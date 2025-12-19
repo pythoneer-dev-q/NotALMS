@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>NotALMS — Дашборд</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Oswald:wght@400;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #6366f1;
+            --bg: #0f172a;
+            --panel: rgba(20,40,70,0.9);
+            --text: #e2e8f0;
+            --card: rgba(30,60,100,0.8);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: 'Oswald', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 25px;
+            background: var(--panel);
+            border-bottom: 1px solid var(--primary);
+        }
+
+        .burger {
+            font-size: 1.8rem;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .logo {
+            font-family: 'Dela Gothic One', cursive;
+            font-size: 1.8rem;
+            color: var(--primary);
+        }
+
+        .user {
+            cursor: pointer;
+            opacity: 0.9;
+        }
+
+        /* ===== MENU ===== */
+        .menu {
+            position: fixed;
+            top: 0;
+            left: -260px;
+            width: 260px;
+            height: 100%;
+            background: var(--panel);
+            padding: 25px;
+            transition: 0.3s;
+            z-index: 100;
+            border-right: 1px solid var(--primary);
+        }
+
+        .menu.active {
+            left: 0;
+        }
+
+        .menu h3 {
+            margin-top: 0;
+        }
+
+        .menu button {
+            width: 100%;
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            background: var(--primary);
+            color: white;
+            font-size: 1rem;
+        }
+
+        /* ===== CONTENT ===== */
+        .content {
+            padding: 30px;
+        }
+
+        .courses {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .course {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid var(--primary);
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .course:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0 20px rgba(99,102,241,0.4);
+        }
+
+        .course h3 {
+            margin: 0 0 10px;
+            color: var(--primary);
+        }
+
+        .error {
+            color: #ff4444;
+            font-size: 1.3rem;
+            margin-top: 40px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="menu" id="menu">
+    <h3>Меню</h3>
+    <button onclick="logout()">Выйти</button>
+</div>
+
+<header class="header">
+    <div class="burger" onclick="toggleMenu()">☰</div>
+    <div class="logo">NotALMS</div>
+    <div class="user" id="user-name">...</div>
+</header>
+
+<main class="content">
+    <h2>Доступные курсы</h2>
+    <div id="courses" class="courses">Загрузка...</div>
+</main>
+
+<script>
+    const API = 'http://127.0.0.1:8004/v1';
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+        location.href = '/';
+    }
+
+    function toggleMenu() {
+        document.getElementById('menu').classList.toggle('active');
+    }
+
+    function logout() {
+        localStorage.removeItem('token');
+        location.href = '/';
+    }
+
+    async function apiGet(url) {
+        const resp = await fetch(API + url, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!resp.ok) throw new Error('auth');
+        return resp.json();
+    }
+
+    async function loadUser() {
+        const me = await apiGet('/me');
+        if (me.error) throw new Error(me.error);
+        document.getElementById('user-name').textContent = me.user_login;
+    }
+
+    async function loadCourses() {
+        const list = await apiGet('/courses');
+        const box = document.getElementById('courses');
+
+        if (!Array.isArray(list) || list.length === 0) {
+            box.innerHTML = 'Курсов пока нет';
+            return;
+        }
+
+        box.innerHTML = '';
+        for (const c of list) {
+            const el = document.createElement('div');
+            el.className = 'course';
+            el.innerHTML = `
+                <h3>${c.title}</h3>
+                <div>${c.description || 'Без описания'}</div>
+            `;
+            box.appendChild(el);
+        }
+    }
+
+    (async () => {
+        try {
+            await loadUser();
+            await loadCourses();
+        } catch (e) {
+            document.querySelector('.content').innerHTML = `
+                <div class="error">
+                    Сессия истекла или нет доступа
+                    <br><br>
+                    <button onclick="logout()">Войти заново</button>
+                </div>
+            `;
+        }
+    })();
+</script>
+
+</body>
+</html>

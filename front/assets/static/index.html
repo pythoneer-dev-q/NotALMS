@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NotALMS — Твоя платформа для обучения</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Oswald:wght@400;600&family=Roboto+Mono:wght@300;400&display=swap"
+        rel="stylesheet">
+
+    <style>
+        /* === Стили (оставлены без изменений, добавлена стилизация чекбокса) === */
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --bg: #0f172a;
+            --text: #e2e8f0;
+            --accent: #f472b6;
+            --gray: #475569;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Oswald', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .bg-pattern {
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(244, 114, 182, 0.15) 0%, transparent 50%);
+            opacity: 0.3;
+            z-index: -1;
+        }
+
+        .header {
+            padding: 20px 0;
+            position: relative;
+            z-index: 10;
+        }
+
+        .header__inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Dela Gothic One', cursive;
+            font-size: 2.5rem;
+            color: var(--primary);
+            text-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+        }
+
+        .burger {
+            display: none;
+            flex-direction: column;
+            gap: 6px;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .burger span {
+            width: 30px;
+            height: 3px;
+            background: var(--primary);
+        }
+
+        .hero {
+            min-height: 90vh;
+            display: flex;
+            align-items: center;
+        }
+
+        .hero__content {
+            max-width: 700px;
+        }
+
+        .hero__title {
+            font-size: 4rem;
+            line-height: 1.1;
+            margin-bottom: 20px;
+        }
+
+        .highlight {
+            color: var(--primary);
+            text-shadow: 0 0 15px var(--primary);
+        }
+
+        .hero__text {
+            font-size: 1.4rem;
+            margin-bottom: 40px;
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        .hero__buttons {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 14px 32px;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Oswald', sans-serif;
+        }
+
+        .btn--primary {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 5px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn--primary:hover {
+            background: #818cf8;
+            transform: translateY(-3px);
+        }
+
+        .btn--secondary {
+            background: transparent;
+            color: var(--text);
+            border: 2px solid var(--primary);
+        }
+
+        .btn--secondary:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn--block {
+            width: 100%;
+        }
+
+        .auth-modal {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            display: none;
+        }
+
+        .auth-modal.active {
+            display: flex;
+        }
+
+        .auth-modal__overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+        }
+
+        .auth-modal__content {
+            background: rgba(20, 40, 70, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 420px;
+            position: relative;
+            border: 1px solid var(--primary);
+            box-shadow: 0 0 40px rgba(99, 102, 241, 0.3);
+        }
+
+        .auth-modal__close {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 2rem;
+            color: var(--text);
+            cursor: pointer;
+        }
+
+        .auth-form input {
+            width: 100%;
+            padding: 14px;
+            margin: 12px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--primary);
+            border-radius: 10px;
+            color: white;
+            font-size: 1rem;
+        }
+
+        .auth-form input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .auth-modal__toggle {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .link {
+            color: var(--primary);
+            cursor: pointer;
+        }
+
+        .link:hover {
+            text-decoration: underline;
+        }
+
+        /* Стилизация чекбокса */
+        .auth-form label input[type="checkbox"] {
+            accent-color: var(--primary);
+            width: 18px;
+            height: 18px;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @media (max-width: 768px) {
+            .hero__title {
+                font-size: 3rem;
+            }
+
+            .hero__buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .burger {
+                display: flex;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-pattern"></div>
+
+    <header class="header">
+        <div class="container header__inner">
+            <h1 class="logo">NotALMS</h1>
+            <button class="burger" aria-label="Открыть меню">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </header>
+
+    <main class="main">
+        <section class="hero">
+            <div class="container hero__content">
+                <h2 class="hero__title">
+                    Учись новому<br>
+                    <span class="highlight">интерактивно</span>
+                </h2>
+                <p class="hero__text">
+                    Платформа для курсов по любым темам: программирование, науки, языки, дизайн и многое другое.<br>
+                    Практические задания с мгновенной проверкой ответов.
+                </p>
+                <div class="hero__buttons">
+                    <button class="btn btn--primary" id="login-btn">Войти</button>
+                    <button class="btn btn--secondary" id="register-btn">Регистрация</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="auth-modal" id="auth-modal">
+            <div class="auth-modal__overlay"></div>
+            <div class="auth-modal__content">
+                <button class="auth-modal__close">×</button>
+                <h2 class="auth-modal__title" id="form-title">Вход</h2>
+                <form id="auth-form" class="auth-form">
+                    <input type="text" placeholder="Логин или email" required>
+                    <input type="password" placeholder="Пароль" required>
+                    <div id="extra-fields"></div>
+                    <button type="submit" class="btn btn--primary btn--block">Войти</button>
+                </form>
+                <p class="auth-modal__toggle" id="toggle-text">
+                    Нет аккаунта? <span class="link">Зарегистрироваться</span>
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const modal = document.getElementById('auth-modal');
+            const form = document.getElementById('auth-form');
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const formTitle = document.getElementById('form-title');
+            const toggleText = document.getElementById('toggle-text');
+            const loginInput = form.querySelector('input[type="text"]');
+            const extraFields = document.getElementById('extra-fields');
+
+            const API_BASE = 'http://127.0.0.1:8004/v1';
+            let isRegister = false;
+            let loginCheckTimeout = null;
+            let statusDiv = null;
+
+            const createStatusDiv = () => {
+                if (!statusDiv) {
+                    statusDiv = document.createElement('div');
+                    statusDiv.id = 'login-status';
+                    statusDiv.style.marginTop = '5px';
+                    statusDiv.style.fontSize = '0.9em';
+                    statusDiv.style.minHeight = '1.2em';
+                    loginInput.after(statusDiv);
+                }
+                return statusDiv;
+            };
+
+            const validateFormat = (login) => {
+                if (login.length < 3) return { ok: false, msg: 'Минимум 3 символа' };
+                if (login.length > 20) return { ok: false, msg: 'Максимум 20 символов' };
+                if (!/^[a-zA-Z0-9_]+$/.test(login)) return { ok: false, msg: 'Только буквы, цифры и _' };
+                return { ok: true, msg: '' };
+            };
+
+            const checkLoginAvailability = async (login) => {
+                const div = createStatusDiv();
+                const { ok, msg } = validateFormat(login);
+
+                if (!ok) {
+                    div.style.color = '#ff4444';
+                    div.textContent = msg;
+                    submitBtn.disabled = true;
+                    return;
+                }
+
+                div.textContent = 'Проверяем...';
+                div.style.color = '#ccc';
+
+                try {
+                    const resp = await fetch(`${API_BASE}/check-login/${encodeURIComponent(login)}`);
+                    const data = await resp.json();
+
+                    const available = !!data.available;
+
+                    div.style.color = available ? '#00ff00' : '#ff4444';
+                    div.textContent = data.message;
+
+                    submitBtn.disabled = isRegister && !available;
+                } catch (err) {
+                    div.textContent = 'Ошибка проверки';
+                    div.style.color = '#ff4444';
+                    submitBtn.disabled = true;
+                }
+            };
+
+            // Ввод логина: проверка только при регистрации
+            loginInput.oninput = () => {
+                if (!isRegister) return;
+
+                const login = loginInput.value.trim();
+                clearTimeout(loginCheckTimeout);
+
+                submitBtn.disabled = true;
+
+                const div = createStatusDiv();
+                if (login === '') {
+                    div.textContent = '';
+                    return;
+                }
+
+                const { ok, msg } = validateFormat(login);
+                if (!ok) {
+                    div.style.color = '#ff4444';
+                    div.textContent = msg;
+                    return;
+                }
+
+                loginCheckTimeout = setTimeout(() => checkLoginAvailability(login), 500);
+            };
+
+            const showModal = (register = false) => {
+                isRegister = register;
+                modal.classList.add('active');
+                formTitle.textContent = register ? 'Регистрация' : 'Вход';
+                submitBtn.textContent = register ? 'Зарегистрироваться' : 'Войти';
+                toggleText.innerHTML = register
+                    ? 'Уже есть аккаунт? <span class="link">Войти</span>'
+                    : 'Нет аккаунта? <span class="link">Зарегистрироваться</span>';
+                form.reset();
+                if (statusDiv) statusDiv.textContent = '';
+                updateExtraFields();
+            };
+
+            const updateExtraFields = () => {
+                if (isRegister) {
+                    extraFields.innerHTML = `
+                <label>
+                    <input type="checkbox" id="notify-tg"> Хочу получать уведомления в Telegram
+                </label>
+                <input type="number" placeholder="Telegram ID (только цифры)" id="tg-id" style="display:none; margin-top:8px;">
+                <input type="text" placeholder="О себе (до 150 символов)" id="about" maxlength="150" style="margin-top:8px;">
+            `;
+                    document.getElementById('notify-tg').onchange = (e) => {
+                        const tg = document.getElementById('tg-id');
+                        tg.style.display = e.target.checked ? 'block' : 'none';
+                        if (!e.target.checked) tg.value = '';
+                    };
+                } else {
+                    extraFields.innerHTML = '';
+                }
+            };
+
+            document.getElementById('login-btn').onclick = () => showModal(false);
+            document.getElementById('register-btn').onclick = () => showModal(true);
+            document.querySelector('.auth-modal__close').onclick = () => modal.classList.remove('active');
+            document.querySelector('.auth-modal__overlay').onclick = () => modal.classList.remove('active');
+
+            toggleText.addEventListener('click', (e) => {
+                if (e.target.classList.contains('link')) showModal(!isRegister);
+            });
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const login = loginInput.value.trim();
+                const password = form.querySelector('input[type="password"]').value;
+
+                const body = isRegister ? {
+                    user_login: login,
+                    user_password: password,
+                    notify_telegram: document.getElementById('notify-tg')?.checked || false,
+                    user_telegram_id: document.getElementById('notify-tg')?.checked
+                        ? parseInt(document.getElementById('tg-id').value || '0')
+                        : null,
+                    about_user: document.getElementById('about')?.value || null
+                } : {
+                    user_login: login,
+                    user_password: password
+                };
+
+                const endpoint = isRegister ? `${API_BASE}/register` : `${API_BASE}/login`;
+
+                try {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Загрузка...';
+                    const resp = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    });
+                    const data = await resp.json();
+                    if (resp.ok && data.JWTSession) {
+                        localStorage.setItem('token', data.JWTSession);
+                        alert(isRegister ? 'Регистрация успешна! JWT ' + data.JWTSession : 'Вход успешен! JWT ' + data.JWTSession);
+                        modal.classList.remove('active');
+                        window.location.href = '/dash.html';
+                    } else {
+                        alert(data.error || 'Ошибка');
+                    }
+                } catch (err) {
+                    alert(err);
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = isRegister ? 'Зарегистрироваться' : 'Войти';
+                }
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && modal.classList.contains('active'))
+                    modal.classList.remove('active');
+            });
+        });
+    </script>
+
+</body>
+
+</html>
