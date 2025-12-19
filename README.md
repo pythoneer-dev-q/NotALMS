@@ -64,23 +64,24 @@ NotALMS/
 │
 ├── .gitignore
 ├── LICENSE (Apache 2.0)
-└── README.md```
+└── README.md
+```
 
 ## Запуск (локально)
 
 1. Клонируй репозиторий  
 2. Установи зависимости:
-   ```bash
+```bash
    pip install fastapi uvicorn motor python-dotenv passlib[bcrypt] python-jose[cryptography] slowapi
-````
+```
 
 3. Создай файл `.env` в корне проекта (пример ниже)
 4. Запусти MongoDB локально или используй MongoDB Atlas
 5. Запусти сервер:
 
-   ```bash
+```bash
    uvicorn front.server.main:app --reload
-   ```
+```
 6. Открой в браузере:
    [http://127.0.0.1:8004/index.html](http://127.0.0.1:8004/index.html) (или просто `/`)
 
