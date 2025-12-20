@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
     <meta charset="UTF-8">
     <title>NotALMS — Дашборд</title>
@@ -7,18 +8,21 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Oswald:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Oswald:wght@400;600&display=swap"
+        rel="stylesheet">
 
     <style>
         :root {
             --primary: #6366f1;
             --bg: #0f172a;
-            --panel: rgba(20,40,70,0.9);
+            --panel: rgba(20, 40, 70, 0.9);
             --text: #e2e8f0;
-            --card: rgba(30,60,100,0.8);
+            --card: rgba(30, 60, 100, 0.8);
         }
 
-        * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+        }
 
         body {
             margin: 0;
@@ -36,6 +40,8 @@
             padding: 15px 25px;
             background: var(--panel);
             border-bottom: 1px solid var(--primary);
+            position: relative;
+            z-index: 10;
         }
 
         .burger {
@@ -53,6 +59,16 @@
         .user {
             cursor: pointer;
             opacity: 0.9;
+            color: #fff;
+            text-decoration: none;
+            border: 1px solid var(--primary);
+            padding: 3px 8px;
+            border-radius: 6px;
+            transition: 0.3s;
+        }
+
+        .user:hover {
+            background: rgba(99, 102, 241, 0.2);
         }
 
         /* ===== MENU ===== */
@@ -75,6 +91,15 @@
 
         .menu h3 {
             margin-top: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .menu h3 span.close {
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: #ff5555;
         }
 
         .menu button {
@@ -112,7 +137,7 @@
 
         .course:hover {
             transform: translateY(-5px);
-            box-shadow: 0 0 20px rgba(99,102,241,0.4);
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
         }
 
         .course h3 {
@@ -125,94 +150,119 @@
             font-size: 1.3rem;
             margin-top: 40px;
         }
+
+        @media (max-width: 600px) {
+            .courses {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 
 <body>
 
-<div class="menu" id="menu">
-    <h3>Меню</h3>
-    <button onclick="logout()">Выйти</button>
-</div>
+    <div class="menu" id="menu">
+        <h3>Меню <span class="close" onclick="toggleMenu()">✕</span></h3>
+        <button onclick="logout()">Выйти</button>
+    </div>
 
-<header class="header">
-    <div class="burger" onclick="toggleMenu()">☰</div>
-    <div class="logo">NotALMS</div>
-    <div class="user" id="user-name">...</div>
-</header>
+    <header class="header">
+        <div class="burger" onclick="toggleMenu()">☰</div>
+        <div class="logo">NotALMS</div>
+        <a href="/profile" class="user" id="user-name">...</a>
+    </header>
 
-<main class="content">
-    <h2>Доступные курсы</h2>
-    <div id="courses" class="courses">Загрузка...</div>
-</main>
+    <main class="content">
+        <h2>Доступные курсы</h2>
+        <div id="courses" class="courses">Загрузка...</div>
+    </main>
 
-<script>
-    const API = 'http://127.0.0.1:8004/v1';
-    const token = localStorage.getItem('token');
+    <script>
+        const API = 'https://lmsapi.cloudpub.ru/v1';
+        const token = localStorage.getItem('token');
 
-    if (!token) {
-        location.href = '/';
-    }
+        if (!token) window.location.href = '/';
 
-    function toggleMenu() {
-        document.getElementById('menu').classList.toggle('active');
-    }
+        function toggleMenu() {
+            const menu = document.getElementById('menu');
+            menu.classList.toggle('active');
+        }
 
-    function logout() {
-        localStorage.removeItem('token');
-        location.href = '/';
-    }
-
-    async function apiGet(url) {
-        const resp = await fetch(API + url, {
-            headers: { 'Authorization': `Bearer ${token}` }
+        // Закрытие меню при клике вне него
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('menu');
+            const burger = document.querySelector('.burger');
+            if (!menu.contains(e.target) && !burger.contains(e.target)) {
+                menu.classList.remove('active');
+            }
         });
-        if (!resp.ok) throw new Error('auth');
-        return resp.json();
-    }
 
-    async function loadUser() {
-        const me = await apiGet('/me');
-        if (me.error) throw new Error(me.error);
-        document.getElementById('user-name').textContent = me.user_login;
-    }
-
-    async function loadCourses() {
-        const list = await apiGet('/courses');
-        const box = document.getElementById('courses');
-
-        if (!Array.isArray(list) || list.length === 0) {
-            box.innerHTML = 'Курсов пока нет';
-            return;
+        function logout() {
+            localStorage.removeItem('token');
+            location.href = '/';
         }
 
-        box.innerHTML = '';
-        for (const c of list) {
-            const el = document.createElement('div');
-            el.className = 'course';
-            el.innerHTML = `
-                <h3>${c.title}</h3>
-                <div>${c.description || 'Без описания'}</div>
-            `;
-            box.appendChild(el);
+        async function apiGet(url) {
+            const resp = await fetch(API + url, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!resp.ok) throw new Error('auth');
+            return resp.json();
         }
-    }
 
-    (async () => {
-        try {
-            await loadUser();
-            await loadCourses();
-        } catch (e) {
-            document.querySelector('.content').innerHTML = `
+        async function loadUser() {
+            const me = await apiGet('/me');
+            if (me.error) throw new Error(me.error);
+            document.getElementById('user-name').textContent = me.user_login;
+        }
+
+        async function loadCourses() {
+            const list = await apiGet('/courses');
+            const box = document.getElementById('courses');
+
+            if (!Array.isArray(list) || list.length === 0) {
+                box.innerHTML = 'Курсов пока нет';
+                return;
+            }
+
+            box.innerHTML = '';
+            for (const c of list) {
+                const el = document.createElement('div');
+                el.className = 'course';
+                el.innerHTML = `
+            <h3>${c.title}</h3>
+            <div>${c.description || 'Без описания'}</div>
+        `;
+
+                // Клик по карточке ведет на страницу курса
+                el.addEventListener('click', () => {
+                    // используем c._id или c.id в зависимости от того, что приходит с API
+                    const courseID = c._id || c.id;
+                    if (courseID) {
+                        location.href = `/course/${courseID}`;
+                    }
+                });
+
+                box.appendChild(el);
+            }
+        }
+
+        (async () => {
+            try {
+                await loadUser();
+                await loadCourses();
+            } catch (e) {
+                document.querySelector('.content').innerHTML = `
                 <div class="error">
                     Сессия истекла или нет доступа
                     <br><br>
                     <button onclick="logout()">Войти заново</button>
                 </div>
             `;
-        }
-    })();
-</script>
+            }
+        })();
+    </script>
 
 </body>
+
 </html>

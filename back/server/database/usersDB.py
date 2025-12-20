@@ -1,7 +1,7 @@
 # ! back/server/database/usersDB.py
 from motor.motor_asyncio import AsyncIOMotorClient
 from server_configs.server_mainConfig import (
-    MONGO_COURSES, MONGO_URI, MONGO_CLUSTER, MONGO_USERS
+        MONGO_URI, MONGO_CLUSTER, MONGO_USERS
 )
 from uuid import uuid4
 from database.utils import hash_password, create_access_token, verify_password
@@ -19,7 +19,7 @@ async def register_user(user_login: str, user_password: str, user_telegram_FOR_A
         'hashed_password': await hash_password(user_password),
         'user_telegram_FOR_ANNOUCMENTS': user_telegram_FOR_ANNOUCMENTS,
         'achivements': [
-            'registered'
+            {'registered': 'Первый шаг к учебе!'}
         ],
         'status': True,
         'biography': about_user

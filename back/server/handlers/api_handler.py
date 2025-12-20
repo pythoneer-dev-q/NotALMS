@@ -49,9 +49,14 @@ async def main_loginReturnToken(data: models.Login):
 async def me(user=Depends(get_current_user)):
     return {
         'user_login': user['user_login'],
-        'user_uid': user['user_uid']
+        'user_uid': user['user_uid'],
+        'role': user['role']
     }
-
+@arouter.get('/search_user')
+async def search_user(user=Depends(get_current_user)):
+    return await usersDB.search_usersByID(
+        user_uid=user.get('user_uid', None)
+    )
 
 
 @arouter.get('/check-login/{login}')
@@ -60,8 +65,7 @@ async def check_login(login: str):
         return jsonset(
             content={"available": False, "message": "Логин не может быть пустым"},
             status_code=200
-        )
-
+        )        
     existing = await usersDB.search_users(login)
     if existing:
         return jsonset(
@@ -89,7 +93,6 @@ async def main_datagetterJWT(data: models.GetSession):
             'error': 'доступ запрещен (неверный токен)'
         }, status_code=403
     )
-
 
         
         

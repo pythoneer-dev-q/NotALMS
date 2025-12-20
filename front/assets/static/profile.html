@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NotALMS — Профиль</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Oswald:wght@400;600&display=swap"
+        rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #6366f1;
+            --bg: #0f172a;
+            --card: #13213d;
+            --text: #e2e8f0;
+            --muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Oswald', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            height: 70px;
+            padding: 0 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(99, 102, 241, 0.3);
+            background: rgba(15, 23, 42, 0.9);
+        }
+
+        .logo {
+            font-family: 'Dela Gothic One', cursive;
+            font-size: 1.8rem;
+            color: var(--primary);
+        }
+
+        .header .btn {
+            padding: 8px 20px;
+        }
+
+        /* ===== PAGE ===== */
+        .page {
+            padding: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .title {
+            font-size: 2rem;
+            margin-bottom: 30px;
+        }
+
+        /* ===== GRID ===== */
+        .profile-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 900px) {
+            .profile-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            box-shadow: 0 0 25px rgba(99, 102, 241, 0.15);
+        }
+
+        .label {
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-bottom: 4px;
+        }
+
+        .info {
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+        }
+
+        /* ===== ACHIEVEMENTS ===== */
+        .achievements {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .ach {
+            background: rgba(99, 102, 241, 0.15);
+            padding: 12px;
+            border-radius: 14px;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn {
+            padding: 12px 28px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: 0.25s;
+        }
+
+        .btn:hover {
+            background: #818cf8;
+            transform: translateY(-1px);
+        }
+
+        .btn.disabled {
+            background: #475569;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .error {
+            color: #ff4d4d;
+            font-size: 1.4rem;
+        }
+
+        /* ===== FLOATING HOME BUTTON ===== */
+        #homeBtn {
+            position: fixed;
+            left: 20px;
+            bottom: 20px;
+            z-index: 1000;
+        }
+
+        @media (max-width: 600px) {
+            #homeBtn {
+                left: 15px;
+                bottom: 15px;
+                padding: 10px 18px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <div class="logo">NotALMS</div>
+        <button class="btn" onclick="logout()">Выйти</button>
+    </div>
+
+    <div class="page">
+        <div id="content">Загрузка профиля…</div>
+    </div>
+
+    <!-- Плавающая кнопка "На главную" слева снизу -->
+    <button class="btn" id="homeBtn" onclick="location.href='/dash'">⇱ На главную</button>
+
+    <script>
+        const API_BASE = 'https://lmsapi.cloudpub.ru/v1';
+        const token = localStorage.getItem('token');
+
+        if (!token) {
+            document.getElementById('content').innerHTML = `
+                <div class="error">Вы не авторизованы</div>
+                <br>
+                <button class="btn" onclick="location.href='/index.html'">На главную</button>
+            `;
+        } else {
+            fetch(`${API_BASE}/search_user`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.error) {
+                        document.getElementById('content').innerHTML = `
+                            <div class="error">${data.error}</div>
+                        `;
+                        return;
+                    }
+
+                    const achHTML = data.achivements.length
+                        ? data.achivements.map(a => {
+                            const key = Object.keys(a)[0];
+                            return `<div class="ach"><b>${key}</b><br><small>${a[key]}</small></div>`;
+                        }).join('')
+                        : '<i>Пока нет достижений</i>';
+
+                    document.getElementById('content').innerHTML = `
+                        <div class="title">Профиль пользователя</div>
+
+                        <div class="profile-grid">
+                            <div class="card">
+                                <div class="info">
+                                    <div class="label">Логин</div>
+                                    <b>${data.user_login}</b>
+                                </div>
+
+                                <div class="info">
+                                    <div class="label">О себе</div>
+                                    ${data.biography || '<i>Не указано</i>'}
+                                </div>
+
+                                <div class="info">
+                                    <div class="label">Telegram</div>
+                                    ${data.user_telegram_FOR_ANNOUCMENTS || '<i>Не указан</i>'}
+                                </div>
+
+                                <div class="info">
+                                    <div class="label">Статус</div>
+                                    ${data.status ? 'Активен' : 'Заблокирован'}
+                                </div>
+
+                                <button class="btn disabled">Кастомизация профиля</button>
+                            </div>
+
+                            <div class="card">
+                                <div class="label">Достижения</div>
+                                <div class="achievements">
+                                    ${achHTML}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                })
+                .catch(() => {
+                    document.getElementById('content').innerHTML = `
+                        <div class="error">Ошибка связи с сервером</div>
+                    `;
+                });
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            location.href = '/index.html';
+        }
+    </script>
+</body>
+
+</html>

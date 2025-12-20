@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <title>NotALMS — Курс</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Oswald:wght@400;600&display=swap"
+        rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #6366f1;
+            --bg: #0f172a;
+            --panel: rgba(20, 40, 70, 0.9);
+            --text: #e2e8f0;
+            --card: rgba(30, 60, 100, 0.8);
+            --accent: #4ade80;
+            --warning: #facc15;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Oswald', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        /* HEADER */
+        .header {
+            display: flex;
+            align-items: center;
+            padding: 15px 25px;
+            background: var(--panel);
+            border-bottom: 1px solid var(--primary);
+        }
+
+        .logo {
+            font-family: 'Dela Gothic One', cursive;
+            font-size: 1.8rem;
+            color: var(--primary);
+        }
+
+        /* MAIN LAYOUT */
+        .container {
+            display: flex;
+            min-height: calc(100vh - 60px);
+        }
+
+        .lessons-list {
+            width: 280px;
+            background: var(--panel);
+            border-right: 1px solid var(--primary);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            /* Чтобы кнопка была снизу */
+            overflow-y: auto;
+        }
+
+        .lessons-top {
+            /* контейнер для уроков */
+        }
+
+        .lessons-list h3 {
+            margin-top: 0;
+            color: var(--primary);
+        }
+
+        .lesson-item {
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .lesson-item.active,
+        .lesson-item:hover {
+            background: rgba(99, 102, 241, 0.3);
+        }
+
+        .back-btn {
+            cursor: pointer;
+            opacity: 0.9;
+            color: #fff;
+            border: 1px solid var(--primary);
+            padding: 8px 12px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .back-btn:hover {
+            background: rgba(99, 102, 241, 0.2);
+        }
+
+        .course-content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .course-content img {
+            max-width: 100%;
+            border-radius: 8px;
+        }
+
+        .course-content pre {
+            background: rgba(50, 50, 80, 0.9);
+            padding: 10px;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
+
+        .warning {
+            background: var(--warning);
+            color: #111;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+
+        .task {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid var(--accent);
+            border-radius: 8px;
+        }
+
+        @media (max-width: 800px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .lessons-list {
+                width: 100%;
+                display: flex;
+                overflow-x: auto;
+                flex-direction: row;
+                justify-content: flex-start;
+            }
+
+            .lessons-top {
+                display: flex;
+                flex-direction: row;
+            }
+
+            .lesson-item {
+                flex: 0 0 auto;
+                margin-right: 10px;
+            }
+
+            .back-btn {
+                order: 99;
+                margin-top: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="header">
+        <div class="logo">NotALMS</div>
+    </header>
+
+    <div class="container">
+        <aside class="lessons-list">
+            <div class="lessons-top">
+                <h3>Уроки</h3>
+                <div id="lessons"></div>
+            </div>
+            <div>
+                <a href="/dash" class="back-btn">← Дашборд</a>
+            </div>
+        </aside>
+
+        <main class="course-content" id="course-content">
+            <h2 id="course-title">Загрузка курса...</h2>
+            <div id="lesson-content"></div>
+            <div id="tasks"></div>
+        </main>
+    </div>
+
+    <script>
+        const API = 'https://lmsapi.cloudpub.ru/v1';
+        const token = localStorage.getItem('token');
+        const courseID = location.pathname.split('/').pop();
+
+        // Если токена нет, сразу на главную
+        if (!token) location.href = '/';
+
+        async function apiGet(url) {
+            try {
+                const resp = await fetch(API + url, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (resp.status === 401 || resp.status === 403) {
+                    // Неверный токен, убираем его и редирект
+                    localStorage.removeItem('token');
+                    location.href = '/';
+                    return null;
+                }
+
+                if (!resp.ok) {
+                    // Другая ошибка API
+                    console.error('Ошибка API', resp.status);
+                    return null;
+                }
+
+                return await resp.json();
+            } catch (err) {
+                console.error('Ошибка сети', err);
+                return null;
+            }
+        }
+
+        async function loadCourse() {
+            const course = await apiGet(`/getcourse/${courseID}`);
+            if (!course) return;
+
+            document.getElementById('course-title').textContent = course.title;
+
+            const lessons = await apiGet(`/search_lessons/${courseID}`);
+            if (!lessons) return;
+
+            const lessonsBox = document.getElementById('lessons');
+            lessonsBox.innerHTML = '';
+            lessons.forEach((lesson, index) => {
+                const el = document.createElement('div');
+                el.className = 'lesson-item';
+                el.textContent = lesson.title;
+                el.addEventListener('click', () => showLesson(lesson, el));
+                if (index === 0) showLesson(lesson, el);
+                lessonsBox.appendChild(el);
+            });
+        }
+
+        function showLesson(lesson, element) {
+            document.querySelectorAll('.lesson-item').forEach(e => e.classList.remove('active'));
+            element.classList.add('active');
+
+            const container = document.getElementById('lesson-content');
+            container.innerHTML = '';
+
+            lesson.content.forEach(block => {
+                switch (block.type) {
+                    case 'text':
+                        const p = document.createElement('p');
+                        p.textContent = block.value;
+                        container.appendChild(p);
+                        break;
+                    case 'image':
+                        const img = document.createElement('img');
+                        img.src = block.src;
+                        img.alt = block.alt || '';
+                        container.appendChild(img);
+                        break;
+                    case 'list':
+                        const ul = document.createElement('ul');
+                        block.items.forEach(item => {
+                            const li = document.createElement('li');
+                            li.textContent = item;
+                            ul.appendChild(li);
+                        });
+                        container.appendChild(ul);
+                        break;
+                    case 'code':
+                        const pre = document.createElement('pre');
+                        pre.textContent = block.value;
+                        container.appendChild(pre);
+                        break;
+                    case 'warning':
+                        const div = document.createElement('div');
+                        div.className = 'warning';
+                        div.textContent = block.value;
+                        container.appendChild(div);
+                        break;
+                }
+            });
+
+            loadTasks(lesson._id);
+        }
+
+        async function loadTasks(lessonID) {
+            const tasksBox = document.getElementById('tasks');
+            const tasks = await apiGet(`/gettasks/${lessonID}`);
+            if (!tasks) return;
+            tasksBox.innerHTML = '';
+            tasks.forEach(task => {
+                const div = document.createElement('div');
+                div.className = 'task';
+                div.innerHTML = `
+                <strong>Тип задания:</strong> ${task.type} <br>
+                <strong>Сложность:</strong> ${task.difficulty} <br>
+                <strong>Режим:</strong> ${task.mode} <br>
+            `;
+                tasksBox.appendChild(div);
+            });
+        }
+
+        (async () => {
+            await loadCourse();
+        })();
+    </script>
+
+</body>
+
+</html>

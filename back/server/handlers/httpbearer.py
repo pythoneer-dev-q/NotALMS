@@ -16,5 +16,5 @@ async def get_current_user(
     user = await usersDB.search_usersByID(payload['user_uid'])
     if not user:
         raise HTTPException(401, 'User not found')
-
+    user['role'] = payload['role']
     return user
