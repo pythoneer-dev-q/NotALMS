@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse as jsonset
 from handlers.httpbearer import get_current_user
 from database import coursesDB
 from handlers.fronthandler_conf import models
+from tasks import biologyUtil
 
 crouter = APIRouter(prefix='/v1')
 
@@ -24,12 +25,18 @@ async def main_returnCourse(courseId: str, user=Depends(get_current_user)):
         content=courseData, status_code=200
     )
 @crouter.get('/search_lessons/{course_id}')
-async def main_lessonSearcher(course_id: str):
+async def main_lessonSearcher(course_id: str, user=Depends(get_current_user)):
     lessonsData = await coursesDB.search_lessons(
         course_id=course_id
     )
     return jsonset(
         content=lessonsData, status_code=200)
+@crouter.get('/gettasks/{Task_LessonId}')
+async def main_TaskLessonSearch(Task_LessonId:str, user=Depends(get_current_user)):
+    testData = await coursesDB.search_tasks(lesson_id=Task_LessonId)
+    return jsonset(
+        content=testData, status_code=200
+    )
 @crouter.post(
     '/createCourse'
 )
@@ -62,4 +69,49 @@ async def main_LessonCreater(
         type_lesson=data.type,
         order=data.order,
         content=data.content
+    )
+"""
+        _id - ид задания,
+        lesson_id - привязка к уроку,
+        type - тип задания,
+        mode - /v1/tasks/{mode} эндпоинт для проверки,
+        difficulty - сложность (по умолчанию -- легко),
+        settings - настройки для задания {mode}
+        created_at - временная метка
+    """
+@crouter.post('/createTask')
+async def main_taskUpdater(
+    data: models.RegVisibleTask
+):
+    return await coursesDB.create_Test(
+        _id=data.id, 
+        lesson_id=data.lesson_id,
+        mode=data.mode,
+        settings=data.settings,
+        task_type=data.type_task,
+        difficulty=data.difficulty
+    )
+
+
+
+@crouter.post('/check_answer')
+async def main_answerCheck(data: dict):
+    sol = await coursesDB.search_test__id(data['task_id'])
+    print(sol)
+    sub = await biologyUtil.validate_submission(user_input=data['user_input'], solution_data=sol['internal_solution'])
+    return jsonset(content=sub, status_code=200)
+@crouter.get('/getTest/{click_from}')
+async def main_taskGetter(click_from: str):
+    if (tmp := await coursesDB.search_tasks__id(_id=click_from)):
+        user_task = await biologyUtil.generate_task(
+            mode=int(tmp['mode']),
+            length=int(tmp['settings']['taskLen'])
+        )
+        await coursesDB.create_test(user_task)
+        user_task['_id'] = None
+        return jsonset(content=user_task, status_code=200)
+    return jsonset(
+        content={
+            'error': 'такого урока не существует'
+        }, status_code=404
     )

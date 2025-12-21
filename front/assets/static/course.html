@@ -3,23 +3,25 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>NotALMS — Курс</title>
+    <title>NotALMS — Биология</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Oswald:wght@400;600&display=swap"
+    <link
+        href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Fira+Code:wght@400;600&family=Oswald:wght@400;600&display=swap"
         rel="stylesheet">
 
     <style>
         :root {
             --primary: #6366f1;
             --bg: #0f172a;
-            --panel: rgba(20, 40, 70, 0.9);
+            --panel: rgba(20, 40, 70, 0.95);
             --text: #e2e8f0;
-            --card: rgba(30, 60, 100, 0.8);
             --accent: #4ade80;
+            --error: #ef4444;
             --warning: #facc15;
+            --dna-font: 'Fira Code', monospace;
         }
 
         * {
@@ -32,18 +34,16 @@
             background: var(--bg);
             color: var(--text);
             min-height: 100vh;
+            overflow: hidden;
+            /* Скролл внутри контейнеров */
         }
 
-        a {
-            color: inherit;
-            text-decoration: none;
-        }
-
-        /* HEADER */
+        /* --- LAYOUT --- */
         .header {
+            height: 60px;
             display: flex;
             align-items: center;
-            padding: 15px 25px;
+            padding: 0 25px;
             background: var(--panel);
             border-bottom: 1px solid var(--primary);
         }
@@ -54,119 +54,313 @@
             color: var(--primary);
         }
 
-        /* MAIN LAYOUT */
         .container {
             display: flex;
-            min-height: calc(100vh - 60px);
+            height: calc(100vh - 60px);
         }
 
+        /* --- SIDEBAR --- */
         .lessons-list {
-            width: 280px;
+            width: 300px;
             background: var(--panel);
             border-right: 1px solid var(--primary);
             padding: 20px;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
-            /* Чтобы кнопка была снизу */
             overflow-y: auto;
+            flex-shrink: 0;
         }
 
-        .lessons-top {
-            /* контейнер для уроков */
+        .sidebar-section {
+            margin-bottom: 25px;
         }
 
-        .lessons-list h3 {
-            margin-top: 0;
+        .sidebar-title {
             color: var(--primary);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(99, 102, 241, 0.3);
+            padding-bottom: 5px;
         }
 
-        .lesson-item {
-            padding: 10px;
+        .nav-item {
+            padding: 12px 15px;
             margin-bottom: 8px;
             border-radius: 8px;
             cursor: pointer;
-            transition: 0.3s;
+            transition: 0.2s;
+            font-size: 0.95rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .lesson-item.active,
-        .lesson-item:hover {
-            background: rgba(99, 102, 241, 0.3);
-        }
-
-        .back-btn {
-            cursor: pointer;
-            opacity: 0.9;
-            color: #fff;
-            border: 1px solid var(--primary);
-            padding: 8px 12px;
-            border-radius: 6px;
-            text-align: center;
-        }
-
-        .back-btn:hover {
+        .nav-item:hover {
             background: rgba(99, 102, 241, 0.2);
         }
 
+        .nav-item.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Стили для тестов в меню */
+        .test-badge {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.3);
+            font-family: var(--dna-font);
+        }
+
+        /* --- MAIN CONTENT --- */
         .course-content {
             flex: 1;
-            padding: 30px;
+            padding: 40px;
             overflow-y: auto;
+            position: relative;
         }
 
-        .course-content img {
-            max-width: 100%;
+        /* --- TEST INTERFACE --- */
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .task-card {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid var(--primary);
+            border-radius: 12px;
+            padding: 30px;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Task ID верхний левый */
+        .task-id {
+            position: absolute;
+            top: 14px;
+            left: 14px;
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            color: #d1d5db;
+            padding: 6px 8px;
             border-radius: 8px;
+            font-family: var(--dna-font);
+            font-size: 0.85rem;
+            z-index: 5;
         }
 
-        .course-content pre {
-            background: rgba(50, 50, 80, 0.9);
-            padding: 10px;
-            border-radius: 6px;
-            overflow-x: auto;
+        .task-instruction {
+            font-size: 1.2rem;
+            margin-bottom: 25px;
+            color: var(--accent);
         }
 
-        .warning {
-            background: var(--warning);
-            color: #111;
-            padding: 10px;
-            border-radius: 6px;
-            margin: 10px 0;
+        /* Изменяем отображение контейнера */
+        .dna-display {
+            background: rgba(15, 23, 42, 0.8);
+            padding: 25px;
+            border-radius: 8px;
+            font-family: var(--dna-font);
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            margin-bottom: 30px;
+            border-left: 4px solid var(--primary);
+
+            /* Флекс-колонка для строк цепей */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
         }
 
-        .task {
+        /* Строка цепи — теперь flex, центрируется по горизонтали */
+        .strand {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            color: #94a3b8;
+            white-space: nowrap;
+            width: 100%;
+        }
+
+        /* Секвенция (ядро цепи) — не переносится и центрируется */
+        .strand .seq {
+            color: #e2e8f0;
+            font-weight: bold;
+            font-size: 1.05rem;
+        }
+
+        .strand .end {
+            color: var(--warning);
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .input-area {
+            position: relative;
             margin-top: 20px;
-            padding: 15px;
-            border: 1px solid var(--accent);
-            border-radius: 8px;
         }
 
+        .dna-input {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.9);
+            border: 2px solid #334155;
+            color: var(--text);
+            padding: 15px 20px;
+            font-family: var(--dna-font);
+            font-size: 1.1rem;
+            border-radius: 8px;
+            letter-spacing: 2px;
+            outline: none;
+            transition: 0.3s;
+            text-transform: uppercase;
+        }
+
+        .dna-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
+        }
+
+        .dna-input.error {
+            border-color: var(--error);
+            animation: shake 0.4s;
+        }
+
+        .dna-input.success {
+            border-color: var(--accent);
+        }
+
+        .submit-btn {
+            margin-top: 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-family: 'Oswald', sans-serif;
+            font-size: 1.1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            transition: 0.2s;
+        }
+
+        .submit-btn:hover {
+            filter: brightness(1.1);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* --- LIGHTBULB (HINT) --- */
+        .bulb-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 2rem;
+            cursor: pointer;
+            filter: grayscale(1);
+            opacity: 0.3;
+            transition: 0.3s;
+            display: none;
+            /* Скрыто по умолчанию */
+            z-index: 6;
+        }
+
+        .bulb-btn.visible {
+            display: block;
+            opacity: 1;
+            filter: grayscale(0) drop-shadow(0 0 10px var(--warning));
+            animation: pulse 2s infinite;
+        }
+
+        .bulb-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* --- FEEDBACK --- */
+        .feedback-msg {
+            margin-top: 15px;
+            min-height: 24px;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        .feedback-msg.error {
+            color: var(--error);
+        }
+
+        .feedback-msg.success {
+            color: var(--accent);
+        }
+
+        /* --- ANIMATIONS --- */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-5px);
+            }
+
+            75% {
+                transform: translateX(5px);
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                filter: drop-shadow(0 0 5px var(--warning));
+            }
+
+            50% {
+                filter: drop-shadow(0 0 15px var(--warning));
+            }
+
+            100% {
+                filter: drop-shadow(0 0 5px var(--warning));
+            }
+        }
+
+        /* MOBILE ADAPTIVE */
         @media (max-width: 800px) {
             .container {
                 flex-direction: column;
+                height: auto;
             }
 
             .lessons-list {
                 width: 100%;
-                display: flex;
-                overflow-x: auto;
-                flex-direction: row;
-                justify-content: flex-start;
+                max-height: 200px;
             }
 
-            .lessons-top {
-                display: flex;
-                flex-direction: row;
-            }
-
-            .lesson-item {
-                flex: 0 0 auto;
-                margin-right: 10px;
-            }
-
-            .back-btn {
-                order: 99;
-                margin-top: 10px;
+            .course-content {
+                padding: 20px;
+                min-height: 60vh;
             }
         }
     </style>
@@ -179,145 +373,295 @@
 
     <div class="container">
         <aside class="lessons-list">
-            <div class="lessons-top">
-                <h3>Уроки</h3>
-                <div id="lessons"></div>
+            <div class="sidebar-section">
+                <div class="sidebar-title">Теория</div>
+                <div id="lessons-container"></div>
             </div>
-            <div>
-                <a href="/dash" class="back-btn">← Дашборд</a>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">Практика</div>
+                <div id="tests-container"></div>
             </div>
+
+            <a href="/dash" class="nav-item"
+                style="margin-top: auto; justify-content: center; border: 1px solid var(--primary);">
+                ← В меню
+            </a>
         </aside>
 
-        <main class="course-content" id="course-content">
-            <h2 id="course-title">Загрузка курса...</h2>
-            <div id="lesson-content"></div>
-            <div id="tasks"></div>
+        <main class="course-content" id="main-area">
+            <h2 id="placeholder-title" style="text-align:center; margin-top: 100px; opacity: 0.5;">
+                Выберите урок или тест из меню
+            </h2>
         </main>
     </div>
 
     <script>
-        const API = 'https://lmsapi.cloudpub.ru/v1';
-        const token = localStorage.getItem('token');
+        const API_BASE = 'https://lmsapi.cloudpub.ru/v1'; // Замените на реальный URL
+        const token = localStorage.getItem('token') || 'dev_token'; // Убрать dev_token в проде
         const courseID = location.pathname.split('/').pop();
 
-        // Если токена нет, сразу на главную
-        if (!token) location.href = '/';
+        let currentTaskId = null;
+        let attemptCounter = 0; // Локальный счетчик ошибок для текущей задачи
 
-        async function apiGet(url) {
+        // --- CORE API ---
+        async function apiRequest(endpoint, method = 'GET', body = null) {
             try {
-                const resp = await fetch(API + url, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
+                const options = {
+                    method,
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                };
+                if (body) options.body = JSON.stringify(body);
 
-                if (resp.status === 401 || resp.status === 403) {
-                    // Неверный токен, убираем его и редирект
-                    localStorage.removeItem('token');
-                    location.href = '/';
+                const res = await fetch(API_BASE + endpoint, options);
+
+                if (res.status === 401) {
+                    location.href = '/login';
                     return null;
                 }
-
-                if (!resp.ok) {
-                    // Другая ошибка API
-                    console.error('Ошибка API', resp.status);
-                    return null;
-                }
-
-                return await resp.json();
-            } catch (err) {
-                console.error('Ошибка сети', err);
+                return await res.json();
+            } catch (e) {
+                console.error("Network error:", e);
                 return null;
             }
         }
 
-        async function loadCourse() {
-            const course = await apiGet(`/getcourse/${courseID}`);
-            if (!course) return;
+        // --- INITIALIZATION ---
+        async function init() {
+            // 1. Загрузка структуры курса
+            const lessons = await apiRequest(`/search_lessons/${courseID}`);
+            if (lessons) renderSidebar(lessons);
 
-            document.getElementById('course-title').textContent = course.title;
+            // 2. Если есть хеш в URL, открыть сразу (опционально)
+        }
 
-            const lessons = await apiGet(`/search_lessons/${courseID}`);
-            if (!lessons) return;
+        function renderSidebar(lessons) {
+            const lContainer = document.getElementById('lessons-container');
+            const tContainer = document.getElementById('tests-container');
 
-            const lessonsBox = document.getElementById('lessons');
-            lessonsBox.innerHTML = '';
-            lessons.forEach((lesson, index) => {
+            lessons.forEach(lesson => {
                 const el = document.createElement('div');
-                el.className = 'lesson-item';
+                el.className = 'nav-item';
                 el.textContent = lesson.title;
-                el.addEventListener('click', () => showLesson(lesson, el));
-                if (index === 0) showLesson(lesson, el);
-                lessonsBox.appendChild(el);
+                el.onclick = () => loadLesson(lesson);
+                lContainer.appendChild(el);
+
+                // Загружаем тесты для этого урока
+                loadTasksForLesson(lesson._id, tContainer);
             });
         }
 
-        function showLesson(lesson, element) {
-            document.querySelectorAll('.lesson-item').forEach(e => e.classList.remove('active'));
-            element.classList.add('active');
-
-            const container = document.getElementById('lesson-content');
-            container.innerHTML = '';
-
-            lesson.content.forEach(block => {
-                switch (block.type) {
-                    case 'text':
-                        const p = document.createElement('p');
-                        p.textContent = block.value;
-                        container.appendChild(p);
-                        break;
-                    case 'image':
-                        const img = document.createElement('img');
-                        img.src = block.src;
-                        img.alt = block.alt || '';
-                        container.appendChild(img);
-                        break;
-                    case 'list':
-                        const ul = document.createElement('ul');
-                        block.items.forEach(item => {
-                            const li = document.createElement('li');
-                            li.textContent = item;
-                            ul.appendChild(li);
-                        });
-                        container.appendChild(ul);
-                        break;
-                    case 'code':
-                        const pre = document.createElement('pre');
-                        pre.textContent = block.value;
-                        container.appendChild(pre);
-                        break;
-                    case 'warning':
-                        const div = document.createElement('div');
-                        div.className = 'warning';
-                        div.textContent = block.value;
-                        container.appendChild(div);
-                        break;
-                }
-            });
-
-            loadTasks(lesson._id);
-        }
-
-        async function loadTasks(lessonID) {
-            const tasksBox = document.getElementById('tasks');
-            const tasks = await apiGet(`/gettasks/${lessonID}`);
+        async function loadTasksForLesson(lessonID, container) {
+            const tasks = await apiRequest(`/gettasks/${lessonID}`);
             if (!tasks) return;
-            tasksBox.innerHTML = '';
+
             tasks.forEach(task => {
-                const div = document.createElement('div');
-                div.className = 'task';
-                div.innerHTML = `
-                <strong>Тип задания:</strong> ${task.type} <br>
-                <strong>Сложность:</strong> ${task.difficulty} <br>
-                <strong>Режим:</strong> ${task.mode} <br>
-            `;
-                tasksBox.appendChild(div);
+                const el = document.createElement('div');
+                el.className = 'nav-item';
+                el.innerHTML = `<span>${task.title || 'Тест'}</span> <span class="test-badge">${task.mode || 'N'}</span>`;
+                // Клик по тесту запускает загрузку задания
+                el.onclick = () => loadTestInterface(task._id); // Используем ID теста для запроса
+                container.appendChild(el);
             });
         }
 
-        (async () => {
-            await loadCourse();
-        })();
-    </script>
+        // --- LESSON RENDERER (Старый функционал) ---
+        function loadLesson(lesson) {
+            const main = document.getElementById('main-area');
+            let contentHtml = `<h1>${lesson.title}</h1>`;
+            lesson.content.forEach(block => {
+                if (block.type === 'text') contentHtml += `<p>${block.value}</p>`;
+                if (block.type === 'image') contentHtml += `<img src="${block.src}" style="max-width:100%; border-radius:8px; margin:10px 0;">`;
+            });
+            main.innerHTML = `<div style="max-width:800px; margin:0 auto;">${contentHtml}</div>`;
+        }
 
+        // ====== Helpers for formatting and escaping ======
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function formatStrand(strandStr) {
+            // Попытка разобрать строки вида "5'-...-3'" или "3'-...-5'"
+            if (!strandStr) return '';
+
+            let m = strandStr.match(/5'-(.+?)-3'/i);
+            let left = "5'";
+            let right = "3'";
+            let seq = '';
+
+            if (m) {
+                seq = m[1];
+                left = "5'";
+                right = "3'";
+            } else {
+                m = strandStr.match(/3'-(.+?)-5'/i);
+                if (m) {
+                    seq = m[1];
+                    // Для красоты отображаем в порядке: левый конец (3'), последовательность, правый конец (5')
+                    left = "3'";
+                    right = "5'";
+                } else {
+                    // Если формат другой — покажем как есть
+                    seq = strandStr;
+                    left = '';
+                    right = '';
+                }
+            }
+
+            const safeSeq = escapeHtml(seq);
+            const leftHtml = left ? `<span class="end">${escapeHtml(left)}</span>` : '';
+            const rightHtml = right ? `<span class="end">${escapeHtml(right)}</span>` : '';
+
+            // Сохраняем общий вид: [left] - [sequence] - [right], центрируем через flex
+            const parts = [];
+            if (leftHtml) parts.push(leftHtml);
+            parts.push(`<span class="seq">${safeSeq}</span>`);
+            if (rightHtml) parts.push(rightHtml);
+
+            return parts.join('<span style="color: #6b7280"> - </span>');
+        }
+
+        // --- TEST RENDERER (Новый функционал) ---
+        async function loadTestInterface(taskId) {
+            const main = document.getElementById('main-area');
+            main.innerHTML = '<h3 style="text-align:center">Генерация задания...</h3>';
+
+            // Вызываем эндпоинт из промпта
+            const response = await apiRequest(`/getTest/${taskId}`);
+
+            if (!response || response.error) {
+                main.innerHTML = `<h3 style="color:var(--error)">Ошибка: ${response?.error || 'Не удалось загрузить'}</h3>`;
+                return;
+            }
+
+            // Данные задачи
+            const task = response; // Ожидаем { condition: {...}, task_id: ... }
+            currentTaskId = task.task_id;
+            attemptCounter = 0; // Сброс счетчика ошибок
+
+            // Рендер UI
+            const condition = task.condition;
+            const topStrand = condition.top || condition.single_chain || '';
+            const bottomStrand = condition.bottom || '';
+            const instruction = condition.instruction;
+
+            main.innerHTML = `
+                <div class="test-container">
+                    <div class="task-card">
+                        <div class="task-id">ID: ${escapeHtml(String(task.task_id))}</div>
+                        <button class="bulb-btn" id="bulb-btn" title="Сдаться и показать ответ">💡</button>
+
+                        <div class="task-instruction">${escapeHtml(instruction || '')}</div>
+
+                        <div class="dna-display">
+                            ${topStrand ? `<div class="strand">${formatStrand(topStrand)}</div>` : ''}
+                            ${bottomStrand ? `<div class="strand">${formatStrand(bottomStrand)}</div>` : ''}
+                        </div>
+
+                        <div class="input-area">
+                            <input type="text" id="user-input" class="dna-input" placeholder="Введите ответ (5'-...-3')" autocomplete="off">
+                            <div id="feedback" class="feedback-msg"></div>
+                        </div>
+
+                        <button class="submit-btn" onclick="submitAnswer()">ПРОВЕРИТЬ</button>
+                    </div>
+                </div>
+            `;
+
+            // Обработчик подсказки
+            document.getElementById('bulb-btn').onclick = () => useHint(currentTaskId);
+        }
+
+        // --- SUBMISSION LOGIC ---
+        async function submitAnswer() {
+            const input = document.getElementById('user-input');
+            const feedback = document.getElementById('feedback');
+            const userVal = input.value.trim().toUpperCase();
+
+            if (!userVal) return;
+
+            // Предполагаем, что есть эндпоинт проверки. 
+            // Если его нет в промпте, я пишу стандартную реализацию.
+            const checkData = {
+                task_id: currentTaskId,
+                user_input: userVal
+            };
+
+            const res = await apiRequest('/check_answer', 'POST', checkData);
+
+            if (res && res.is_correct) {
+                // SUCCESS
+                input.classList.remove('error');
+                input.classList.add('success');
+                feedback.className = 'feedback-msg success';
+                feedback.textContent = 'Верно! +100 баллов';
+                document.querySelector('.submit-btn').disabled = true;
+            } else {
+                // ERROR
+                attemptCounter++;
+                input.classList.add('error');
+                feedback.className = 'feedback-msg error';
+
+                // Формируем текст ошибки
+                if (res && res.errors && res.errors.length > 0) {
+                    // Показываем все ошибки, но кратко
+                    feedback.innerHTML = '';
+                    res.errors.slice(0, 5).forEach(err => {
+                        const idx = (typeof err.index === 'number') ? (err.index + 1) : '?';
+                        const msg = err.msg ? escapeHtml(err.msg) : `Ожидалось: ${escapeHtml(err.expected || '')}`;
+                        feedback.innerHTML += `<div>позиция ${idx}: ${msg}</div>`;
+                    });
+                } else {
+                    feedback.textContent = 'Неверно. Попробуйте еще раз.';
+                }
+
+                // Анимация тряски
+                setTimeout(() => input.classList.remove('error'), 500);
+
+                // ЛАМПОЧКА (после 3 ошибок)
+                if (attemptCounter >= 3) {
+                    const bulb = document.getElementById('bulb-btn');
+                    bulb.classList.add('visible');
+                    // Добавляем подсказку в текст
+                    feedback.textContent += " (Доступна подсказка 💡)";
+                }
+            }
+        }
+
+        // --- HINT LOGIC (💡) ---
+        async function useHint(taskId) {
+            if (!confirm("Использовать подсказку? Вы получите 0 баллов за это задание.")) return;
+
+            // Запрашиваем правильный ответ
+            // Предполагаем эндпоинт solve_task или similar
+            const res = await apiRequest(`/solve_task/${taskId}`, 'GET');
+
+            if (res && res.solution) {
+                const input = document.getElementById('user-input');
+                input.value = res.solution; // Вставляем ответ
+                input.disabled = true;
+                input.classList.add('warning'); // Желтая рамка
+
+                const feedback = document.getElementById('feedback');
+                feedback.textContent = "Ответ получен. Баллы за задание: 0";
+                feedback.style.color = 'var(--warning)';
+
+                document.querySelector('.submit-btn').disabled = true;
+                document.getElementById('bulb-btn').classList.remove('visible');
+            }
+        }
+
+        init();
+    </script>
 </body>
 
 </html>

@@ -1,33 +1,22 @@
 import requests
-
+"""_id=data.id, 
+        lesson_id=data.lesson_id,
+        mode=data.mode,
+        settings=data.settings,
+        task_type=data.type_task,
+        difficulty=data.difficulty
+    """
 response = requests.post(
-    'http://localhost:8004/v1/createLesson',
+    'http://localhost:8004/v1/createTask',
     json={
-    "id": "testCourseLesson2",
-    "course_id": "testCourse",
-    "title": "Строение рНК",
-    "type": "theory",
-    "order": 2,
-    "content": [
-        {
-            "type": "text",
-            "value": "РРРРРнкккк"
-        },
-        {
-            "type": "image",
-            "src": "/static/img/dna.png",
-            "alt": "Структура ароырваоыНК"
-        },
-        {
-            "type": "list",
-            "items": [
-                "test1",
-                "Test1",
-                "TesT1",
-                "Цитози2н"
-            ]
-        },
-    ]
+    "id": "testCourseLesson12",
+    "lesson_id": "testCourseLesson1",
+    "mode": 'createRNK',
+    'settings': {
+        'taskLen': 10
+    },
+    'type_task': 'test',
+    'difficulty': 'hard'
 }
 )
 print(response.text)

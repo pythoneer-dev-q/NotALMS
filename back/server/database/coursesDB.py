@@ -10,6 +10,7 @@ courses = database[mongo.MONGO_LMSCOURSESDATA]
 lessons = database[mongo.MONGO_LMSLESSONS]
 progress = database[mongo.MONGO_LMSPROGRESS]
 tasks = database[mongo.MONGO_LMSTASKS]
+tests = database[mongo.MONGO_LMSTESTS]
 projection = {'_id': 0}
 
 
@@ -123,6 +124,14 @@ async def create_Test(
     await tasks.insert_one(task)
     return task
 
+async def create_test(
+    data: dict[str]
+):
+    doc = data
+    await tests.insert_one(doc)
+    return doc
+async def search_test(task_id: int):
+    return await tests.find_one({'task_id': task_id})
 
 async def search_courses(role: str):
     return await courses.find(
@@ -142,3 +151,9 @@ async def search_course(role: str, course_id: str):
         'granted_to': {'$in': ['all', role]}, '_id': course_id})
 async def search_lessons(course_id: str):
     return await lessons.find({'course_id': course_id}).sort('order', 1).to_list(length=None)
+async def search_tasks(lesson_id: str):
+    return await tasks.find({'lesson_id': lesson_id}).to_list(length=None)
+async def search_tasks__id(_id: str):
+    return await tasks.find_one({'_id': _id}, projection)
+async def search_test__id(task_id: int):
+    return await tests.find_one({'task_id': task_id}, projection)

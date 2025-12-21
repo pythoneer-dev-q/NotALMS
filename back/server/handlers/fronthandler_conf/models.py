@@ -54,3 +54,22 @@ class RegVisibleLesson(BaseModel):
     type: str
     order: int = -1
     content: list[dict]
+    """
+        _id - ид задания,
+        lesson_id - привязка к уроку,
+        type - тип задания,
+        mode - /v1/tasks/{mode} эндпоинт для проверки,
+        difficulty - сложность (по умолчанию -- легко),
+        settings - настройки для задания {mode}
+        created_at - временная метка
+    """
+class RegVisibleTask(BaseModel):
+  id: str
+  lesson_id: str
+  type_task: str
+  mode: str
+  difficulty: str
+  settings: dict
+
+class UserRequest(BaseModel):
+  click_from: str
