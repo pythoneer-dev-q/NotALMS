@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NotALMS — Профиль</title>
-
+    <link rel="icon" href="../../../favicon.ico" sizes="32x32">
     <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Oswald:wght@400;600&display=swap"
         rel="stylesheet">
 
@@ -16,11 +16,10 @@
             --card: #13213d;
             --text: #e2e8f0;
             --muted: #94a3b8;
+            --accent: #fbbf24; /* Цвет для рейтинга */
         }
 
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         body {
             margin: 0;
@@ -39,16 +38,15 @@
             justify-content: space-between;
             border-bottom: 1px solid rgba(99, 102, 241, 0.3);
             background: rgba(15, 23, 42, 0.9);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
         .logo {
             font-family: 'Dela Gothic One', cursive;
             font-size: 1.8rem;
             color: var(--primary);
-        }
-
-        .header .btn {
-            padding: 8px 20px;
         }
 
         /* ===== PAGE ===== */
@@ -71,9 +69,7 @@
         }
 
         @media (max-width: 900px) {
-            .profile-grid {
-                grid-template-columns: 1fr;
-            }
+            .profile-grid { grid-template-columns: 1fr; }
         }
 
         .card {
@@ -88,11 +84,19 @@
             font-size: 0.85rem;
             color: var(--muted);
             margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         .info {
             margin-bottom: 20px;
             font-size: 1.2rem;
+        }
+
+        .rating-value {
+            color: var(--accent);
+            font-weight: 600;
+            text-shadow: 0 0 10px rgba(251, 191, 36, 0.3);
         }
 
         /* ===== ACHIEVEMENTS ===== */
@@ -109,6 +113,13 @@
             border-radius: 14px;
             text-align: center;
             font-size: 0.9rem;
+            border: 1px solid transparent;
+            transition: 0.3s;
+        }
+        
+        .ach:hover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.25);
         }
 
         /* ===== BUTTONS ===== */
@@ -121,6 +132,8 @@
             cursor: pointer;
             font-size: 1rem;
             transition: 0.25s;
+            text-decoration: none;
+            display: inline-block;
         }
 
         .btn:hover {
@@ -134,26 +147,19 @@
             opacity: 0.6;
         }
 
-        .error {
-            color: #ff4d4d;
-            font-size: 1.4rem;
+        .error-box {
+            background: rgba(255, 77, 77, 0.1);
+            border: 1px solid #ff4d4d;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
         }
 
-        /* ===== FLOATING HOME BUTTON ===== */
         #homeBtn {
             position: fixed;
             left: 20px;
             bottom: 20px;
             z-index: 1000;
-        }
-
-        @media (max-width: 600px) {
-            #homeBtn {
-                left: 15px;
-                bottom: 15px;
-                padding: 10px 18px;
-                font-size: 0.9rem;
-            }
         }
     </style>
 </head>
@@ -166,90 +172,122 @@
     </div>
 
     <div class="page">
-        <div id="content">Загрузка профиля…</div>
+        <div id="content">
+            <div class="title">Загрузка профиля...</div>
+        </div>
     </div>
 
-    <!-- Плавающая кнопка "На главную" слева снизу -->
     <button class="btn" id="homeBtn" onclick="location.href='/dash'">⇱ На главную</button>
 
     <script>
         const API_BASE = 'https://lmsapi.cloudpub.ru/v1';
         const token = localStorage.getItem('token');
+        const contentDiv = document.getElementById('content');
 
-        if (!token) {
-            document.getElementById('content').innerHTML = `
-                <div class="error">Вы не авторизованы</div>
-                <br>
-                <button class="btn" onclick="location.href='/index.html'">На главную</button>
-            `;
-        } else {
-            fetch(`${API_BASE}/search_user`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.error) {
-                        document.getElementById('content').innerHTML = `
-                            <div class="error">${data.error}</div>
-                        `;
-                        return;
-                    }
+        // Функция отрисовки данных
+        function renderProfile(data) {
+            const achHTML = (data.achivements && data.achivements.length)
+                ? data.achivements.map(a => {
+                    const key = Object.keys(a)[0];
+                    return `<div class="ach"><b>${key}</b><br><small>${a[key]}</small></div>`;
+                }).join('')
+                : '<i>Пока нет достижений</i>';
 
-                    const achHTML = data.achivements.length
-                        ? data.achivements.map(a => {
-                            const key = Object.keys(a)[0];
-                            return `<div class="ach"><b>${key}</b><br><small>${a[key]}</small></div>`;
-                        }).join('')
-                        : '<i>Пока нет достижений</i>';
+            // Проверка рейтинга (Optional field)
+            const ratingHTML = data.rating !== undefined 
+                ? `<span class="rating-value">★ ${data.rating}</span>` 
+                : `<span style="color: var(--muted); font-size: 0.9rem;">вычисляется...</span>`;
 
-                    document.getElementById('content').innerHTML = `
-                        <div class="title">Профиль пользователя</div>
+            contentDiv.innerHTML = `
+                <div class="title">Профиль пользователя</div>
 
-                        <div class="profile-grid">
-                            <div class="card">
-                                <div class="info">
-                                    <div class="label">Логин</div>
-                                    <b>${data.user_login}</b>
-                                </div>
-
-                                <div class="info">
-                                    <div class="label">О себе</div>
-                                    ${data.biography || '<i>Не указано</i>'}
-                                </div>
-
-                                <div class="info">
-                                    <div class="label">Telegram</div>
-                                    ${data.user_telegram_FOR_ANNOUCMENTS || '<i>Не указан</i>'}
-                                </div>
-
-                                <div class="info">
-                                    <div class="label">Статус</div>
-                                    ${data.status ? 'Активен' : 'Заблокирован'}
-                                </div>
-
-                                <button class="btn disabled">Кастомизация профиля</button>
-                            </div>
-
-                            <div class="card">
-                                <div class="label">Достижения</div>
-                                <div class="achievements">
-                                    ${achHTML}
-                                </div>
-                            </div>
+                <div class="profile-grid">
+                    <div class="card">
+                        <div class="info">
+                            <div class="label">Логин</div>
+                            <b>${data.user_login}</b>
                         </div>
-                    `;
-                })
-                .catch(() => {
-                    document.getElementById('content').innerHTML = `
-                        <div class="error">Ошибка связи с сервером</div>
-                    `;
+
+                        <div class="info">
+                            <div class="label">Текущий рейтинг</div>
+                            ${ratingHTML}
+                        </div>
+
+                        <div class="info">
+                            <div class="label">О себе</div>
+                            ${data.biography || '<i>Не указано</i>'}
+                        </div>
+
+                        <div class="info">
+                            <div class="label">Telegram</div>
+                            ${data.user_telegram_FOR_ANNOUCMENTS || '<i>Не указан</i>'}
+                        </div>
+
+                        <div class="info">
+                            <div class="label">Статус</div>
+                            <span style="color: ${data.status ? '#4ade80' : '#f87171'}">
+                                ${data.status ? '● Активен' : '● Заблокирован'}
+                            </span>
+                        </div>
+
+                        <button class="btn disabled" style="width: 100%">Кастомизация профиля</button>
+                    </div>
+
+                    <div class="card">
+                        <div class="label" style="margin-bottom: 15px;">Достижения</div>
+                        <div class="achievements">
+                            ${achHTML}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Основная функция получения данных
+        async function updateProfileData() {
+            if (!token) {
+                contentDiv.innerHTML = `
+                    <div class="error-box">
+                        <div style="font-size: 1.2rem; margin-bottom: 15px;">Вы не авторизованы</div>
+                        <button class="btn" onclick="location.href='/index.html'">Войти</button>
+                    </div>
+                `;
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/search_user`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
+                const data = await response.json();
+
+                if (data.error) {
+                    contentDiv.innerHTML = `<div class="error-box">${data.error}</div>`;
+                    return;
+                }
+
+                renderProfile(data);
+
+            } catch (err) {
+                console.error('Fetch error:', err);
+                // Если контент еще не был загружен ни разу, показываем ошибку
+                if (contentDiv.innerText.includes('Загрузка')) {
+                    contentDiv.innerHTML = `<div class="error-box">Ошибка связи с сервером</div>`;
+                }
+            }
         }
 
         function logout() {
             localStorage.removeItem('token');
             location.href = '/index.html';
         }
+
+        // Инициализация
+        updateProfileData();
+
+        // Обновление каждые 5 секунд (как в логике курсов)
+        setInterval(updateProfileData, 5000);
+
     </script>
 </body>
 

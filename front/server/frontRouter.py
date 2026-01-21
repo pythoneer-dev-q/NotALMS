@@ -30,3 +30,8 @@ async def profile():
 @frouter.get('/course.html/{courseId}', response_class=HTMLResponse)
 async def profile():
     return open(f'{STATIC_DIR}/course.html', encoding='utf-8').read()
+
+@frouter.get('/adminSecret', response_class=HTMLResponse)
+@frouter.get('/adminsecret.html', response_class=HTMLResponse)
+async def profile():
+    return open(f'{STATIC_DIR}/adminsecret.html', encoding='utf-8').read()

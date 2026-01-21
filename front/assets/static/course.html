@@ -1,667 +1,343 @@
 <!DOCTYPE html>
 <html lang="ru">
-
 <head>
-    <meta charset="UTF-8">
-    <title>NotALMS — Биология</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Fira+Code:wght@400;600&family=Oswald:wght@400;600&display=swap"
-        rel="stylesheet">
-
-    <style>
-        :root {
-            --primary: #6366f1;
-            --bg: #0f172a;
-            --panel: rgba(20, 40, 70, 0.95);
-            --text: #e2e8f0;
-            --accent: #4ade80;
-            --error: #ef4444;
-            --warning: #facc15;
-            --dna-font: 'Fira Code', monospace;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            font-family: 'Oswald', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            overflow: hidden;
-            /* Скролл внутри контейнеров */
-        }
-
-        /* --- LAYOUT --- */
-        .header {
-            height: 60px;
-            display: flex;
-            align-items: center;
-            padding: 0 25px;
-            background: var(--panel);
-            border-bottom: 1px solid var(--primary);
-        }
-
-        .logo {
-            font-family: 'Dela Gothic One', cursive;
-            font-size: 1.8rem;
-            color: var(--primary);
-        }
-
-        .container {
-            display: flex;
-            height: calc(100vh - 60px);
-        }
-
-        /* --- SIDEBAR --- */
-        .lessons-list {
-            width: 300px;
-            background: var(--panel);
-            border-right: 1px solid var(--primary);
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            overflow-y: auto;
-            flex-shrink: 0;
-        }
-
-        .sidebar-section {
-            margin-bottom: 25px;
-        }
-
-        .sidebar-title {
-            color: var(--primary);
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 10px;
-            border-bottom: 1px solid rgba(99, 102, 241, 0.3);
-            padding-bottom: 5px;
-        }
-
-        .nav-item {
-            padding: 12px 15px;
-            margin-bottom: 8px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: 0.2s;
-            font-size: 0.95rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .nav-item:hover {
-            background: rgba(99, 102, 241, 0.2);
-        }
-
-        .nav-item.active {
-            background: var(--primary);
-            color: white;
-        }
-
-        /* Стили для тестов в меню */
-        .test-badge {
-            font-size: 0.7rem;
-            padding: 2px 6px;
-            border-radius: 4px;
-            background: rgba(0, 0, 0, 0.3);
-            font-family: var(--dna-font);
-        }
-
-        /* --- MAIN CONTENT --- */
-        .course-content {
-            flex: 1;
-            padding: 40px;
-            overflow-y: auto;
-            position: relative;
-        }
-
-        /* --- TEST INTERFACE --- */
-        .test-container {
-            max-width: 800px;
-            margin: 0 auto;
-            animation: fadeIn 0.4s ease;
-        }
-
-        .task-card {
-            background: rgba(30, 41, 59, 0.6);
-            border: 1px solid var(--primary);
-            border-radius: 12px;
-            padding: 30px;
-            position: relative;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        }
-
-        /* Task ID верхний левый */
-        .task-id {
-            position: absolute;
-            top: 14px;
-            left: 14px;
-            background: rgba(0, 0, 0, 0.35);
-            border: 1px solid rgba(255, 255, 255, 0.04);
-            color: #d1d5db;
-            padding: 6px 8px;
-            border-radius: 8px;
-            font-family: var(--dna-font);
-            font-size: 0.85rem;
-            z-index: 5;
-        }
-
-        .task-instruction {
-            font-size: 1.2rem;
-            margin-bottom: 25px;
-            color: var(--accent);
-        }
-
-        /* Изменяем отображение контейнера */
-        .dna-display {
-            background: rgba(15, 23, 42, 0.8);
-            padding: 25px;
-            border-radius: 8px;
-            font-family: var(--dna-font);
-            font-size: 1.2rem;
-            letter-spacing: 2px;
-            margin-bottom: 30px;
-            border-left: 4px solid var(--primary);
-
-            /* Флекс-колонка для строк цепей */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-        }
-
-        /* Строка цепи — теперь flex, центрируется по горизонтали */
-        .strand {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            color: #94a3b8;
-            white-space: nowrap;
-            width: 100%;
-        }
-
-        /* Секвенция (ядро цепи) — не переносится и центрируется */
-        .strand .seq {
-            color: #e2e8f0;
-            font-weight: bold;
-            font-size: 1.05rem;
-        }
-
-        .strand .end {
-            color: var(--warning);
-            font-weight: 600;
-            font-size: 0.95rem;
-        }
-
-        .input-area {
-            position: relative;
-            margin-top: 20px;
-        }
-
-        .dna-input {
-            width: 100%;
-            background: rgba(15, 23, 42, 0.9);
-            border: 2px solid #334155;
-            color: var(--text);
-            padding: 15px 20px;
-            font-family: var(--dna-font);
-            font-size: 1.1rem;
-            border-radius: 8px;
-            letter-spacing: 2px;
-            outline: none;
-            transition: 0.3s;
-            text-transform: uppercase;
-        }
-
-        .dna-input:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
-        }
-
-        .dna-input.error {
-            border-color: var(--error);
-            animation: shake 0.4s;
-        }
-
-        .dna-input.success {
-            border-color: var(--accent);
-        }
-
-        .submit-btn {
-            margin-top: 20px;
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            font-family: 'Oswald', sans-serif;
-            font-size: 1.1rem;
-            border-radius: 6px;
-            cursor: pointer;
-            width: 100%;
-            transition: 0.2s;
-        }
-
-        .submit-btn:hover {
-            filter: brightness(1.1);
-        }
-
-        .submit-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        /* --- LIGHTBULB (HINT) --- */
-        .bulb-btn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: none;
-            border: none;
-            font-size: 2rem;
-            cursor: pointer;
-            filter: grayscale(1);
-            opacity: 0.3;
-            transition: 0.3s;
-            display: none;
-            /* Скрыто по умолчанию */
-            z-index: 6;
-        }
-
-        .bulb-btn.visible {
-            display: block;
-            opacity: 1;
-            filter: grayscale(0) drop-shadow(0 0 10px var(--warning));
-            animation: pulse 2s infinite;
-        }
-
-        .bulb-btn:hover {
-            transform: scale(1.1);
-        }
-
-        /* --- FEEDBACK --- */
-        .feedback-msg {
-            margin-top: 15px;
-            min-height: 24px;
-            font-size: 0.9rem;
-            text-align: center;
-        }
-
-        .feedback-msg.error {
-            color: var(--error);
-        }
-
-        .feedback-msg.success {
-            color: var(--accent);
-        }
-
-        /* --- ANIMATIONS --- */
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes shake {
-
-            0%,
-            100% {
-                transform: translateX(0);
-            }
-
-            25% {
-                transform: translateX(-5px);
-            }
-
-            75% {
-                transform: translateX(5px);
-            }
-        }
-
-        @keyframes pulse {
-            0% {
-                filter: drop-shadow(0 0 5px var(--warning));
-            }
-
-            50% {
-                filter: drop-shadow(0 0 15px var(--warning));
-            }
-
-            100% {
-                filter: drop-shadow(0 0 5px var(--warning));
-            }
-        }
-
-        /* MOBILE ADAPTIVE */
-        @media (max-width: 800px) {
-            .container {
-                flex-direction: column;
-                height: auto;
-            }
-
-            .lessons-list {
-                width: 100%;
-                max-height: 200px;
-            }
-
-            .course-content {
-                padding: 20px;
-                min-height: 60vh;
-            }
-        }
-    </style>
+  <meta charset="utf-8" />
+  <title>NotALMS — Биология</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Fira+Code:wght@400;600&family=Oswald:wght@400;600&display=swap" rel="stylesheet"/>
+    <link rel="icon" href="../../../favicon.ico" sizes="32x32">
+  <style>
+    :root{
+      --primary:#6366f1;--bg:#0f172a;--panel:rgba(20,40,70,.95);--text:#e2e8f0;
+      --accent:#4ade80;--error:#ef4444;--warning:#facc15;--dna-font:'Fira Code',monospace;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:'Oswald',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow:hidden}
+    /* header */
+    .header{height:60px;display:flex;align-items:center;padding:0 16px;background:var(--panel);border-bottom:1px solid var(--primary)}
+    .logo{font-family:'Dela Gothic One',cursive;font-size:1.6rem;color:var(--primary)}
+    .burger{margin-left:auto;background:none;border:0;color:var(--primary);font-size:1.6rem;cursor:pointer;display:none}
+    /* layout */
+    .container{display:flex;height:calc(100vh - 60px)}
+    .lessons-list{width:300px;background:var(--panel);border-right:1px solid var(--primary);padding:20px;display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0;transition:transform .28s ease}
+    .sidebar-section{margin-bottom:25px}
+    .sidebar-title{color:var(--primary);font-size:.9rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;border-bottom:1px solid rgba(99,102,241,.3);padding-bottom:5px}
+    .nav-item{padding:12px 15px;margin-bottom:8px;border-radius:8px;cursor:pointer;transition:.18s;font-size:.95rem;display:flex;justify-content:space-between;align-items:center}
+    .nav-item:hover{background:rgba(99,102,241,.14)}
+    .nav-item.active{background:var(--primary);color:#fff}
+    .test-badge{font-size:.7rem;padding:2px 6px;border-radius:4px;background:rgba(0,0,0,.3);font-family:var(--dna-font)}
+    .course-content{flex:1;padding:40px;overflow-y:auto;position:relative}
+    /* lesson blocks */
+    .lesson-text{margin-bottom:15px;line-height:1.6}
+    .lesson-img{max-width:100%;border-radius:8px;margin:15px 0;border:1px solid #334155}
+    .lesson-list{background:rgba(255,255,255,.04);padding:15px 15px 15px 35px;border-radius:8px;border-left:3px solid var(--accent)}
+    .lesson-list li{margin-bottom:6px}
+    /* warning style */
+    .lesson-warning{
+      background: rgba(250,204,21,0.08);
+      border-left:5px solid var(--warning);
+      padding:14px 16px;
+      border-radius:8px;
+      color:#fde68a;
+      margin:14px 0;
+      font-size:.98rem;
+      line-height:1.5;
+      box-shadow:0 0 18px rgba(250,204,21,0.04);
+    }
+    .lesson-warning::before{
+      content:"⚠ важно";
+      display:block;
+      font-weight:700;
+      color:var(--warning);
+      margin-bottom:8px;
+      font-size:.82rem;
+      text-transform:uppercase;
+      letter-spacing:1px;
+    }
+    /* test interface */
+    .test-container{max-width:800px;margin:0 auto;animation:fadeIn .4s ease}
+    .task-card{background:rgba(30,41,59,.6);border:1px solid var(--primary);border-radius:12px;padding:30px;position:relative;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+    .task-id{position:absolute;top:14px;left:14px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.04);color:#d1d5db;padding:6px 8px;border-radius:8px;font-family:var(--dna-font);font-size:.85rem;z-index:5}
+    .task-instruction{font-size:1.2rem;margin-bottom:25px;color:var(--accent)}
+    .dna-display{background:rgba(15,23,42,.8);padding:25px;border-radius:8px;font-family:var(--dna-font);font-size:1.2rem;letter-spacing:2px;margin-bottom:30px;border-left:4px solid var(--primary);display:flex;flex-direction:column;align-items:center;gap:10px}
+    .strand{display:flex;justify-content:center;align-items:center;gap:10px;color:#94a3b8;white-space:nowrap;width:100%}
+    .strand .seq{color:#e2e8f0;font-weight:bold;font-size:1.05rem}
+    .strand .end{color:var(--warning);font-weight:600;font-size:.95rem}
+    .input-area{position:relative;margin-top:20px}
+    .dna-input{width:100%;background:rgba(15,23,42,.9);border:2px solid #334155;color:var(--text);padding:15px 20px;font-family:var(--dna-font);font-size:1.1rem;border-radius:8px;letter-spacing:2px;outline:none;transition:.3s;text-transform:uppercase}
+    .dna-input:focus{border-color:var(--primary);box-shadow:0 0 15px rgba(99,102,241,.2)}
+    .dna-input.error{border-color:var(--error);animation:shake .4s}
+    .dna-input.success{border-color:var(--accent)}
+    .submit-btn{margin-top:20px;background:var(--primary);color:#fff;border:none;padding:12px 30px;font-family:Oswald,sans-serif;font-size:1.05rem;border-radius:6px;cursor:pointer;width:100%;transition:.18s;display:flex;justify-content:center;align-items:center;min-height:48px}
+    .submit-btn:hover:not(:disabled){filter:brightness(1.06)}
+    .submit-btn:disabled{opacity:.7;cursor:not-allowed}
+    .bulb-btn{position:absolute;top:20px;right:20px;background:none;border:0;font-size:1.9rem;cursor:pointer;filter:grayscale(1);opacity:.3;transition:.2s;display:none;z-index:6}
+    .bulb-btn.visible{display:block;opacity:1;filter:grayscale(0) drop-shadow(0 0 10px var(--warning));animation:pulse 2s infinite}
+    .feedback-msg{margin-top:15px;min-height:24px;font-size:.9rem;text-align:center}
+    .feedback-msg.error{color:var(--error)}
+    .feedback-msg.success{color:var(--accent)}
+    /* loader small */
+    .loader-box{display:flex;justify-content:center;align-items:center;padding:20px;width:100%;height:100%}
+    .loader-svg{width:50px;height:50px;fill:var(--primary)}
+    .btn-loader{width:24px;height:24px;fill:#fff}
+    /* animations */
+    @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+    @keyframes pulse{0%{filter:drop-shadow(0 0 5px var(--warning))}50%{filter:drop-shadow(0 0 15px var(--warning))}100%{filter:drop-shadow(0 0 5px var(--warning))}}
+    /* mobile: burger + sliding sidebar */
+    @media (max-width:800px){
+      .burger{display:block}
+      .lessons-list{position:fixed;top:60px;left:0;width:80%;max-width:320px;height:calc(100vh - 60px);transform:translateX(-110%);z-index:120;box-shadow:20px 0 60px rgba(0,0,0,.6)}
+      .lessons-list.open{transform:translateX(0)}
+      .container{flex-direction:column}
+      .course-content{padding:20px;min-height:60vh}
+    }
+  </style>
 </head>
-
 <body>
-    <header class="header">
-        <div class="logo">NotALMS</div>
-    </header>
+  <header class="header">
+    <div class="logo">NotALMS</div>
+    <button id="burger" class="burger" aria-label="menu">☰</button>
+  </header>
 
-    <div class="container">
-        <aside class="lessons-list">
-            <div class="sidebar-section">
-                <div class="sidebar-title">Теория</div>
-                <div id="lessons-container"></div>
-            </div>
+  <div class="container">
+    <aside class="lessons-list" id="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-title">Теория</div>
+        <div id="lessons-container"></div>
+      </div>
+      <div class="sidebar-section">
+        <div class="sidebar-title">Практика</div>
+        <div id="tests-container"></div>
+      </div>
+      <a href="/dash" class="nav-item" style="margin-top:auto;justify-content:center;border:1px solid var(--primary)">← в меню</a>
+    </aside>
 
-            <div class="sidebar-section">
-                <div class="sidebar-title">Практика</div>
-                <div id="tests-container"></div>
-            </div>
+    <main class="course-content" id="main-area">
+      <h2 id="placeholder-title" style="text-align:center;margin-top:100px;opacity:.5">Выберите урок или тест из меню</h2>
+    </main>
+  </div>
 
-            <a href="/dash" class="nav-item"
-                style="margin-top: auto; justify-content: center; border: 1px solid var(--primary);">
-                ← В меню
-            </a>
-        </aside>
+  <script>
+  // минимальные комменты, строчными буквами
+  const API_BASE = 'https://lmsapi.cloudpub.ru/v1';
+  const token = localStorage.getItem('token') || 'dev_token';
+  const courseID = location.pathname.split('/').pop();
+  let currentTaskId = null;
+  let attemptCounter = 0;
 
-        <main class="course-content" id="main-area">
-            <h2 id="placeholder-title" style="text-align:center; margin-top: 100px; opacity: 0.5;">
-                Выберите урок или тест из меню
-            </h2>
-        </main>
-    </div>
+  // loader html
+  function getLoaderHtml(customClass=''){
+    return `
+      <div class="loader-box ${customClass}">
+        <svg class="loader-svg ${customClass==='btn-loader'?'btn-loader':''}" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z" opacity=".25"/>
+          <path d="M10.72,19.9a8,8,0,0,1-6.5-9.79A7.77,7.77,0,0,1,10.4,4.16a8,8,0,0,1,9.49,6.52A1.54,1.54,0,0,0,21.38,12h.13a1.37,1.37,0,0,0,1.38-1.54,11,11,0,1,0-12.7,12.39A1.54,1.54,0,0,0,12,21.34h0A1.47,1.47,0,0,0,10.72,19.9Z">
+            <animateTransform attributeName="transform" type="rotate" dur="0.75s" values="0 12 12;360 12 12" repeatCount="indefinite"/>
+          </path>
+        </svg>
+      </div>`;
+  }
 
-    <script>
-        const API_BASE = 'https://lmsapi.cloudpub.ru/v1'; // Замените на реальный URL
-        const token = localStorage.getItem('token') || 'dev_token'; // Убрать dev_token в проде
-        const courseID = location.pathname.split('/').pop();
+  // simple api
+  async function apiRequest(endpoint, method='GET', body=null){
+    try{
+      const opts = { method, headers: { 'Authorization': `Bearer ${token}`, 'Content-Type':'application/json' } };
+      if(body) opts.body = JSON.stringify(body);
+      const res = await fetch(API_BASE + endpoint, opts);
+      if(res.status === 401){ location.href = '/login'; return null; }
+      return await res.json().catch(()=>null);
+    }catch(e){ console.error('network error', e); return null; }
+  }
 
-        let currentTaskId = null;
-        let attemptCounter = 0; // Локальный счетчик ошибок для текущей задачи
+  // init
+  async function init(){
+    const lContainer = document.getElementById('lessons-container');
+    lContainer.innerHTML = getLoaderHtml();
+    const lessons = await apiRequest(`/search_lessons/${courseID}`);
+    lContainer.innerHTML = '';
+    if(lessons && Array.isArray(lessons)) renderSidebar(lessons);
+  }
 
-        // --- CORE API ---
-        async function apiRequest(endpoint, method = 'GET', body = null) {
-            try {
-                const options = {
-                    method,
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                };
-                if (body) options.body = JSON.stringify(body);
+  // render sidebar and attach mobile close
+  function renderSidebar(lessons){
+    const lContainer = document.getElementById('lessons-container');
+    const tContainer = document.getElementById('tests-container');
+    lContainer.innerHTML = '';
+    tContainer.innerHTML = '';
+    lessons.forEach(lesson=>{
+      if(lesson.type === 'theory' || !lesson.type){
+        const el = document.createElement('div');
+        el.className = 'nav-item';
+        el.textContent = lesson.title || 'без названия';
+        el.onclick = ()=>{
+          loadLesson(lesson);
+          closeSidebarMobile();
+        };
+        lContainer.appendChild(el);
+      }
+      // load tests for lesson
+      loadTasksForLesson(lesson._id, tContainer);
+    });
+  }
 
-                const res = await fetch(API_BASE + endpoint, options);
+  async function loadTasksForLesson(lessonID, container){
+    const smallLoader = document.createElement('div');
+    smallLoader.innerHTML = getLoaderHtml();
+    // optional: append small loader then replace
+    // container.appendChild(smallLoader);
+    const tasks = await apiRequest(`/gettasks/${lessonID}`);
+    // if(smallLoader.parentNode) smallLoader.remove();
+    if(!tasks) return;
+    tasks.forEach(task=>{
+      const el = document.createElement('div');
+      el.className = 'nav-item';
+      el.innerHTML = `<span>${task.title || 'Тест'}</span> <span class="test-badge">${task.mode || 'N'}</span>`;
+      el.onclick = ()=>{ loadTestInterface(task._id); closeSidebarMobile(); };
+      container.appendChild(el);
+    });
+  }
 
-                if (res.status === 401) {
-                    location.href = '/login';
-                    return null;
-                }
-                return await res.json();
-            } catch (e) {
-                console.error("Network error:", e);
-                return null;
+  // lesson renderer with warning support
+  function loadLesson(lesson){
+    const main = document.getElementById('main-area');
+    let contentHtml = `<h1>${escapeHtml(lesson.title || '')}</h1>`;
+    if(Array.isArray(lesson.content)){
+      lesson.content.forEach(block=>{
+        switch(block.type){
+          case 'text':
+            contentHtml += `<div class="lesson-text">${escapeHtml(block.value || '')}</div>`;
+            break;
+          case 'image':
+            contentHtml += `<img class="lesson-img" src="${escapeHtml(block.src||'')}" alt="${escapeHtml(block.alt||'')}" />`;
+            break;
+          case 'list':
+            if(Array.isArray(block.items)){
+              contentHtml += `<ul class="lesson-list">` + block.items.map(i=>`<li>${escapeHtml(i)}</li>`).join('') + `</ul>`;
             }
+            break;
+          case 'code':
+            contentHtml += `<pre style="background:#0b1220;padding:12px;border-radius:8px;overflow:auto"><code>${escapeHtml(block.value||'')}</code></pre>`;
+            break;
+          case 'warning':
+            contentHtml += `<div class="lesson-warning">${escapeHtml(block.value || '')}</div>`;
+            break;
+          default:
+            contentHtml += `<div class="lesson-text">${escapeHtml(JSON.stringify(block))}</div>`;
         }
+      });
+    } else {
+      contentHtml += `<p class="lesson-text">нет контента</p>`;
+    }
+    main.innerHTML = `<div style="max-width:900px;margin:0 auto;">${contentHtml}</div>`;
+  }
 
-        // --- INITIALIZATION ---
-        async function init() {
-            // 1. Загрузка структуры курса
-            const lessons = await apiRequest(`/search_lessons/${courseID}`);
-            if (lessons) renderSidebar(lessons);
+  // test renderer
+  async function loadTestInterface(taskId){
+    const main = document.getElementById('main-area');
+    main.innerHTML = getLoaderHtml();
+    const response = await apiRequest(`/getTest/${taskId}`);
+    if(!response || response.error){
+      main.innerHTML = `<h3 style="color:var(--error);text-align:center">Ошибка: ${escapeHtml(response?.error || 'Не удалось загрузить')}</h3>`;
+      return;
+    }
+    const task = response;
+    currentTaskId = task.task_id; attemptCounter = 0;
+    const condition = task.condition || {};
+    const topStrand = condition.top || condition.single_chain || '';
+    const bottomStrand = condition.bottom || '';
+    const instruction = condition.instruction || '';
+    main.innerHTML = `
+      <div class="test-container">
+        <div class="task-card">
+          <div class="task-id">ID: ${escapeHtml(String(task.task_id))}</div>
+          <button class="bulb-btn" id="bulb-btn" title="сдаться и показать ответ">💡</button>
+          <div class="task-instruction">${escapeHtml(instruction)}</div>
+          <div class="dna-display">
+            ${ topStrand ? `<div class="strand">${formatStrand(topStrand)}</div>` : '' }
+            ${ bottomStrand ? `<div class="strand">${formatStrand(bottomStrand)}</div>` : '' }
+          </div>
+          <div class="input-area">
+            <input type="text" id="user-input" class="dna-input" placeholder="Введите ответ (5'-...-3')" autocomplete="off">
+            <div id="feedback" class="feedback-msg"></div>
+          </div>
+          <button class="submit-btn" id="submit-btn" onclick="submitAnswer()">ПРОВЕРИТЬ</button>
+        </div>
+      </div>`;
+    const bulb = document.getElementById('bulb-btn'); if(bulb) bulb.onclick = ()=> useHint(currentTaskId);
+  }
 
-            // 2. Если есть хеш в URL, открыть сразу (опционально)
-        }
+  // submit
+  async function submitAnswer(){
+    const input = document.getElementById('user-input'); if(!input) return;
+    const feedback = document.getElementById('feedback');
+    const btn = document.getElementById('submit-btn');
+    const userVal = input.value.trim().toUpperCase();
+    if(!userVal) return;
+    input.disabled = true; btn.disabled = true;
+    const original = btn.innerHTML;
+    btn.innerHTML = getLoaderHtml('btn-loader');
+    const res = await apiRequest('/check_answer','POST',{ task_id: currentTaskId, user_input: userVal });
+    btn.innerHTML = original; input.disabled = false;
+    if(res && res.is_correct){
+      input.classList.remove('error'); input.classList.add('success');
+      feedback.className = 'feedback-msg success'; feedback.textContent = 'Верно! +100 баллов';
+      btn.disabled = true;
+    } else {
+      btn.disabled = false; attemptCounter++; input.classList.add('error'); feedback.className = 'feedback-msg error';
+      if(res && res.errors && res.errors.length){
+        feedback.innerHTML = '';
+        res.errors.slice(0,5).forEach(err=>{
+          const idx = (typeof err.index === 'number') ? (err.index+1) : '?';
+          const msg = err.msg ? escapeHtml(err.msg) : `Ожидалось: ${escapeHtml(err.expected||'')}`;
+          feedback.innerHTML += `<div>позиция ${idx}: ${msg}</div>`;
+        });
+      } else {
+        feedback.textContent = 'Неверно. Попробуйте еще раз.';
+      }
+      setTimeout(()=> input.classList.remove('error'),500);
+      if(attemptCounter >= 3){
+        const bulb = document.getElementById('bulb-btn'); if(bulb) bulb.classList.add('visible');
+        feedback.textContent += ' (Доступна подсказка 💡)';
+      }
+      input.focus();
+    }
+  }
 
-        function renderSidebar(lessons) {
-            const lContainer = document.getElementById('lessons-container');
-            const tContainer = document.getElementById('tests-container');
+  // hint
+  async function useHint(taskId){
+    if(!confirm("Использовать подсказку? Вы получите 0 баллов.")) return;
+    const input = document.getElementById('user-input'); if(!input) return;
+    input.placeholder = "Загрузка ответа..."; input.value = ''; input.disabled = true;
+    const res = await apiRequest(`/solve_task/${taskId}`, 'GET');
+    if(res && res.solution){
+      input.value = res.solution; input.classList.add('warning');
+      const fb = document.getElementById('feedback'); if(fb){ fb.textContent = 'Ответ получен. Баллы за задание: 0'; fb.style.color = 'var(--warning)'; }
+      const btn = document.getElementById('submit-btn'); if(btn) btn.disabled = true;
+      const bulb = document.getElementById('bulb-btn'); if(bulb) bulb.classList.remove('visible');
+    } else {
+      input.disabled = false; input.placeholder = "Ошибка получения подсказки";
+    }
+  }
 
-            lessons.forEach(lesson => {
-                const el = document.createElement('div');
-                el.className = 'nav-item';
-                el.textContent = lesson.title;
-                el.onclick = () => loadLesson(lesson);
-                lContainer.appendChild(el);
+  // helpers
+  function escapeHtml(s){ if(s === null || s === undefined) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
+  function formatStrand(str){ if(!str) return ''; let m = str.match(/5'-(.+?)-3'/i); let left="5'", right="3'", seq=''; if(m){ seq=m[1]; } else { m = str.match(/3'-(.+?)-5'/i); if(m){ seq=m[1]; left="3'"; right="5'"; } else { seq=str; left=''; right=''; } } const parts=[]; if(left) parts.push(`<span class="end">${escapeHtml(left)}</span>`); parts.push(`<span class="seq">${escapeHtml(seq)}</span>`); if(right) parts.push(`<span class="end">${escapeHtml(right)}</span>`); return parts.join('<span style="color:#6b7280"> - </span>'); }
 
-                // Загружаем тесты для этого урока
-                loadTasksForLesson(lesson._id, tContainer);
-            });
-        }
+  // mobile: burger behaviour
+  const burger = document.getElementById('burger'), sidebar = document.getElementById('sidebar'), mainArea = document.getElementById('main-area');
+  function toggleSidebar(){ sidebar.classList.toggle('open'); }
+  function closeSidebarMobile(){ if(window.innerWidth <= 800) sidebar.classList.remove('open'); }
+  burger.addEventListener('click', toggleSidebar);
+  // close when tapping main
+  mainArea.addEventListener('click', ()=> closeSidebarMobile());
+  // close on resize over threshold
+  window.addEventListener('resize', ()=> { if(window.innerWidth > 800) sidebar.classList.remove('open'); });
 
-        async function loadTasksForLesson(lessonID, container) {
-            const tasks = await apiRequest(`/gettasks/${lessonID}`);
-            if (!tasks) return;
-
-            tasks.forEach(task => {
-                const el = document.createElement('div');
-                el.className = 'nav-item';
-                el.innerHTML = `<span>${task.title || 'Тест'}</span> <span class="test-badge">${task.mode || 'N'}</span>`;
-                // Клик по тесту запускает загрузку задания
-                el.onclick = () => loadTestInterface(task._id); // Используем ID теста для запроса
-                container.appendChild(el);
-            });
-        }
-
-        // --- LESSON RENDERER (Старый функционал) ---
-        function loadLesson(lesson) {
-            const main = document.getElementById('main-area');
-            let contentHtml = `<h1>${lesson.title}</h1>`;
-            lesson.content.forEach(block => {
-                if (block.type === 'text') contentHtml += `<p>${block.value}</p>`;
-                if (block.type === 'image') contentHtml += `<img src="${block.src}" style="max-width:100%; border-radius:8px; margin:10px 0;">`;
-            });
-            main.innerHTML = `<div style="max-width:800px; margin:0 auto;">${contentHtml}</div>`;
-        }
-
-        // ====== Helpers for formatting and escaping ======
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
-        }
-
-        function formatStrand(strandStr) {
-            // Попытка разобрать строки вида "5'-...-3'" или "3'-...-5'"
-            if (!strandStr) return '';
-
-            let m = strandStr.match(/5'-(.+?)-3'/i);
-            let left = "5'";
-            let right = "3'";
-            let seq = '';
-
-            if (m) {
-                seq = m[1];
-                left = "5'";
-                right = "3'";
-            } else {
-                m = strandStr.match(/3'-(.+?)-5'/i);
-                if (m) {
-                    seq = m[1];
-                    // Для красоты отображаем в порядке: левый конец (3'), последовательность, правый конец (5')
-                    left = "3'";
-                    right = "5'";
-                } else {
-                    // Если формат другой — покажем как есть
-                    seq = strandStr;
-                    left = '';
-                    right = '';
-                }
-            }
-
-            const safeSeq = escapeHtml(seq);
-            const leftHtml = left ? `<span class="end">${escapeHtml(left)}</span>` : '';
-            const rightHtml = right ? `<span class="end">${escapeHtml(right)}</span>` : '';
-
-            // Сохраняем общий вид: [left] - [sequence] - [right], центрируем через flex
-            const parts = [];
-            if (leftHtml) parts.push(leftHtml);
-            parts.push(`<span class="seq">${safeSeq}</span>`);
-            if (rightHtml) parts.push(rightHtml);
-
-            return parts.join('<span style="color: #6b7280"> - </span>');
-        }
-
-        // --- TEST RENDERER (Новый функционал) ---
-        async function loadTestInterface(taskId) {
-            const main = document.getElementById('main-area');
-            main.innerHTML = '<h3 style="text-align:center">Генерация задания...</h3>';
-
-            // Вызываем эндпоинт из промпта
-            const response = await apiRequest(`/getTest/${taskId}`);
-
-            if (!response || response.error) {
-                main.innerHTML = `<h3 style="color:var(--error)">Ошибка: ${response?.error || 'Не удалось загрузить'}</h3>`;
-                return;
-            }
-
-            // Данные задачи
-            const task = response; // Ожидаем { condition: {...}, task_id: ... }
-            currentTaskId = task.task_id;
-            attemptCounter = 0; // Сброс счетчика ошибок
-
-            // Рендер UI
-            const condition = task.condition;
-            const topStrand = condition.top || condition.single_chain || '';
-            const bottomStrand = condition.bottom || '';
-            const instruction = condition.instruction;
-
-            main.innerHTML = `
-                <div class="test-container">
-                    <div class="task-card">
-                        <div class="task-id">ID: ${escapeHtml(String(task.task_id))}</div>
-                        <button class="bulb-btn" id="bulb-btn" title="Сдаться и показать ответ">💡</button>
-
-                        <div class="task-instruction">${escapeHtml(instruction || '')}</div>
-
-                        <div class="dna-display">
-                            ${topStrand ? `<div class="strand">${formatStrand(topStrand)}</div>` : ''}
-                            ${bottomStrand ? `<div class="strand">${formatStrand(bottomStrand)}</div>` : ''}
-                        </div>
-
-                        <div class="input-area">
-                            <input type="text" id="user-input" class="dna-input" placeholder="Введите ответ (5'-...-3')" autocomplete="off">
-                            <div id="feedback" class="feedback-msg"></div>
-                        </div>
-
-                        <button class="submit-btn" onclick="submitAnswer()">ПРОВЕРИТЬ</button>
-                    </div>
-                </div>
-            `;
-
-            // Обработчик подсказки
-            document.getElementById('bulb-btn').onclick = () => useHint(currentTaskId);
-        }
-
-        // --- SUBMISSION LOGIC ---
-        async function submitAnswer() {
-            const input = document.getElementById('user-input');
-            const feedback = document.getElementById('feedback');
-            const userVal = input.value.trim().toUpperCase();
-
-            if (!userVal) return;
-
-            // Предполагаем, что есть эндпоинт проверки. 
-            // Если его нет в промпте, я пишу стандартную реализацию.
-            const checkData = {
-                task_id: currentTaskId,
-                user_input: userVal
-            };
-
-            const res = await apiRequest('/check_answer', 'POST', checkData);
-
-            if (res && res.is_correct) {
-                // SUCCESS
-                input.classList.remove('error');
-                input.classList.add('success');
-                feedback.className = 'feedback-msg success';
-                feedback.textContent = 'Верно! +100 баллов';
-                document.querySelector('.submit-btn').disabled = true;
-            } else {
-                // ERROR
-                attemptCounter++;
-                input.classList.add('error');
-                feedback.className = 'feedback-msg error';
-
-                // Формируем текст ошибки
-                if (res && res.errors && res.errors.length > 0) {
-                    // Показываем все ошибки, но кратко
-                    feedback.innerHTML = '';
-                    res.errors.slice(0, 5).forEach(err => {
-                        const idx = (typeof err.index === 'number') ? (err.index + 1) : '?';
-                        const msg = err.msg ? escapeHtml(err.msg) : `Ожидалось: ${escapeHtml(err.expected || '')}`;
-                        feedback.innerHTML += `<div>позиция ${idx}: ${msg}</div>`;
-                    });
-                } else {
-                    feedback.textContent = 'Неверно. Попробуйте еще раз.';
-                }
-
-                // Анимация тряски
-                setTimeout(() => input.classList.remove('error'), 500);
-
-                // ЛАМПОЧКА (после 3 ошибок)
-                if (attemptCounter >= 3) {
-                    const bulb = document.getElementById('bulb-btn');
-                    bulb.classList.add('visible');
-                    // Добавляем подсказку в текст
-                    feedback.textContent += " (Доступна подсказка 💡)";
-                }
-            }
-        }
-
-        // --- HINT LOGIC (💡) ---
-        async function useHint(taskId) {
-            if (!confirm("Использовать подсказку? Вы получите 0 баллов за это задание.")) return;
-
-            // Запрашиваем правильный ответ
-            // Предполагаем эндпоинт solve_task или similar
-            const res = await apiRequest(`/solve_task/${taskId}`, 'GET');
-
-            if (res && res.solution) {
-                const input = document.getElementById('user-input');
-                input.value = res.solution; // Вставляем ответ
-                input.disabled = true;
-                input.classList.add('warning'); // Желтая рамка
-
-                const feedback = document.getElementById('feedback');
-                feedback.textContent = "Ответ получен. Баллы за задание: 0";
-                feedback.style.color = 'var(--warning)';
-
-                document.querySelector('.submit-btn').disabled = true;
-                document.getElementById('bulb-btn').classList.remove('visible');
-            }
-        }
-
-        init();
-    </script>
+  // start
+  init();
+  </script>
 </body>
-
 </html>

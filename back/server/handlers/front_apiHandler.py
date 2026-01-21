@@ -98,7 +98,7 @@ async def main_taskUpdater(
 async def main_answerCheck(data: dict):
     sol = await coursesDB.search_test__id(data['task_id'])
     print(sol)
-    sub = await biologyUtil.validate_submission(user_input=data['user_input'], solution_data=sol['internal_solution'])
+    sub = await biologyUtil.validate_submission(user_input=data['user_input'], solution=sol['internal_solution'])
     return jsonset(content=sub, status_code=200)
 @crouter.get('/getTest/{click_from}')
 async def main_taskGetter(click_from: str):
@@ -115,3 +115,18 @@ async def main_taskGetter(click_from: str):
             'error': 'такого урока не существует'
         }, status_code=404
     )
+
+@crouter.get('/lastnews')
+async def rtNews():
+    return [
+        {
+            'title': 'Ищем ошибки',
+            'text': 'Возможны ошибки в работе приложения. Просим сообщать о нахождении таких ошибок в поддержку.',
+            'emoji': '🫆'
+        },
+        {
+            'title': 'Хотим узнать ваще мнение',
+            'text': 'Нам важно, что вы думаете о системе. Просим заполнить этот опросник. Займет не больше 5ти минут. https://forms.yandex.ru/u/697065b6f47e73b3ab544e35',
+            'emoji': '✨'
+        }
+    ]

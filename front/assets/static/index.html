@@ -4,8 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NotALMS — Твоя платформа для обучения</title>
+    <title>NotALMS</title>
 
+    <link rel="icon" href="../../../favicon.ico" sizes="32x32">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -13,7 +14,6 @@
         rel="stylesheet">
 
     <style>
-        /* === Стили (оставлены без изменений, добавлена стилизация чекбокса) === */
         :root {
             --primary: #6366f1;
             --primary-dark: #4f46e5;
@@ -30,6 +30,32 @@
             color: var(--text);
             min-height: 100vh;
             overflow-x: hidden;
+        }
+
+        /* ===== LOADER ===== */
+        .loader-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.3s ease;
+        }
+
+        .loader-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loader-svg {
+            width: 80px;
+            height: 80px;
+            fill: var(--primary);
         }
 
         .container {
@@ -206,6 +232,12 @@
             font-size: 1rem;
         }
 
+        .auth-form input:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            border-color: #555;
+        }
+
         .auth-form input::placeholder {
             color: rgba(255, 255, 255, 0.6);
         }
@@ -224,7 +256,6 @@
             text-decoration: underline;
         }
 
-        /* Стилизация чекбокса */
         .auth-form label input[type="checkbox"] {
             accent-color: var(--primary);
             width: 18px;
@@ -234,26 +265,24 @@
         }
 
         @media (max-width: 768px) {
-            .hero__title {
-                font-size: 3rem;
-            }
-
-            .hero__buttons {
-                flex-direction: column;
-            }
-
-            .btn {
-                width: 100%;
-            }
-
-            .burger {
-                display: flex;
-            }
+            .hero__title { font-size: 3rem; }
+            .hero__buttons { flex-direction: column; }
+            .btn { width: 100%; }
+            .burger { display: flex; }
         }
     </style>
 </head>
 
 <body>
+    <div id="global-loader" class="loader-overlay hidden">
+        <svg class="loader-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z" opacity=".25"/>
+            <path d="M10.72,19.9a8,8,0,0,1-6.5-9.79A7.77,7.77,0,0,1,10.4,4.16a8,8,0,0,1,9.49,6.52A1.54,1.54,0,0,0,21.38,12h.13a1.37,1.37,0,0,0,1.38-1.54,11,11,0,1,0-12.7,12.39A1.54,1.54,0,0,0,12,21.34h0A1.47,1.47,0,0,0,10.72,19.9Z">
+                <animateTransform attributeName="transform" type="rotate" dur="0.75s" values="0 12 12;360 12 12" repeatCount="indefinite"/>
+            </path>
+        </svg>
+    </div>
+
     <div class="bg-pattern"></div>
 
     <header class="header">
@@ -291,7 +320,9 @@
                 <form id="auth-form" class="auth-form">
                     <input type="text" placeholder="Логин или email" required>
                     <input type="password" placeholder="Пароль" required>
+                    
                     <div id="extra-fields"></div>
+                    
                     <button type="submit" class="btn btn--primary btn--block">Войти</button>
                 </form>
                 <p class="auth-modal__toggle" id="toggle-text">
@@ -303,6 +334,33 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            const API_BASE = 'https://lmsapi.cloudpub.ru/v1';
+            const loader = document.getElementById('global-loader');
+
+            // --- 1. ПРОВЕРКА СЕССИИ ПРИ ВХОДЕ ---
+            const token = localStorage.getItem('token');
+            if (token) {
+                // Если есть токен, сразу показываем лоадер и проверяем
+                loader.classList.remove('hidden');
+                
+                fetch(`${API_BASE}/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+                .then(r => {
+                    if (r.ok) {
+                        window.location.href = '/dash'; // Токен жив, летим в дашборд
+                    } else {
+                        // Токен протух
+                        throw new Error('Invalid token');
+                    }
+                })
+                .catch(() => {
+                    localStorage.removeItem('token');
+                    loader.classList.add('hidden'); // Убираем лоадер, показываем лендинг
+                });
+            }
+
+            // --- Инициализация UI ---
             const modal = document.getElementById('auth-modal');
             const form = document.getElementById('auth-form');
             const submitBtn = form.querySelector('button[type="submit"]');
@@ -311,7 +369,6 @@
             const loginInput = form.querySelector('input[type="text"]');
             const extraFields = document.getElementById('extra-fields');
 
-            const API_BASE = 'https:///lmsapi.cloudpub.ru/v1';
             let isRegister = false;
             let loginCheckTimeout = null;
             let statusDiv = null;
@@ -352,12 +409,9 @@
                 try {
                     const resp = await fetch(`${API_BASE}/check-login/${encodeURIComponent(login)}`);
                     const data = await resp.json();
-
                     const available = !!data.available;
-
                     div.style.color = available ? '#00ff00' : '#ff4444';
                     div.textContent = data.message;
-
                     submitBtn.disabled = isRegister && !available;
                 } catch (err) {
                     div.textContent = 'Ошибка проверки';
@@ -366,13 +420,10 @@
                 }
             };
 
-            // Ввод логина: проверка только при регистрации
             loginInput.oninput = () => {
                 if (!isRegister) return;
-
                 const login = loginInput.value.trim();
                 clearTimeout(loginCheckTimeout);
-
                 submitBtn.disabled = true;
 
                 const div = createStatusDiv();
@@ -406,18 +457,17 @@
 
             const updateExtraFields = () => {
                 if (isRegister) {
+                    // Telegram заблокирован и снесен вниз
                     extraFields.innerHTML = `
-                <label>
-                    <input type="checkbox" id="notify-tg"> Хочу получать уведомления в Telegram
-                </label>
-                <input type="number" placeholder="Telegram ID (только цифры)" id="tg-id" style="display:none; margin-top:8px;">
-                <input type="text" placeholder="О себе (до 150 символов)" id="about" maxlength="150" style="margin-top:8px;">
-            `;
-                    document.getElementById('notify-tg').onchange = (e) => {
-                        const tg = document.getElementById('tg-id');
-                        tg.style.display = e.target.checked ? 'block' : 'none';
-                        if (!e.target.checked) tg.value = '';
-                    };
+                        <input type="text" placeholder="О себе (до 150 символов)" id="about" maxlength="150" style="margin-top:8px;">
+                        
+                        <div style="opacity: 0.5; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
+                            <label style="cursor: not-allowed;">
+                                <input type="checkbox" id="notify-tg" disabled> Уведомления в Telegram (Временно недоступно)
+                            </label>
+                            <input type="number" placeholder="Telegram ID" id="tg-id" disabled style="display:none; margin-top:8px;">
+                        </div>
+                    `;
                 } else {
                     extraFields.innerHTML = '';
                 }
@@ -432,18 +482,22 @@
                 if (e.target.classList.contains('link')) showModal(!isRegister);
             });
 
+            // --- 2. ЛОГИКА ОТПРАВКИ С ЛОАДЕРОМ ---
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
+                
+                // Включаем лоадер
+                loader.classList.remove('hidden');
+                modal.classList.remove('active'); // Прячем модалку под лоадером
+
                 const login = loginInput.value.trim();
                 const password = form.querySelector('input[type="password"]').value;
 
                 const body = isRegister ? {
                     user_login: login,
                     user_password: password,
-                    notify_telegram: document.getElementById('notify-tg')?.checked || false,
-                    user_telegram_id: document.getElementById('notify-tg')?.checked
-                        ? parseInt(document.getElementById('tg-id').value || '0')
-                        : null,
+                    notify_telegram: false, // Всегда false, раз заблокировано
+                    user_telegram_id: null,
                     about_user: document.getElementById('about')?.value || null
                 } : {
                     user_login: login,
@@ -453,27 +507,24 @@
                 const endpoint = isRegister ? `${API_BASE}/register` : `${API_BASE}/login`;
 
                 try {
-                    submitBtn.disabled = true;
-                    submitBtn.textContent = 'Загрузка...';
                     const resp = await fetch(endpoint, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(body)
                     });
                     const data = await resp.json();
+
                     if (resp.ok && data.JWTSession) {
                         localStorage.setItem('token', data.JWTSession);
-                        alert(isRegister ? 'Регистрация успешна! JWT ' + data.JWTSession : 'Вход успешен! JWT ' + data.JWTSession);
-                        modal.classList.remove('active');
-                        window.location.href = '/dash.html';
+                        window.location.href = '/dash'; // Успех -> редирект
                     } else {
-                        alert(data.error || 'Ошибка');
+                        throw new Error(data.error || 'Все поля обязательны для регистрации. Если вы считает, что это ошибка, обратитесь в поддержку.');
                     }
                 } catch (err) {
-                    alert(err);
-                } finally {
-                    submitBtn.disabled = false;
-                    submitBtn.textContent = isRegister ? 'Зарегистрироваться' : 'Войти';
+                    // Ошибка -> прячем лоадер, возвращаем модалку, показываем алерт
+                    loader.classList.add('hidden');
+                    modal.classList.add('active'); 
+                    alert(err.message || err);
                 }
             });
 
@@ -483,7 +534,5 @@
             });
         });
     </script>
-
 </body>
-
 </html>
