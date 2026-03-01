@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse as jsonset
-from handlers.httpbearer import get_current_user
-from database import coursesDB
-from handlers.fronthandler_conf import models
-from tasks import biologyUtil
+from back.server.handlers.httpbearer import get_current_user
+from back.server.database import coursesDB
+from back.server.handlers.fronthandler_conf import models
+from back.server.tasks import biologyUtil
 
 crouter = APIRouter(prefix='/v1')
 
@@ -120,13 +120,44 @@ async def main_taskGetter(click_from: str):
 async def rtNews():
     return [
         {
+            'title': "Провайдер для локального сервера или почему сайт упал?",
+            'text': 'За последние пару часов произошло нечто любопытное с провайдером. Подробности <a href="https://t.me/NotALMS/16">В Telegram</a>',
+            'emoji': '⚠️',
+            'url': 'https://avatars.mds.yandex.net/i?id=7e4846a676fa7b0274b0df9998596bac_l-5233432-images-thumbs&n=13'
+        },
+        {
+        'title': 'Мы обновились!', 
+        'text': 'Система NotALMS обновилась! Посмотреть наши новости вы сможете в <a href="https://t.me/NotALMS">✈️ Telegram</a>',
+        'url': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQDnUwfncYXorPAjtljnLQ0r31A6Y20kersdw&s', 
+        'emoji': '📩'
+        },
+        {
             'title': 'Ищем ошибки',
             'text': 'Возможны ошибки в работе приложения. Просим сообщать о нахождении таких ошибок в поддержку.',
-            'emoji': '🫆'
+            'emoji': '💡'
         },
         {
             'title': 'Хотим узнать ваще мнение',
-            'text': 'Нам важно, что вы думаете о системе. Просим заполнить этот опросник. Займет не больше 5ти минут. https://forms.yandex.ru/u/697065b6f47e73b3ab544e35',
+            'text': 'Нам важно, что вы думаете о системе. Просим заполнить этот опросник. Займет не больше 5ти минут. <a href="https://forms.yandex.ru/u/697065b6f47e73b3ab544e35">Заполнить</a>',
             'emoji': '✨'
+        },
+        {
+            'title': "Контакт с разработчиками",
+            'text': 'Если вы хотите связаться с нами, напишите <a href="https://desthenq.t.me/">в Telegram</a>',
+            'emoji': '🇷🇺'
+        },
+        {
+            'title': "Официальные контакты",
+            'text': 'Официальная почта проекта: <a href="mailto:admin_lms@notawallet.sbs">admin_lms@notawallet.sbs</a>',
+            'emoji': '🆔',
+            'url': 'https://blog.1a23.com/wp-content/uploads/sites/2/2020/02/Desktop.png'
+        },
+        {
+            'title': "Страничка с новостями",
+            'text': 'Открыли свою страничку с новостями. Теперь вам будет проще следить за ними <a href="https://news-dc1.lms.notawallet.sbs/">ЗДЕСЬ</a>',
+            'emoji': '📰',
+            'url': 'https://imgur.com/a/bPfyZtb'
         }
     ]
+
+"https://avatars.mds.yandex.net/i?id=7e4846a676fa7b0274b0df9998596bac_l-5233432-images-thumbs&n=13"

@@ -1,5 +1,5 @@
-from config.authConfig import OTPLEN as length
-import databaseAuth.database as db
+from back.auth.bot.config.authConfig import OTPLEN as length
+import back.auth.bot.databaseAuth.database as db
 import random
 
 async def GenerateOTP(user_id: int):

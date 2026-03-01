@@ -1,10 +1,11 @@
 # ! back/server/handlers/api_handler.py
 from fastapi import APIRouter, Header, Depends
-from handlers.httpbearer import get_current_user
+from back.server.handlers.httpbearer import get_current_user
 from fastapi.responses import HTMLResponse as htmlset, JSONResponse as jsonset
-from handlers.apihandler_conf import models
-from database import usersDB, utils
-
+from back.server.handlers.apihandler_conf import models
+from back.server.database import usersDB, utils
+from back.auth.bot import main
+from back.auth.bot.databaseAuth import database
 arouter = APIRouter(
     tags=["backend-api", "bugs-api"], prefix='/v1'
 )
@@ -57,7 +58,16 @@ async def search_user(user=Depends(get_current_user)):
     return await usersDB.search_usersByID(
         user_uid=user.get('user_uid', None)
     )
-
+    
+@arouter.get('/user_cabinet_bot_generateLink')
+async def main_userBotCabinet(user=Depends(get_current_user)):
+    user_telegram = await usersDB.search_users(user['user_login'])
+    if not user_telegram.get('user_telegram_FOR_ANNOUCMENTS'):
+        return jsonset(content={'is_registered': False,
+                                'register_link': await main.main_GenerateLink(username=user['user_login'])})
+    return jsonset(content={
+        'is_registered': True
+    })
 
 @arouter.get('/check-login/{login}')
 async def check_login(login: str):
@@ -77,6 +87,7 @@ async def check_login(login: str):
         content={"available": True, "message": f"Отлично — {login} доступен вам!"},
         status_code=200
     )
+    
 
 @arouter.post(
     '/getData'

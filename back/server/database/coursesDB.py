@@ -1,7 +1,7 @@
 # ! back/server/database/coursesDB.py
 from datetime import timezone, datetime
 from motor.motor_asyncio import AsyncIOMotorClient
-from server_configs import server_mainConfig as mongo
+from back.server.server_configs import server_mainConfig as mongo
 from typing import Literal, Optional
 
 client = AsyncIOMotorClient(mongo.MONGO_URI)

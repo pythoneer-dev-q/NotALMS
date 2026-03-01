@@ -2,8 +2,8 @@ import asyncio
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from handlers.api_handler import arouter
-from handlers.front_apiHandler import crouter
+from back.server.handlers.api_handler import arouter
+from back.server.handlers.front_apiHandler import crouter
 
 app = FastAPI()
 

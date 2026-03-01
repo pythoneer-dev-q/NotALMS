@@ -2,9 +2,10 @@ from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import Command, CommandStart, CommandObject
 from aiogram.utils.deep_linking import decode_payload
-import utils.keyboards as kb
-import databaseAuth.database as db
-import utils.utils as ut
+import back.auth.bot.utils.keyboards as kb
+import back.auth.bot.databaseAuth.database as db
+import back.auth.bot.utils.utils as ut
+from back.auth.bot.utils import api
 import random
 import asyncio
 
@@ -12,40 +13,26 @@ vrouter = Router()
 
 @vrouter.message(CommandStart(deep_link=True))
 async def main_starter(message: Message, command: CommandObject):
-    username, pswd = decode_payload(command.args).split(':')
-    if isinstance(decode_payload(command.args).split(':')[0], str):
-        if (tmp := await db.find_user(message.from_user.id, username)) is None:
-            await db.register_user(user_id=message.from_user.id, 
-                                   username=username,
-                                   pswd=pswd)
-            wlcm_msg = await message.answer(f"Здравствуйте, <i>{username}!</i>\nВаш пароль: <code>{pswd}</code>\n\n<b>Нажмите кнопку ниже</b>, чтобы авторизоваться.",
-                                             reply_markup=await kb.main_generateAuthKeyboard(user_id=message.from_user.id,
-                                                                                    username=username,
-                                                                                    pswd=pswd))
-            await wlcm_msg.pin()
-        else:
-            wlcm_msg = await message.answer(f"Возможно, вы уже подтвердили свой доступ.")
+    username = decode_payload(command.args)
+    await message.answer(f'Добро пожаловать, <i><b>{username}</b></i>', reply_markup=await kb.main_generateAuthKeyboard(username=username))
+    
+@vrouter.callback_query(F.data.startswith('registration'))
+async def userReg(call: CallbackQuery):
+    await call.message.answer('Регистрация..')
+    if await api.set_user_TG(user_id=call.from_user.id, username=call.data.split(':')[1]) == 'success':
+        await call.message.edit_text('<b>💡 Главное меню</b>', reply_markup=await kb.main_Keyboard())
 
-    else:
-        wlcm_msg = await message.answer(f"Здравствуйте, <i>{username}!</i>\nВаш пароль: <code>{pswd}</code>\n\n<b🤷‍♂️ >Вы уже подтвердили свой аккаунт</b>")
-
-@vrouter.callback_query(F.data.startswith('auth:'))
-async def main_GenerateOTPAuth(call: CallbackQuery):
-    _, username, pswd, user_id = call.data.split(':')
-    tmp = await ut.GenerateOTP(user_id=call.from_user.id)
-    if tmp is not None:
-        for i in range(random.randint(0, 7)):
-            await call.message.edit_text(f'{[
-                '🕐', '🕑', '🕓', '🕔', '🕥', '🕛', '⚠️'
-            ][i]} Генерация кода ')
-            await asyncio.sleep(0.7)
-        await call.message.edit_text(text=
-            f'Ваш код: <code>{tmp}</code> (click2copy)\n\n'
-            f'<b>Данные для входа (на всякий случай)</b>:'
-            f'<blockquote><b>Ваш логин:</b> <i>{username}</i>\n<b>Ваш пароль:</b> <code>{pswd}</code></blockquote>',
-            reply_markup=await kb.main_generateOTPKeyboard(otp=tmp, for_user=call.from_user.id)
-        )
-
-@vrouter.callback_query(F.data.startswith('check:'))
-async def maindel(call: CallbackQuery):
-    await call.message.edit_text(f"Данные будут удалены:\n{'<code>#</code' * 8}>")
+@vrouter.message(CommandStart())
+async def main_userCabinet(message: Message):
+    await message.answer('<b>💡 Главное меню</b>', reply_markup=await kb.main_Keyboard())
+@vrouter.callback_query(F.data.startswith('user_'))
+async def main_functions(call: CallbackQuery):
+    match call.data[5:]:
+        case 'cancel_all':
+            await call.message.edit_text('❌ <b>Действие отменено.</b>\n\nЧтобы зарегистрироваться заново, нужно получить ссылку в личном кабинете.')
+        case 'achievements':
+            await call.message.edit_text(f'<b>🧩 Достижения на платформе</b>\n\n<i>Достижения - важный шаг к познанию и обучению, они разработаны, дабы благодарить учеников за их труды и старания</i>\nНажмите на любое из них и получите по нему информацию\n\n{await api.main_get_userAchievements(call.from_user.id)}')
+        case 'courses':
+            await call.message.edit_text(f'<b>✅ Доступные курсы</b>\n\n<i>Это курсы, к которым имеет доступ только ваша роль (<b>у вас сейчас: "user"</b>). Отельной роли назначаются отдельные курсы. Посмотрите их ниже.</i>\n\n{await api.main_get_userCourses(call.from_user.id)}')
+        case _:
+            await call.answer('Запретная зона...')

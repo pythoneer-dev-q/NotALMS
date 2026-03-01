@@ -1,10 +1,10 @@
 # ! back/server/database/usersDB.py
 from motor.motor_asyncio import AsyncIOMotorClient
-from server_configs.server_mainConfig import (
+from back.server.server_configs.server_mainConfig import (
         MONGO_URI, MONGO_CLUSTER, MONGO_USERS
 )
 from uuid import uuid4
-from database.utils import hash_password, create_access_token, verify_password
+from back.server.database.utils import hash_password, create_access_token, verify_password
 
 client = AsyncIOMotorClient(MONGO_URI)
 database = client[MONGO_CLUSTER]
@@ -34,3 +34,14 @@ async def search_users(user_login: str):
 
 async def search_usersByID(user_uid: str):
     return await users.find_one({'user_uid': user_uid}, projection) if user_uid is not None else None
+
+async def search_usersByTelegram(user_id: int):
+    return await users.find_one({'user_telegram_FOR_ANNOUCMENTS': user_id})
+
+
+async def settg(user_id: int, to_user: str):
+    await users.update_one(
+        {'user_login': to_user},
+        {'$set': {'user_telegram_FOR_ANNOUCMENTS': user_id}}
+    )
+    return True

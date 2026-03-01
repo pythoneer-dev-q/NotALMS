@@ -1,4 +1,4 @@
-from main import main_GenerateLink
+from back.auth.bot.main import main_GenerateLink
 import asyncio
 
 async def main():

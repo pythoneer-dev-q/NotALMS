@@ -1,6 +1,6 @@
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import Depends, HTTPException
-from database import utils, usersDB
+from back.server.database import utils, usersDB
 
 security = HTTPBearer()
 

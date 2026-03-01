@@ -1,5 +1,5 @@
 from motor.motor_asyncio import AsyncIOMotorClient
-from config.authConfig import MONGO_URI, MONGO_DB_NAME
+from back.auth.bot.config.authConfig import MONGO_URI, MONGO_DB_NAME
 
 client = AsyncIOMotorClient(MONGO_URI)
 db = client[MONGO_DB_NAME]
