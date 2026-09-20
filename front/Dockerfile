@@ -12,4 +12,5 @@ COPY front ./front
 COPY favicon.ico .
 
 ENTRYPOINT ["entrypoint.sh"]
-CMD ["uvicorn", "front.server.main:app", "--host", "0.0.0.0", "--port", "8005"]
+# запускаем модуль, а не uvicorn напрямую: host/port/ssl берутся из env (FRONT_HOST/FRONT_PORT/SSL_*)
+CMD ["python", "-m", "front.server.main"]

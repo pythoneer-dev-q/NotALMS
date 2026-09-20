@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# ! scripts/install.sh — интерактивная установка notalms (docker или venv+systemd)
+# ! scripts/install.sh — установка notalms:
+# спрашивает способ/домены/порты/серты, сам ставит docker, поднимает стек,
+# прописывает автозапуск через systemd и алиас ntlms
 # запуск: bash scripts/install.sh
 set -euo pipefail
 
@@ -12,113 +14,268 @@ ok()   { echo -e "   \033[0;32m+ $1\033[0m"; }
 warn() { echo -e "   \033[0;33m! $1\033[0m"; }
 die()  { echo -e "\033[0;31mERROR: $1\033[0m"; exit 1; }
 
-ask() { # ask "вопрос" "дефолт" -> ответ в stdout
+ask() { # ask "вопрос" "дефолт" -> ответ
   local q="$1" d="${2:-}"
   read -rp "$q${d:+ [$d]}: " a
   echo "${a:-$d}"
 }
 
-banner() {
-  cat <<'EOF'
+SUDO="$( [ "$(id -u)" = 0 ] && echo '' || echo sudo )"
+
+# ufw, если включен — открываем нужные порты
+open_firewall_ports() {
+  if command -v ufw >/dev/null 2>&1 && $SUDO ufw status 2>/dev/null | grep -qi active; then
+    for p in "$@"; do $SUDO ufw allow "$p"/tcp >/dev/null 2>&1 || true; done
+    ok "ufw: открыл tcp $*"
+  fi
+}
+
+cat <<'EOF'
 
   NotALMS — установка
   -------------------
-  скрипт проведет по шагам: env, серты, запуск, systemd, алиас ntlms.
-  каждый шаг можно прервать ctrl+c, ничего необратимого не делается.
+  шаги: способ -> окружение (docker) -> домены и порты -> сертификаты ->
+        .env -> запуск -> systemd -> алиас ntlms
+  на любом шаге можно прервать ctrl+c, ничего необратимого не делается.
 
 EOF
-}
 
-banner
-say "шаг 1/6 — способ запуска"
-echo "   docker      — всё в контейнерах (mongo тоже), рекомендую для начала"
-echo "   venv        — python-venv на хосте + systemd-юниты (mongo нужна своя)"
-MODE="$(ask 'способ (docker/venv)' 'docker')"
+# ============ шаг 1: способ запуска ============
+say "шаг 1/8 — способ запуска"
+echo "   docker — всё в контейнерах (mongo и redis тоже), рекомендую"
+echo "   venv   — python-venv на хосте + systemd (mongo нужна своя)"
+MODE="$(ask '  способ (docker/venv)' "${NTLMS_MODE:-docker}")"
 case "$MODE" in docker|venv) ;; *) die "не понимаю '$MODE', нужно docker или venv" ;; esac
 echo "$MODE" > "$MODE_FILE"
-info "способ: $MODE (записал в .ntlms-mode, его читает алиас ntlms)"
+info "способ: $MODE (записал в .ntlms-mode, оттуда читает алиас ntlms)"
 
-say "шаг 2/6 — проверка зависимостей"
+# ============ шаг 2: окружение ============
+say "шаг 2/8 — окружение"
 if [ "$MODE" = docker ]; then
-  command -v docker >/dev/null || die "docker не найден, поставь с https://docs.docker.com/engine/install/"
-  docker compose version >/dev/null 2>&1 || die "docker compose plugin не найден"
-  ok "docker и compose на месте"
+  . "$ROOT/scripts/install_docker.sh"
+  install_docker_engine
+  resolve_docker_cmd
 else
-  command -v python3 >/dev/null || die "python3 не найден"
-  PY_VER="$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')"
-  ok "python3 $PY_VER"
+  command -v python3 >/dev/null || die "python3 не найден (apt install python3 python3-venv)"
   command -v systemctl >/dev/null || die "systemd не найден, venv-режим рассчитан на linux+systemd"
-  ok "systemd на месте"
+  command -v openssl >/dev/null || die "openssl не найден (нужен для сертов)"
+  info "python3: $(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:3])))')"
+  ok "python3 и systemd на месте"
 fi
 
-say "шаг 3/6 — .env"
-GEN_ENV=0
+# ============ шаг 3: домены и порты ============
+say "шаг 3/8 — домены и порты"
+info "домена нет? жми enter — тогда адреса будут по ip и выбранному порту"
+DETECT_IP="$(hostname -I 2>/dev/null | awk '{print $1}')"
+[ -n "${DETECT_IP:-}" ] || DETECT_IP='127.0.0.1'
+FRONT_DOMAIN="$(ask "  домен сайта (enter = ip $DETECT_IP)" "${NTLMS_FRONT_DOMAIN:-}")"
+BACK_DOMAIN="$(ask '  домен api (пусто = api на том же домене/ip)' "${NTLMS_BACK_DOMAIN:-}")"
+
+DEF_BACK=8004
+DEF_FRONT=8005
+[ -n "$FRONT_DOMAIN" ] && { DEF_BACK=8443; DEF_FRONT=443; }
+BACK_PORT="$(ask '  порт api наружу' "${NTLMS_BACK_PORT:-$DEF_BACK}")"
+FRONT_PORT="$(ask '  порт сайта наружу' "${NTLMS_FRONT_PORT:-$DEF_FRONT}")"
+[[ "$BACK_PORT" =~ ^[0-9]+$ ]] || die "порт api не число: $BACK_PORT"
+[[ "$FRONT_PORT" =~ ^[0-9]+$ ]] || die "порт сайта не число: $FRONT_PORT"
+[ "$BACK_PORT" != "$FRONT_PORT" ] || die "порты api и сайта совпадают, разведи их"
+ok "домены: сайт=${FRONT_DOMAIN:-<ip>} api=${BACK_DOMAIN:-$FRONT_DOMAIN}; порты: api=$BACK_PORT сайт=$FRONT_PORT"
+
+# ============ шаг 4: сертификаты ============
+say "шаг 4/8 — сертификаты (https)"
+. "$ROOT/scripts/install_certs.sh"
+CERT_KIND="$(ask_certs)"
+CERT_DIR="$ROOT/certs"
+case "$CERT_KIND" in
+  none)
+    ok "остаемся на http"
+    ;;
+  selfsigned)
+    certs_selfsigned
+    ;;
+  letsencrypt)
+    [ -n "$FRONT_DOMAIN" ] || die "для Let's Encrypt нужен домен — перезапусти и укажи домен"
+    open_firewall_ports 80
+    certs_letsencrypt
+    ;;
+  existing)
+    certs_existing
+    ;;
+esac
+
+if [ "$CERT_KIND" = none ]; then
+  SCHEME=http; SSL_CERT_ENV=''; SSL_KEY_ENV=''
+else
+  SCHEME=https
+  if [ "$MODE" = docker ]; then
+    # в контейнер ./certs монтируется в /certs
+    SSL_CERT_ENV=/certs/cert.pem
+    SSL_KEY_ENV=/certs/key.pem
+  else
+    SSL_CERT_ENV="$CERT_DIR/cert.pem"
+    SSL_KEY_ENV="$CERT_DIR/key.pem"
+  fi
+fi
+
+# публичный адрес фронта — из него бот строит ссылки входа (порт опускаем для 443/80)
+PUBLIC_URL="$SCHEME://${FRONT_DOMAIN:-$DETECT_IP}"
+if [ -z "$FRONT_DOMAIN" ] || { [ "$FRONT_PORT" != 443 ] && [ "$FRONT_PORT" != 80 ]; }; then
+  PUBLIC_URL="$SCHEME://${FRONT_DOMAIN:-$DETECT_IP}:$FRONT_PORT"
+fi
+info "публичный адрес: $PUBLIC_URL"
+
+# ============ шаг 5: .env ============
+say "шаг 5/8 — .env"
+GEN_ENV=1
 if [ -f "$ROOT/.env" ]; then
   if ask '  .env уже есть, перезаписать? (y/N)' 'N' | grep -qi '^y'; then
-    cp "$ROOT/.env" "$ROOT/.env.bak.$(date +%s)" && info "старый сохранил в .env.bak.*"
-    GEN_ENV=1
+    cp "$ROOT/.env" "$ROOT/.env.bak.$(date +%s)"
+    info "старый сохранил в .env.bak.*"
   else
-    ok "использую существующий .env"
+    GEN_ENV=0
+    ok "использую существующий .env (значения портов/сертов в нём не меняю)"
   fi
-else
-  GEN_ENV=1
 fi
 
 if [ "$GEN_ENV" = 1 ]; then
-  source "$ROOT/scripts/install_env.sh"
-fi
+  BOT_TOKEN="$(ask '  токен бота от @BotFather (можно пропустить)' "${NTLMS_BOT_TOKEN:-}")"
+  MONGO_WHERE="$(ask '  mongo где? (compose/atlas/custom)' 'compose')"
+  case "$MONGO_WHERE" in
+    atlas)  MONGO_URI="$(ask '  строка подключения mongodb+srv://...' '')"
+            [ -n "$MONGO_URI" ] || die "пустая строка atlas" ;;
+    custom) MONGO_URI="$(ask '  uri mongo' 'mongodb://localhost:27017/')" ;;
+    *)      MONGO_URI='mongodb://localhost:27017/'
+            [ "$MODE" = docker ] && info "в контейнерах compose сам подставит mongodb://mongo:27017/" ;;
+  esac
 
-say "шаг 4/6 — сертификаты (https)"
-USE_SSL="$(ask '  включить https? (y/N)' 'N')"
-if echo "$USE_SSL" | grep -qi '^y'; then
-  SSL_KIND="$(ask '  серты какие? (self-signed/real)' 'self-signed')"
-  mkdir -p "$ROOT/certs"
-  if [ "$SSL_KIND" = self-signed ]; then
-    info "генерирую self-signed в ./certs"
-    openssl req -x509 -newkey rsa:2048 -sha256 -days 365 -nodes \
-      -keyout "$ROOT/certs/key.pem" -out "$ROOT/certs/cert.pem" \
-      -subj "/CN=$(hostname)" \
-      -addext "subjectAltName=DNS:localhost,IP:127.0.0.1"
-    CERT=cert.pem; KEY=key.pem
-    ok "сертификаты готовы (браузер скажет 'не доверенный' — норм для self-signed)"
-  else
-    info "скопируй cert.pem и key.pem в $ROOT/certs"
-    CERT="$(ask '  имя файла сертификата' 'cert.pem')"
-    KEY="$(ask '  имя файла ключа' 'key.pem')"
-    [ -f "$ROOT/certs/$CERT" ] || die "$ROOT/certs/$CERT не найден, положи файл и перезапусти"
+  ADMIN_SECRET="$(ask '  пароль админки /adminSecret (enter = сгенерить)' "${NTLMS_ADMIN_SECRET:-}")"
+  if [ -z "$ADMIN_SECRET" ]; then
+    ADMIN_SECRET="$(openssl rand -hex 8 2>/dev/null || head -c 8 /dev/urandom | od -An -tx1 | tr -d ' \n')"
+    warn "пароль админки сгенерирован, запиши его: $ADMIN_SECRET"
   fi
-  # включаем ssl в .env
-  sed -i "s|^SSL_CERTFILE=.*|SSL_CERTFILE=$ROOT/certs/$CERT|" "$ROOT/.env"
-  sed -i "s|^SSL_KEYFILE=.*|SSL_KEYFILE=$ROOT/certs/$KEY|" "$ROOT/.env"
-  ok "ssl прописан в .env"
-else
-  ok "остаемся на http"
+  SECRET="$(openssl rand -hex 32 2>/dev/null || head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n')"
+
+  # публичный адрес уже посчитан на шаге сертов
+  if [ -n "$FRONT_DOMAIN" ]; then
+    CORS_ORIGINS="$SCHEME://$FRONT_DOMAIN,http://localhost:$FRONT_PORT"
+  else
+    CORS_ORIGINS='*'
+  fi
+
+  if [ "$MODE" = docker ]; then
+    REDIS_URL='redis://redis:6379/0'
+    WORKERS="${WORKERS:-2}"
+    # внутри контейнеров порты фиксированы, наружу — выбранные
+    PORTS_BLOCK="PORT=8004
+FRONT_PORT=8005
+BACK_PORT=$BACK_PORT
+FRONT_PORT_HOST=$FRONT_PORT"
+  else
+    REDIS_URL="$(ask '  redis url (пусто = кэш в памяти процесса)' '')"
+    WORKERS="${WORKERS:-1}"
+    # venv слушает выбранные порты напрямую
+    PORTS_BLOCK="PORT=$BACK_PORT
+FRONT_PORT=$FRONT_PORT
+BACK_PORT=$BACK_PORT
+FRONT_PORT_HOST=$FRONT_PORT"
+    if [ "$FRONT_PORT" -lt 1024 ] || [ "$BACK_PORT" -lt 1024 ]; then
+      warn "порт меньше 1024: systemd-сервис работает не под root — дай права (setcap) или выбери порт выше"
+    fi
+  fi
+
+  cat > "$ROOT/.env" <<EOF
+# сгенерировано scripts/install.sh
+# PORT/FRONT_PORT — порты прослушивания приложения, BACK_PORT/FRONT_PORT_HOST — публикуемые (docker)
+HOST=127.0.0.1
+FRONT_HOST=127.0.0.1
+$PORTS_BLOCK
+PUBLIC_URL=$PUBLIC_URL
+
+# ssl: пусто = http
+SSL_CERTFILE=$SSL_CERT_ENV
+SSL_KEYFILE=$SSL_KEY_ENV
+DEV_CERTS=
+
+CORS_ORIGINS=$CORS_ORIGINS
+
+MONGO_URI=$MONGO_URI
+SECRET_KEY=$SECRET
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=10080
+
+BOT_TOKEN=$BOT_TOKEN
+BOT_DB_NAME=ntlmsauth
+OTPLEN=6
+
+ADMIN_SECRET=$ADMIN_SECRET
+
+WORKERS=$WORKERS
+MONGO_MAX_POOL=100
+CACHE_TTL=60
+RATE_LIMIT=20/minute
+REDIS_URL=$REDIS_URL
+EOF
+  ok ".env записан (SECRET_KEY и ADMIN_SECRET сгенерированы)"
+  [ -n "$BOT_TOKEN" ] || warn "BOT_TOKEN пуст — подключишь позже: ntlms edit-env"
+  info "публичный адрес фронта: $PUBLIC_URL"
 fi
 
-say "шаг 5/6 — запуск"
+
+# ============ шаг 6: запуск ============
+say "шаг 6/8 — запуск"
 if [ "$MODE" = docker ]; then
-  info "собираю и поднимаю контейнеры (mongo, back, front, bot) — может занять пару минут"
-  (cd "$ROOT" && docker compose up -d --build) || die "docker compose упал, смотри вывод выше"
-  ok "контейнеры подняты: $(cd "$ROOT" && docker compose ps --services | tr '\n' ' ')"
+  open_firewall_ports "$FRONT_PORT" "$BACK_PORT"
+  info "собираю образы и поднимаю контейнеры (mongo, redis, back, front, bot) — пара минут"
+  (cd "$ROOT" && $DOCKER compose up -d --build) || die "docker compose упал, смотри вывод выше"
+
+  info "жду, пока сервисы поднимутся"
+  for i in $(seq 1 30); do
+    RUNNING="$(cd "$ROOT" && $DOCKER compose ps --status running --services 2>/dev/null | tr '\n' ' ')"
+    echo "$RUNNING" | grep -q back && echo "$RUNNING" | grep -q front && break
+    sleep 2
+  done
+
+  # проверяем, что фронт отвечает
+  WAIT_SCHEME="$SCHEME"
+  CHECK_URL="$WAIT_SCHEME://127.0.0.1:$FRONT_PORT/"
+  if curl -sk --max-time 5 -o /dev/null "$CHECK_URL"; then
+    ok "фронт отвечает: $CHECK_URL"
+  else
+    warn "фронт пока не ответил — глянь логи: ntlms logs front"
+  fi
+  ok "подняты сервисы: $(cd "$ROOT" && $DOCKER compose ps --services | tr '\n' ' ')"
 else
-  . "$ROOT/scripts/install_systemd.sh"
+  info "venv-режим поднимается через systemd — это следующий шаг"
 fi
 
-say "шаг 6/6 — алиас ntlms"
+# ============ шаг 7: systemd ============
+say "шаг 7/8 — автозапуск (systemd)"
+if command -v systemctl >/dev/null 2>&1; then
+  . "$ROOT/scripts/install_systemd.sh"
+  ok "автозапуск настроен"
+else
+  warn "systemd не найден — автозапуск пропускаю, поднимай руками: ntlms up"
+fi
+
+# ============ шаг 8: алиас ============
+say "шаг 8/8 — алиас ntlms"
 if ! grep -q 'scripts/ntlms.sh' "$HOME/.bashrc" 2>/dev/null; then
   echo "source \"$ROOT/scripts/ntlms.sh\"" >> "$HOME/.bashrc"
   ok "добавил source в ~/.bashrc"
 else
   ok "алиас уже был в ~/.bashrc"
 fi
-ok "команды: ntlms up | down | restart | status | logs [back|front|bot|mongo] | edit-env | edit | update | help"
+ok "команды: ntlms up|down|restart|status|logs [svc]|certs|renew|edit-env|edit|update|help"
 
 say "готово"
-if [ "$MODE" = docker ]; then
-  echo "   фронт:  http://localhost:${FRONT_PORT:-8005}/  (или https, если включал серты)"
-  echo "   api:    http://localhost:${BACK_PORT:-8004}/v1"
-else
-  echo "   фронт:  http://localhost:8005/   api: http://localhost:8004/v1"
-  echo "   статус: ntlms status"
+echo "   сайт:     $PUBLIC_URL"
+echo "   api:      $SCHEME://${FRONT_DOMAIN:-127.0.0.1}:$BACK_PORT/v1"
+echo "   админка:  $PUBLIC_URL/adminSecret"
+echo "   https:    $([ "$CERT_KIND" = none ] && echo 'нет (http)' || echo "$CERT_KIND, серты в $CERT_DIR")"
+echo "   режим:    $MODE  (systemd: $([ "$MODE" = docker ] && echo notalms-compose.service || echo notalms-back/front/bot.service))"
+echo
+echo "   чтобы алиас заработал: source ~/.bashrc (или новый терминал)"
+if [ "$CERT_KIND" = selfsigned ]; then
+  echo "   self-signed: браузер попросит принять сертификат — это норм"
 fi
-echo "   чтобы алиас заработал: source ~/.bashrc (или просто открой новый терминал)"
+

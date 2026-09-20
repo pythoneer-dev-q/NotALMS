@@ -12,4 +12,5 @@ COPY back ./back
 
 # entrypoint генерит self-signed серты для dev, потом запускает команду
 ENTRYPOINT ["entrypoint.sh"]
-CMD ["uvicorn", "back.server.main:app", "--host", "0.0.0.0", "--port", "8004"]
+# запускаем модуль, а не uvicorn напрямую: host/port/ssl берутся из env (HOST/PORT/SSL_*)
+CMD ["python", "-m", "back.server.main"]

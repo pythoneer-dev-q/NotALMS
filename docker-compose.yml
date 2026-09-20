@@ -1,6 +1,7 @@
 # ! docker-compose.yml
-# dev: DEV_CERTS=1 + SSL_CERTFILE=/certs/cert.pem + SSL_KEYFILE=/certs/key.pem -> self-signed
-# prod: положи реальные серты в ./certs и пропиши те же пути в .env
+# внутренние порты контейнеров фиксированы (8004/8005), наружу публикуются BACK_PORT/FRONT_PORT_HOST
+# https: серты из ./certs монтируются в /certs, в .env SSL_CERTFILE=/certs/cert.pem + SSL_KEYFILE=/certs/key.pem
+# dev-фолбэк: DEV_CERTS=1 — entrypoint сам сгенерит self-signed, если сертов нет
 services:
   mongo:
     image: mongo:7
@@ -33,6 +34,7 @@ services:
     env_file: .env
     environment:
       HOST: 0.0.0.0
+      PORT: "8004"
       WORKERS: ${WORKERS:-2}
       # в контейнере mongo/redis всегда по сети compose
       MONGO_URI: mongodb://mongo:27017/
@@ -55,10 +57,11 @@ services:
     env_file: .env
     environment:
       FRONT_HOST: 0.0.0.0
+      FRONT_PORT: "8005"
       MONGO_URI: mongodb://mongo:27017/
       REDIS_URL: redis://redis:6379/0
     ports:
-      - "${FRONT_PORT:-8005}:8005"
+      - "${FRONT_PORT_HOST:-${FRONT_PORT:-8005}}:8005"
     volumes:
       - ./certs:/certs
     depends_on:
