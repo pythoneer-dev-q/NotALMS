@@ -162,7 +162,6 @@
       font-size: 1rem
     }
 
-    /* ===== liquid glass кнопки ===== */
     .close-sidebar {
       width: 36px;
       height: 36px;
@@ -439,7 +438,6 @@
       border-left: 2px solid var(--warning);
     }
 
-    /* ===== mark-read-btn (liquid glass) ===== */
     .mark-read-btn {
       position: relative;
       background: rgba(255, 255, 255, .04);
@@ -616,7 +614,6 @@
       font-size: .95rem
     }
 
-    /* ===== reward chip (в шапке задания) ===== */
     .reward-chip {
       display: inline-flex;
       align-items: center;
@@ -665,7 +662,6 @@
       color: var(--warning);
     }
 
-    /* ===== hint popover ===== */
     .hint-popover {
       position: absolute;
       top: calc(100% + 10px);
@@ -791,7 +787,6 @@
       border-color: var(--accent)
     }
 
-    /* ===== submit-btn (liquid glass primary) ===== */
     .submit-btn {
       position: relative;
       display: inline-flex;
@@ -850,7 +845,6 @@
       cursor: not-allowed
     }
 
-    /* ===== bulb-btn (liquid glass) ===== */
     .bulb-btn {
       position: relative;
       background: rgba(255, 255, 255, .04);
@@ -985,6 +979,7 @@
       }
     }
 
+    /* ===== menu-tab (компактная, полупрозрачная) ===== */
     .menu-tab {
       display: none;
       position: fixed;
@@ -992,24 +987,25 @@
       left: 0;
       transform: translateY(-50%);
       z-index: 130;
-      width: 44px;
-      height: 64px;
+      width: 36px;
+      height: 56px;
       align-items: center;
       justify-content: center;
       border: 1px solid color-mix(in srgb, var(--primary) 60%, transparent);
       border-left: 0;
-      border-radius: 0 18px 18px 0;
+      border-radius: 0 16px 16px 0;
       color: #fff;
-      font-size: 1.4rem;
+      font-size: 1.15rem;
       cursor: pointer;
       overflow: hidden;
+      opacity: .6;
       background: linear-gradient(180deg,
           color-mix(in srgb, var(--primary) 32%, transparent),
           color-mix(in srgb, var(--primary) 18%, transparent));
       -webkit-backdrop-filter: blur(14px) saturate(1.4);
       backdrop-filter: blur(14px) saturate(1.4);
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2);
-      transition: transform .2s, background .2s, border-color .2s, box-shadow .2s;
+      transition: transform .2s, opacity .2s, background .2s, border-color .2s, box-shadow .2s;
     }
 
     .menu-tab::before {
@@ -1027,6 +1023,12 @@
       position: relative;
       z-index: 1;
       transition: transform .25s ease
+    }
+
+    .menu-tab:hover,
+    .menu-tab:focus-visible,
+    .menu-tab.open {
+      opacity: 1;
     }
 
     .menu-tab:hover {
@@ -1071,8 +1073,10 @@
         min-height: 0
       }
 
+      /* Отступ слева = ширина плашки (36) + отступ (16) + буфер (4) = 56px,
+         чтобы контент не оказывался под плашкой */
       .course-content {
-        padding: 16px 16px calc(24px + env(safe-area-inset-bottom));
+        padding: 16px 16px calc(24px + env(safe-area-inset-bottom)) 56px;
         order: 1;
         flex: 1;
         min-width: 0
@@ -1184,8 +1188,9 @@
         max-width: none
       }
 
+      /* Плашка 32px + 12px отступ + 4px буфер = 48px */
       .course-content {
-        padding: 12px 12px calc(20px + env(safe-area-inset-bottom))
+        padding: 12px 12px calc(20px + env(safe-area-inset-bottom)) 48px
       }
 
       .task-head {
@@ -1273,10 +1278,12 @@
         font-size: .85rem
       }
 
+      /* ещё чуть компактнее на самых узких */
       .menu-tab {
-        width: 40px;
-        height: 58px;
-        border-radius: 0 14px 14px 0
+        width: 32px;
+        height: 48px;
+        border-radius: 0 14px 14px 0;
+        font-size: 1rem;
       }
     }
 
@@ -1505,7 +1512,6 @@
       main.addEventListener('scroll', onScroll, { passive: true });
     }
 
-    /* ====== безопасный URL ====== */
     function safeUrl(u) {
       if (u === null || u === undefined) return '';
       let s = String(u).trim();
@@ -1604,8 +1610,6 @@
       const solves = Number(task.solves || 0);
       const nextReward = Number(task.next_reward || 100);
 
-      // Награда: если подсказка уже использовалась — чип "без очков",
-      // иначе чип с суммой и множителем (номер следующего решения)
       const rewardChip = hintUsed
         ? `<span class="reward-chip muted" title="Подсказка уже была открыта — очки за это задание не начисляются">
              <i class="ti ti-bulb"></i> без очков
@@ -1657,7 +1661,6 @@
       updateAttempts();
     }
 
-    /* ====== hint popover ====== */
     function closeHintPopover() {
       const p = document.getElementById('hint-popover');
       if (p) p.remove();
@@ -1703,7 +1706,6 @@
       }
       wrap.appendChild(pop);
 
-      // закрытие по клику мимо и по Escape
       setTimeout(() => {
         document.addEventListener('click', outsideHintClick, true);
         document.addEventListener('keydown', escHintPopover);
@@ -1740,7 +1742,6 @@
           const old = item.querySelector('.nav-status'); if (old) old.remove();
           item.insertAdjacentHTML('beforeend', statusHtml(false, false, true));
         }
-        // обновляем чип награды → «без очков»
         const headRight = document.getElementById('task-head-right');
         const chip = headRight?.querySelector('.reward-chip');
         if (chip) {
@@ -1806,7 +1807,6 @@
           feedback.textContent = 'Неверно, попробуйте ещё раз.';
         }
         setTimeout(() => input.classList.remove('error'), 500);
-        // после 3 неудачных попыток подсвечиваем кнопку подсказки
         if (attemptCounter >= 3) {
           const bulb = document.getElementById('bulb-btn');
           if (bulb && !bulb.classList.contains('used')) bulb.classList.add('visible');
@@ -1872,7 +1872,6 @@
     }
     function formatStrand(str) { if (!str) return ''; let m = str.match(/5'-(.+?)-3'/i); let left = "5'", right = "3'", seq = ''; if (m) { seq = m[1]; } else { m = str.match(/3'-(.+?)-5'/i); if (m) { seq = m[1]; left = "3'"; right = "5'"; } else { seq = str; left = ''; right = ''; } } const parts = []; if (left) parts.push(`<span class="end">${escapeHtml(left)}</span>`); parts.push(`<span class="seq">${escapeHtml(seq)}</span>`); if (right) parts.push(`<span class="end">${escapeHtml(right)}</span>`); return parts.join('<span style="color:#6b7280"> - </span>'); }
 
-    /* ====== мобильное меню ====== */
     const menuTab = document.getElementById('menu-tab');
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('menu-overlay');
@@ -1899,7 +1898,6 @@
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSidebar(); });
     window.addEventListener('resize', () => { if (!isMobile()) closeSidebar(); });
 
-    /* ====== тема ====== */
     (async () => {
       try {
         const r = await fetch(`${API_BASE}/search_user`, { headers: { 'Authorization': `Bearer ${token}` } });
