@@ -1,5 +1,5 @@
-\#!/usr/bin/env bash
-# scripts/install.sh — установка и обновление notalms
+#!/usr/bin/env bash
+# scripts/install.sh — умная установка и обновление NotALMS
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -32,8 +32,7 @@ cat <<'EOF'
 
   NotALMS — умный установщик
   ---------------------------
-  Автоматически подтягивает существующую конфигурацию,
-  генерирует недостающие модули и настраивает систему.
+  Проверяет окружение, серты, порты и восстанавливает конфиги.
 
 EOF
 
@@ -51,7 +50,7 @@ case "$MODE" in docker|venv) ;; *) die "не понимаю '$MODE', нужно 
 echo "$MODE" > "$MODE_FILE"
 ok "способ: $MODE"
 
-# ============ шаг 2: окружение и зависимости ============
+# ============ шаг 2: окружение ============
 say "шаг 2/8 — окружение"
 if [ "$MODE" = docker ]; then
   if [ -f "$ROOT/scripts/install_docker.sh" ]; then
@@ -64,25 +63,17 @@ if [ "$MODE" = docker ]; then
   fi
   ok "docker готов"
 else
-  command -v python3 >/dev/null || die "python3 не найден (sudo apt install python3 python3-venv)"
+  command -v python3 >/dev/null || die "python3 не найден"
   command -v systemctl >/dev/null || die "systemd не найден"
   command -v openssl >/dev/null || die "openssl не найден"
 
-  # проверка python3-venv
   if ! python3 -m venv --help >/dev/null 2>&1; then
-    warn "python3-venv не найден, пытаюсь установить..."
-    $SUDO apt-get update && $SUDO apt-get install -y python3-venv python3-pip || die "Установите вручную: sudo apt install python3-venv python3-pip"
+    warn "python3-venv не найден, пробую установить..."
+    $SUDO apt-get update && $SUDO apt-get install -y python3-venv python3-pip || die "Установите: sudo apt install python3-venv python3-pip"
   fi
 
-  # Создание/пропуск venv
   if [ -f "$VENV_DIR/bin/uvicorn" ] && [ -f "$VENV_DIR/bin/python" ]; then
-    ok "venv уже существует и инициализирован ($VENV_DIR)"
-    if ask "  переустановить зависимости заново? (y/N)" "N" | grep -qi '^y'; then
-      info "обновляю зависимости..."
-      "$VENV_DIR/bin/pip" install --upgrade pip setuptools wheel
-      "$VENV_DIR/bin/pip" install fastapi uvicorn motor python-dotenv "passlib[bcrypt]" "python-jose[cryptography]" slowapi redis aiogram pydantic-settings
-      ok "зависимости обновлены"
-    fi
+    ok "venv уже инициализирован ($VENV_DIR)"
   else
     info "создаю venv в $VENV_DIR..."
     python3 -m venv "$VENV_DIR"
@@ -92,10 +83,8 @@ else
   fi
 fi
 
-# ============ шаг 3: автогенерация локальных модулей ============
-say "шаг 3/8 — проверка локальных модулей python"
-
-# Гарантируем структуру папок и пакетов
+# ============ шаг 3: автогенерация модулей и конфигов ============
+say "шаг 3/8 — проверка локальных модулей"
 mkdir -p "$ROOT/back/auth/bot/config"
 mkdir -p "$ROOT/back/server/server_configs"
 touch "$ROOT/back/__init__.py" 2>/dev/null || true
@@ -105,33 +94,51 @@ touch "$ROOT/back/auth/bot/config/__init__.py" 2>/dev/null || true
 touch "$ROOT/back/server/__init__.py" 2>/dev/null || true
 touch "$ROOT/back/server/server_configs/__init__.py" 2>/dev/null || true
 
-# Создаем authConfig.py, если отсутствует
-if [ ! -f "$ROOT/back/auth/bot/config/authConfig.py" ]; then
-  cat << 'EOF' > "$ROOT/back/auth/bot/config/authConfig.py"
-# ! back/auth/bot/config/authConfig.py
-# локальный конфиг бота, значения берутся из .env (файл gitignored по правилу config/)
-from back.server.server_configs.settings import settings
+# Проверяем authConfig.py на наличие обязательных экспортов
+AUTH_CONF="$ROOT/back/auth/bot/config/authConfig.py"
+NEED_AUTH_GEN=0
+if [ ! -f "$AUTH_CONF" ]; then
+  NEED_AUTH_GEN=1
+elif ! grep -q "MONGO_URI" "$AUTH_CONF" || ! grep -q "MONGO_DB_NAME" "$AUTH_CONF"; then
+  warn "В $AUTH_CONF отсутствуют обязательные переменные, пересоздаю..."
+  NEED_AUTH_GEN=1
+fi
 
-TOKEN = settings.bot_token
-MONGO_URI = settings.mongo_uri
-MONGO_DB_NAME = settings.bot_db_name
-OTPLEN = settings.otplen
+if [ "$NEED_AUTH_GEN" = 1 ]; then
+  cat << 'EOF' > "$AUTH_CONF"
+import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+env_path = Path(__file__).resolve().parents[4] / ".env"
+load_dotenv(dotenv_path=env_path)
+
+try:
+    from back.server.server_configs.settings import settings
+    TOKEN = getattr(settings, "bot_token", os.getenv("BOT_TOKEN", ""))
+    MONGO_URI = getattr(settings, "mongo_uri", os.getenv("MONGO_URI", "mongodb://localhost:27017/"))
+    MONGO_DB_NAME = getattr(settings, "bot_db_name", os.getenv("BOT_DB_NAME", "ntlmsauth"))
+    OTPLEN = int(getattr(settings, "otplen", os.getenv("OTPLEN", 6)))
+except Exception:
+    TOKEN = os.getenv("BOT_TOKEN", "")
+    MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
+    MONGO_DB_NAME = os.getenv("BOT_DB_NAME", "ntlmsauth")
+    OTPLEN = int(os.getenv("OTPLEN", 6))
 EOF
-  ok "сгенерирован недостающий back/auth/bot/config/authConfig.py"
+  ok "сконфигурирован $AUTH_CONF (TOKEN, MONGO_URI, MONGO_DB_NAME, OTPLEN)"
 else
-  ok "back/auth/bot/config/authConfig.py на месте"
+  ok "$AUTH_CONF корректен"
 fi
 
 # ============ шаг 4: домены и порты ============
 say "шаг 4/8 — домены и порты"
 PREV_FRONT_PORT="$(grep -E '^FRONT_PORT=' "$ROOT/.env" 2>/dev/null | cut -d= -f2 || true)"
 PREV_BACK_PORT="$(grep -E '^PORT=' "$ROOT/.env" 2>/dev/null | cut -d= -f2 || true)"
-
 DETECT_IP="$(hostname -I 2>/dev/null | awk '{print $1}')"
 [ -n "${DETECT_IP:-}" ] || DETECT_IP='127.0.0.1'
 
 if [ -f "$ROOT/.env" ] && [ -n "$PREV_FRONT_PORT" ]; then
-  info "найдены сохраненные порты: фронт=$PREV_FRONT_PORT, api=$PREV_BACK_PORT"
+  info "найдены порты из .env: фронт=$PREV_FRONT_PORT, api=$PREV_BACK_PORT"
   USE_EXISTING_PORTS="$(ask '  использовать их? (Y/n)' 'Y')"
 else
   USE_EXISTING_PORTS="n"
@@ -140,7 +147,8 @@ fi
 if echo "$USE_EXISTING_PORTS" | grep -qi '^y'; then
   FRONT_PORT="$PREV_FRONT_PORT"
   BACK_PORT="$PREV_BACK_PORT"
-  FRONT_DOMAIN=""
+  FRONT_DOMAIN="$(grep -E '^PUBLIC_URL=' "$ROOT/.env" 2>/dev/null | sed -E 's#^PUBLIC_URL=https?://([^:/]+).*#\1#' || true)"
+  [ "$FRONT_DOMAIN" = "$DETECT_IP" ] && FRONT_DOMAIN=""
   BACK_DOMAIN=""
 else
   FRONT_DOMAIN="$(ask "  домен сайта (enter = ip $DETECT_IP)" "${NTLMS_FRONT_DOMAIN:-}")"
@@ -154,25 +162,27 @@ else
   FRONT_PORT="$(ask '  порт сайта наружу' "${NTLMS_FRONT_PORT:-$DEF_FRONT}")"
   [[ "$BACK_PORT" =~ ^[0-9]+$ ]] || die "порт api не число: $BACK_PORT"
   [[ "$FRONT_PORT" =~ ^[0-9]+$ ]] || die "порт сайта не число: $FRONT_PORT"
-  [ "$BACK_PORT" != "$FRONT_PORT" ] || die "порты api и сайта совпадают"
+  [ "$BACK_PORT" != "$FRONT_PORT" ] || die "порты совпадают"
 fi
-ok "порты: api=$BACK_PORT, фронт=$FRONT_PORT"
+ok "порты: api=$BACK_PORT, сайт=$FRONT_PORT"
 
-# ============ шаг 5: сертификаты ============
+# ============ шаг 5: сертификаты (https) ============
 say "шаг 5/8 — сертификаты (https)"
-CERT_KIND="none"
 mkdir -p "$CERT_DIR"
+CERT_KIND=""
 
+# Проверяем существующие сертификаты
 if [ -f "$CERT_DIR/cert.pem" ] && [ -f "$CERT_DIR/key.pem" ]; then
   if openssl x509 -checkend 86400 -noout -in "$CERT_DIR/cert.pem" 2>/dev/null; then
-    ok "обнаружен действующий сертификат в $CERT_DIR — шаг сертификатов пропущен"
-    CERT_KIND="existing"
-  else
-    warn "сертификат в $CERT_DIR найден, но его срок истекает/истек"
+    ok "найден действующий сертификат в $CERT_DIR"
+    KEEP_CERTS="$(ask '  оставить текущие сертификаты? (Y/n)' 'Y')"
+    if echo "$KEEP_CERTS" | grep -qi '^y'; then
+      CERT_KIND="existing"
+    fi
   fi
 fi
 
-if [ "$CERT_KIND" != "existing" ]; then
+if [ -z "$CERT_KIND" ]; then
   if [ -f "$ROOT/scripts/install_certs.sh" ]; then
     . "$ROOT/scripts/install_certs.sh"
     CERT_KIND="$(ask_certs)"
@@ -186,16 +196,21 @@ if [ "$CERT_KIND" != "existing" ]; then
         ;;
       existing)    certs_existing ;;
     esac
+  else
+    warn "scripts/install_certs.sh не найден"
+    CERT_KIND="none"
   fi
 fi
 
-if [ "$CERT_KIND" = none ] && [ ! -f "$CERT_DIR/cert.pem" ]; then
-  SCHEME=http; SSL_CERT_ENV=''; SSL_KEY_ENV=''
+if [ "$CERT_KIND" = "none" ] && [ ! -f "$CERT_DIR/cert.pem" ]; then
+  SCHEME="http"
+  SSL_CERT_ENV=""
+  SSL_KEY_ENV=""
 else
-  SCHEME=https
-  if [ "$MODE" = docker ]; then
-    SSL_CERT_ENV=/certs/cert.pem
-    SSL_KEY_ENV=/certs/key.pem
+  SCHEME="https"
+  if [ "$MODE" = "docker" ]; then
+    SSL_CERT_ENV="/certs/cert.pem"
+    SSL_KEY_ENV="/certs/key.pem"
   else
     SSL_CERT_ENV="$CERT_DIR/cert.pem"
     SSL_KEY_ENV="$CERT_DIR/key.pem"
@@ -206,32 +221,34 @@ PUBLIC_URL="$SCHEME://${FRONT_DOMAIN:-$DETECT_IP}"
 if [ -z "$FRONT_DOMAIN" ] || { [ "$FRONT_PORT" != 443 ] && [ "$FRONT_PORT" != 80 ]; }; then
   PUBLIC_URL="$SCHEME://${FRONT_DOMAIN:-$DETECT_IP}:$FRONT_PORT"
 fi
+info "публичный адрес: $PUBLIC_URL"
 
 # ============ шаг 6: .env ============
 say "шаг 6/8 — конфигурация (.env)"
 GEN_ENV=1
 if [ -f "$ROOT/.env" ]; then
-  if ask '  .env уже существует. Использовать текущий без перезаписи? (Y/n)' 'Y' | grep -qi '^y'; then
+  if ask '  .env уже существует. Использовать текущий? (Y/n)' 'Y' | grep -qi '^y'; then
     GEN_ENV=0
-    ok "использую существующий .env"
+    # Синхронизируем обновленные пути сертификатов в текущем .env
+    sed -i "s|^SSL_CERTFILE=.*|SSL_CERTFILE=$SSL_CERT_ENV|" "$ROOT/.env"
+    sed -i "s|^SSL_KEYFILE=.*|SSL_KEYFILE=$SSL_KEY_ENV|" "$ROOT/.env"
+    ok "использую существующий .env (пути сертов обновлены)"
   else
     cp "$ROOT/.env" "$ROOT/.env.bak.$(date +%s)"
-    info "старый сохранен в .env.bak.*"
+    info "резервная копия: .env.bak.*"
   fi
 fi
 
 if [ "$GEN_ENV" = 1 ]; then
-  BOT_TOKEN="$(ask '  токен бота от @BotFather (можно пропустить)' "${NTLMS_BOT_TOKEN:-}")"
+  BOT_TOKEN="$(ask '  токен бота @BotFather' "${NTLMS_BOT_TOKEN:-}")"
   MONGO_WHERE="$(ask '  mongo где? (compose/atlas/custom)' 'compose')"
   case "$MONGO_WHERE" in
-    atlas)  MONGO_URI="$(ask '  строка подключения mongodb+srv://...' '')"
-            [ -n "$MONGO_URI" ] || die "пустая строка atlas" ;;
+    atlas)  MONGO_URI="$(ask '  строка atlas' '')" ;;
     custom) MONGO_URI="$(ask '  uri mongo' 'mongodb://localhost:27017/')" ;;
-    *)      MONGO_URI='mongodb://localhost:27017/'
-            [ "$MODE" = docker ] && info "в docker compose подставится mongodb://mongo:27017/" ;;
+    *)      MONGO_URI='mongodb://localhost:27017/' ;;
   esac
 
-  ADMIN_SECRET="$(ask '  пароль админки /adminSecret (enter = автогенерация)' "${NTLMS_ADMIN_SECRET:-}")"
+  ADMIN_SECRET="$(ask '  пароль админки (enter = сгенерировать)' "${NTLMS_ADMIN_SECRET:-}")"
   [ -z "$ADMIN_SECRET" ] && ADMIN_SECRET="$(openssl rand -hex 8 2>/dev/null || head -c 8 /dev/urandom | od -An -tx1 | tr -d ' \n')"
   SECRET="$(openssl rand -hex 32 2>/dev/null || head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n')"
 
@@ -295,17 +312,15 @@ say "шаг 7/8 — запуск сервисов"
 open_firewall_ports "$FRONT_PORT" "$BACK_PORT"
 
 if [ "$MODE" = docker ]; then
-  info "пересобираю контейнеры..."
+  info "запуск контейнеров..."
   (cd "$ROOT" && $DOCKER compose up -d --build) || die "docker compose упал"
-  ok "контейнеры подняты"
+  ok "контейнеры запущены"
 else
   if command -v systemctl >/dev/null 2>&1 && [ -f "$ROOT/scripts/install_systemd.sh" ]; then
     . "$ROOT/scripts/install_systemd.sh"
     $SUDO systemctl daemon-reload
     $SUDO systemctl restart notalms-back notalms-front notalms-bot 2>/dev/null || true
-    ok "systemd сервисы перезапущены"
-  else
-    warn "systemctl или install_systemd.sh не найдены"
+    ok "сервисы systemd перезапущены"
   fi
 fi
 
@@ -314,9 +329,6 @@ say "шаг 8/8 — алиас"
 if [ -f "$ROOT/scripts/ntlms.sh" ]; then
   if ! grep -q 'scripts/ntlms.sh' "$HOME/.bashrc" 2>/dev/null; then
     echo "source \"$ROOT/scripts/ntlms.sh\"" >> "$HOME/.bashrc"
-    ok "алиас добавлен в ~/.bashrc"
-  else
-    ok "алиас уже настроен"
   fi
 fi
 
@@ -324,5 +336,4 @@ say "Готово!"
 echo "   сайт:     $PUBLIC_URL"
 echo "   api:      $SCHEME://${FRONT_DOMAIN:-$DETECT_IP}:$BACK_PORT/v1"
 echo "   режим:    $MODE"
-echo
-echo "   Примените алиасы: source ~/.bashrc"
+echo "   серты:    $CERT_DIR"
