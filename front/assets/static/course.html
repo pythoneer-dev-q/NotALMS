@@ -321,7 +321,7 @@ function showToast(msg, err = false) {
   </div>
 
   <script>
-  const API_BASE = document.querySelector('meta[name="api-base"]')?.content || `${location.protocol}//${location.hostname}:8004/v1`;
+  const API_BASE = document.querySelector('meta[name="api-base"]')?.content || `${location.protocol}//${location.hostname}:8443/v1`;
   const token = localStorage.getItem('token') || '';
   if(!token) location.href = '/login';
   const courseID = location.pathname.split('/').pop();

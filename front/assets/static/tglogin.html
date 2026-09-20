@@ -66,7 +66,7 @@ button:hover{transform:scale(.97);filter:brightness(1.15)}
 
 (async () => {
     const code = location.pathname.split('/').pop();
-    const API = `${location.protocol}//${location.hostname}:8004/v1`;
+    const API = `${location.protocol}//${location.hostname}:8443/v1`;
     if (localStorage.getItem('theme')) document.body.dataset.theme = localStorage.getItem('theme');
     try {
         const res = await fetch(`${API}/login/telegram`, {
