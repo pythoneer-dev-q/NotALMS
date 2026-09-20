@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 
 <head>
@@ -6,9 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NotALMS — Профиль</title>
     <link rel="icon" href="../../../favicon.ico" sizes="32x32">
-    <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Oswald:wght@400;600&display=swap"
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
-
+    <script>
+        (function() {
+            var theme = localStorage.getItem('theme');
+            if (theme) document.documentElement.dataset.theme = theme;
+        })();
+    </script>
     <style>
         :root {
             --primary: #6366f1;
@@ -16,8 +22,16 @@
             --card: #13213d;
             --text: #e2e8f0;
             --muted: #94a3b8;
-            --accent: #fbbf24; /* Цвет для рейтинга */
+            --accent: #fbbf24; 
+            --bord: color-mix(in srgb, var(--primary) 30%, transparent);
+            --bord-soft: color-mix(in srgb, var(--primary) 14%, transparent);
         }
+
+        
+        [data-theme="emerald"] { --primary:#10b981; --bg:#08130e; --card:#0d3226; --text:#dcfce7; --muted:#6ee7b7; }
+        [data-theme="sunset"]  { --primary:#f59e0b; --bg:#171009; --card:#3c2c0e; --text:#fef3c7; --muted:#fcd34d; }
+        [data-theme="rose"]    { --primary:#f43f5e; --bg:#170a12; --card:#401022; --text:#ffe4e6; --muted:#fb7185; }
+        [data-theme="ocean"]   { --primary:#0ea5e9; --bg:#071224; --card:#0d345e; --text:#e0f2fe; --muted:#7dd3fc; }
 
         * { box-sizing: border-box; }
 
@@ -29,14 +43,14 @@
             min-height: 100vh;
         }
 
-        /* ===== HEADER ===== */
+        
         .header {
             height: 70px;
             padding: 0 40px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            border-bottom: 1px solid rgba(99, 102, 241, 0.3);
+            border-bottom: 1px solid var(--bord);
             background: rgba(15, 23, 42, 0.9);
             position: sticky;
             top: 0;
@@ -49,7 +63,7 @@
             color: var(--primary);
         }
 
-        /* ===== PAGE ===== */
+        
         .page {
             padding: 40px;
             max-width: 1200px;
@@ -61,7 +75,7 @@
             margin-bottom: 30px;
         }
 
-        /* ===== GRID ===== */
+        
         .profile-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -72,12 +86,23 @@
             .profile-grid { grid-template-columns: 1fr; }
         }
 
+        @media (max-width: 600px) {
+            .header { height: auto; padding: 12px 16px; }
+            .logo { font-size: 1.4rem; }
+            .page { padding: 20px 16px; }
+            .title { font-size: 1.5rem; margin-bottom: 20px; }
+            .card { padding: 20px; border-radius: 16px; }
+            .label { font-size: 0.8rem; }
+            .info { font-size: 1rem; }
+            #homeBtn { left: 12px; bottom: 12px; padding: 10px 16px; font-size: 0.9rem; }
+        }
+
         .card {
             background: var(--card);
             border-radius: 20px;
             padding: 25px;
-            border: 1px solid rgba(99, 102, 241, 0.25);
-            box-shadow: 0 0 25px rgba(99, 102, 241, 0.15);
+            border: 1px solid var(--bord);
+            box-shadow: 0 0 25px color-mix(in srgb, var(--primary) 15%, transparent);
         }
 
         .label {
@@ -99,30 +124,249 @@
             text-shadow: 0 0 10px rgba(251, 191, 36, 0.3);
         }
 
-        /* ===== ACHIEVEMENTS ===== */
+        
+        .palette {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 8px;
+            
+            overflow: visible;
+        }
+
+        
+        .pick {
+            position: relative;
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            border-radius: 9px;
+            cursor: pointer;
+            border: 2px solid rgba(255, 255, 255, .12);
+            transition: .18s;
+        }
+
+        .pick:hover { transform: translateY(-2px); border-color: rgba(255, 255, 255, .35); }
+        .pick.sel { border-color: #fff; box-shadow: 0 0 0 2px rgba(255, 255, 255, .25) inset; }
+
+        
+        .pick::after {
+            content: attr(data-tip);
+            position: absolute;
+            left: 50%;
+            bottom: calc(100% + 7px);
+            transform: translateX(-50%) translateY(3px);
+            background: #17151f;
+            color: #fff;
+            font-size: .72rem;
+            font-weight: 500;
+            line-height: 1;
+            padding: 6px 9px;
+            border-radius: 7px;
+            white-space: nowrap;
+            outline: 1px solid var(--bord-soft);
+            opacity: 0;
+            pointer-events: none;
+            transition: .15s ease;
+            z-index: 30;
+        }
+
+        
+        .pick::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            bottom: calc(100% + 3px);
+            transform: translateX(-50%) translateY(3px);
+            border: 4px solid transparent;
+            border-top-color: #17151f;
+            opacity: 0;
+            pointer-events: none;
+            transition: .15s ease;
+            z-index: 31;
+        }
+
+        .pick:hover::after,
+        .pick:hover::before {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        
+        @keyframes spin { from { transform: rotate(0) } to { transform: rotate(360deg) } }
+
+        
+        .acc-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--bord-soft);
+        }
+
+        .acc-row:last-child { border-bottom: 0; }
+
+        .acc-row .acc-name {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: .98rem;
+        }
+
+        .acc-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        .btn-sm {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            font-size: .88rem;
+            border-radius: 9px;
+            border: 1px solid var(--bord);
+            background: transparent;
+            color: var(--text);
+            cursor: pointer;
+            font-family: inherit;
+            transition: .18s;
+        }
+
+        .btn-sm:hover { border-color: var(--primary); color: var(--primary); }
+
+        .btn-sm.warn { border-color: color-mix(in srgb, #ef4444 40%, transparent); color: #f87171; }
+        .btn-sm.warn:hover { border-color: #ef4444; color: #ef4444; }
+
+        
+        .modal {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .modal.active { display: flex; }
+
+        .modal__overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(3, 3, 6, .7);
+            -webkit-backdrop-filter: blur(6px);
+            backdrop-filter: blur(6px);
+        }
+
+        .modal__card {
+            position: relative;
+            width: 100%;
+            max-width: 30rem;
+            padding: 1.8rem;
+            border-radius: 16px;
+            background: var(--card);
+            border: 1px solid var(--bord);
+            box-shadow: 0 20px 50px -20px rgba(0, 0, 0, .8);
+            animation: m-in .22s ease-out;
+        }
+
+        @keyframes m-in {
+            from { opacity: 0; transform: translateY(10px) scale(.98); }
+            to { opacity: 1; }
+        }
+
+        .modal__close {
+            position: absolute;
+            top: .8rem;
+            right: .9rem;
+            background: none;
+            border: 0;
+            color: var(--muted);
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: .18s;
+        }
+
+        .modal__close:hover { color: var(--text); }
+
+        .modal__title { font-size: 1.1rem; font-weight: 700; margin-bottom: .9rem; }
+
+        .modal__body { color: var(--muted); font-size: .93rem; line-height: 1.55; }
+
+        .modal__body .tg-url {
+            display: block;
+            margin-top: .8rem;
+            padding: 10px 12px;
+            border-radius: 9px;
+            background: rgba(255, 255, 255, .04);
+            color: var(--primary);
+            word-break: break-all;
+            text-decoration: none;
+            font-size: .9rem;
+        }
+
+        .modal__body .tg-url:hover { text-decoration: underline; }
+
+        .modal__foot {
+            display: flex;
+            gap: .6rem;
+            justify-content: flex-end;
+            margin-top: 1.2rem;
+        }
+
+        
         .achievements {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px;
             margin-top: 10px;
         }
 
         .ach {
-            background: rgba(99, 102, 241, 0.15);
-            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 16px 12px;
             border-radius: 14px;
+            background: color-mix(in srgb, var(--primary) 12%, transparent);
+            outline: 1px solid var(--line);
+            outline-offset: -1px;
+            border: 0;
+            transition: .25s;
             text-align: center;
-            font-size: 0.9rem;
-            border: 1px solid transparent;
-            transition: 0.3s;
-        }
-        
-        .ach:hover {
-            border-color: var(--primary);
-            background: rgba(99, 102, 241, 0.25);
         }
 
-        /* ===== BUTTONS ===== */
+        .ach:hover {
+            outline-color: var(--line2);
+            background: color-mix(in srgb, var(--primary) 22%, transparent);
+            transform: translateY(-2px);
+        }
+
+        .ach__icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: color-mix(in srgb, var(--primary) 18%, transparent);
+            color: var(--primary);
+            font-size: 1.4rem;
+        }
+
+        .ach__title {
+            font-weight: 600;
+            font-size: .9rem;
+            line-height: 1.2;
+        }
+
+        .ach__desc {
+            font-size: .75rem;
+            color: var(--muted);
+            line-height: 1.3;
+        }
+
+        
         .btn {
             padding: 12px 28px;
             background: var(--primary);
@@ -162,9 +406,130 @@
             z-index: 1000;
         }
     </style>
+    <style>
+    
+    body{
+      --acc1:var(--primary);--acc2:color-mix(in srgb,var(--primary) 60%,#000);
+      --bg:#08070b;--surface:#0e0d13;--surface2:#131019;
+      --line:rgba(255,255,255,.055);--line2:rgba(255,255,255,.1);
+      --grad:linear-gradient(90deg,var(--acc1),color-mix(in srgb,var(--acc2) 70%,var(--acc1)));
+      --grad-text:linear-gradient(180deg,color-mix(in srgb,var(--acc1) 72%,#fff) 28%,color-mix(in srgb,var(--acc2) 45%,transparent));
+      font-family:'Onest',sans-serif !important;
+      background:var(--bg) !important;
+    }
+    [data-theme="emerald"]{--surface:#0b1813;--surface2:#0e1e17}
+    [data-theme="sunset"]{--surface:#1b160c;--surface2:#221b0e}
+    [data-theme="rose"]{--surface:#190d14;--surface2:#20111a}
+    [data-theme="ocean"]{--surface:#0a1626;--surface2:#0d1c30}
+    h1,h2,h3{font-weight:700 !important}
+    
+    .gtext{color:var(--acc1)}
+
+    .header{
+      position:sticky;top:0;z-index:50;
+      background:rgba(5,5,8,.85) !important;
+      -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+      border-bottom:1px solid var(--line) !important;
+      height:auto !important;padding:.8rem 1.6rem !important;
+    }
+    .logo{
+      font-family:'Onest',sans-serif !important;font-weight:800 !important;font-size:1.4rem;
+      color:var(--acc1);
+    }
+    .btn{
+      background:var(--acc1) !important;border:0 !important;border-radius:10px !important;
+      padding:.7rem 1.5rem !important;font-family:'Onest',sans-serif !important;font-weight:500;
+      transition:.2s;
+    }
+    .btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
+    .btn.disabled{background:rgba(255,255,255,.05) !important;color:var(--muted) !important}
+
+    .page{max-width:100rem;margin:0 auto;padding:2.2rem 1.6rem}
+    @media(min-width:1024px){.page{padding:2.5rem 4rem}}
+    .title{font-weight:800 !important;margin-bottom:1.8rem}
+    .card{
+      background:var(--surface) !important;
+      outline:1px solid var(--line);outline-offset:-1px;
+      border:0 !important;border-radius:16px !important;
+      box-shadow:none !important;transition:.25s;
+    }
+    .card:hover{outline-color:var(--line2)}
+    .label{font-family:'Onest',sans-serif !important}
+    .info{font-size:1.1rem !important;font-weight:500}
+    .ach{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:.5rem;
+      padding:1rem .8rem;
+      background:color-mix(in srgb,var(--primary) 12%,transparent) !important;
+      outline:1px solid var(--line);outline-offset:-1px;
+      border:0 !important;border-radius:12px !important;font-family:'Onest',sans-serif;
+      transition:.25s;
+    }
+    .ach:hover{background:color-mix(in srgb,var(--primary) 22%,transparent) !important;outline-color:var(--line2);transform:translateY(-2px)}
+    .ach__icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--primary) 18%,transparent);color:var(--primary);font-size:1.3rem}
+    .ach__title{font-weight:600;font-size:.85rem;line-height:1.2}
+    .ach__desc{font-size:.7rem;color:var(--muted);line-height:1.3}
+    .sw{border-radius:50%}
+    .pick.sel{border-color:var(--text)}
+
+    
+    @media(max-width: 600px) {
+      .header{padding:.7rem 1rem !important}
+      .logo{font-size:1.2rem !important}
+      .btn{padding:.6rem 1.2rem !important;font-size:.9rem !important}
+      .page{padding:1.5rem 1rem}
+      .title{font-size:1.5rem;margin-bottom:1.2rem}
+      .card{padding:1.2rem;border-radius:12px !important}
+      .label{font-size:.8rem}
+      .info{font-size:1rem !important}
+      .acc-row{flex-direction:column;align-items:flex-start;gap:.5rem;padding:.8rem 0}
+      .acc-actions{width:100%}
+      .btn-sm{width:100%;justify-content:center}
+      .palette{gap:8px}
+      .pick{width:28px;height:28px;border-radius:8px}
+      .achievements{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+      .ach{padding:.8rem .6rem}
+      .ach__icon{width:32px;height:32px;font-size:1.1rem}
+      .ach__title{font-size:.8rem}
+      .ach__desc{font-size:.65rem}
+      #homeBtn{left:12px;bottom:12px;padding:.6rem 1rem;font-size:.9rem}
+      .modal__card{margin:1rem;padding:1.4rem;max-width:calc(100vw - 2rem)}
+      .modal__title{font-size:1rem}
+      .modal__body{font-size:.88rem}
+      .tg-url{font-size:.8rem;padding:8px 10px}
+      .modal__foot{gap:.5rem}
+      .btn-sm{padding:.6rem 1rem;font-size:.8rem}
+    }
+
+    
+    .toast{position:fixed;inset:1.2rem 0 auto;z-index:200;display:flex;justify-content:center;padding:0 1rem;pointer-events:none}
+    .toast__card{
+      display:flex;gap:.9rem;align-items:center;padding:.8rem 1.5rem;border-radius:1rem;
+      background:linear-gradient(180deg,color-mix(in srgb,var(--acc1) 10%,var(--surface2)),var(--surface2));
+      outline:1px solid var(--line2);outline-offset:-1px;
+      box-shadow:0 20px 50px -20px #000c;
+      pointer-events:auto;animation:t-in .3s ease-out;max-width:30rem;
+      font-family:'Onest',sans-serif;
+    }
+    .toast__card.err{outline-color:color-mix(in srgb,#ef4444 45%,transparent)}
+    .toast.out{animation:t-out .3s ease-in forwards}
+    @keyframes t-in{from{opacity:0;transform:translateY(-10px)}to{opacity:1}}
+    @keyframes t-out{to{opacity:0;transform:translateY(-10px)}}
+    </style>
 </head>
 
 <body>
+<div class="toast" id="toast"></div>
+<script>
+
+function showToast(msg, err = false) {
+    const t = document.getElementById('toast');
+    t.innerHTML = `<div class="toast__card${err ? ' err' : ''}"><span class="ti ${err ? 'ti-alert-triangle' : 'ti-check'}" style="font-size:1.1rem;${err ? 'color:#f87171' : 'color:var(--acc1)'}"></span><span>${msg}</span></div>`;
+    clearTimeout(window._tt);
+    window._tt = setTimeout(() => { const c = t.firstChild; c && c.classList.add('out'); }, 3200);
+}</script>
 
     <div class="header">
         <div class="logo">NotALMS</div>
@@ -177,27 +542,53 @@
         </div>
     </div>
 
-    <button class="btn" id="homeBtn" onclick="location.href='/dash'">⇱ На главную</button>
+    <button class="btn" id="homeBtn" onclick="location.href='/dash'"><i class="ti ti-arrow-back-up"></i> На главную</button>
+
+    
+    <div class="modal" id="acc-modal">
+        <div class="modal__overlay" onclick="closeModal()"></div>
+        <div class="modal__card">
+            <button class="modal__close" onclick="closeModal()">×</button>
+            <div class="modal__title" id="acc-modal-title"></div>
+            <div class="modal__body" id="acc-modal-body"></div>
+            <div class="modal__foot" id="acc-modal-foot"></div>
+        </div>
+    </div>
 
     <script>
-        const API_BASE = 'https://lmsapi.cloudpub.ru/v1';
+        const API_BASE = document.querySelector('meta[name="api-base"]')?.content || `${location.protocol}//${location.hostname}:8004/v1`;
         const token = localStorage.getItem('token');
         const contentDiv = document.getElementById('content');
 
-        // Функция отрисовки данных
+        function achListHTML(list) {
+            if (!list || !list.length) return '<div class="ach" style="grid-column:1/-1;color:var(--muted)"><i class="ti ti-award" style="font-size:1.5rem;margin-bottom:.5rem;display:block"></i>Пока нет достижений</div>';
+            
+            const achIcons = {
+                'registered': 'ti-user-plus',
+                'first_solve': 'ti-circle-check',
+                'streak_3': 'ti-flame',
+                'streak_7': 'ti-fire',
+                'top_10': 'ti-trophy',
+                'top_3': 'ti-medal',
+                'top_1': 'ti-crown',
+                'perfect_score': 'ti-star',
+                'night_owl': 'ti-moon',
+                'early_bird': 'ti-sun',
+                'course_complete': 'ti-certificate',
+            };
+            
+            return list.map(a => {
+                if (typeof a === 'string') {
+                    return `<div class="ach"><div class="ach__icon"><i class="ti ti-award"></i></div><div class="ach__title">${a}</div></div>`;
+                }
+                const key = Object.keys(a)[0];
+                const desc = a[key];
+                const icon = achIcons[key] || 'ti-award';
+                return `<div class="ach"><div class="ach__icon"><i class="ti ${icon}"></i></div><div class="ach__title">${key}</div><div class="ach__desc">${desc}</div></div>`;
+            }).join('');
+        }
+
         function renderProfile(data) {
-            const achHTML = (data.achivements && data.achivements.length)
-                ? data.achivements.map(a => {
-                    const key = Object.keys(a)[0];
-                    return `<div class="ach"><b>${key}</b><br><small>${a[key]}</small></div>`;
-                }).join('')
-                : '<i>Пока нет достижений</i>';
-
-            // Проверка рейтинга (Optional field)
-            const ratingHTML = data.rating !== undefined 
-                ? `<span class="rating-value">★ ${data.rating}</span>` 
-                : `<span style="color: var(--muted); font-size: 0.9rem;">вычисляется...</span>`;
-
             contentDiv.innerHTML = `
                 <div class="title">Профиль пользователя</div>
 
@@ -205,12 +596,21 @@
                     <div class="card">
                         <div class="info">
                             <div class="label">Логин</div>
-                            <b>${data.user_login}</b>
+                            <b id="p-login" style="${data.name_color ? `color:${data.name_color}` : ''}">${data.user_login}</b>
+                            <div class="label" style="margin-top:14px">Цвет имени</div>
+                            <div class="palette" id="p-palette"></div>
+                            <div class="label" style="margin-top:14px">Тема сайта</div>
+                            <div class="palette" id="p-themes"></div>
                         </div>
 
                         <div class="info">
                             <div class="label">Текущий рейтинг</div>
-                            ${ratingHTML}
+                            <span id="p-rating">—</span>
+                        </div>
+
+                        <div class="info">
+                            <div class="label">Решено задач</div>
+                            <span id="p-solved">—</span>
                         </div>
 
                         <div class="info">
@@ -219,31 +619,72 @@
                         </div>
 
                         <div class="info">
-                            <div class="label">Telegram</div>
-                            ${data.user_telegram_FOR_ANNOUCMENTS || '<i>Не указан</i>'}
-                        </div>
-
-                        <div class="info">
                             <div class="label">Статус</div>
                             <span style="color: ${data.status ? '#4ade80' : '#f87171'}">
                                 ${data.status ? '● Активен' : '● Заблокирован'}
                             </span>
                         </div>
-
-                        <button class="btn disabled" style="width: 100%">Кастомизация профиля</button>
                     </div>
 
                     <div class="card">
                         <div class="label" style="margin-bottom: 15px;">Достижения</div>
-                        <div class="achievements">
-                            ${achHTML}
+                        <div class="achievements" id="p-ach">${achListHTML(data.achivements)}</div>
+                    </div>
+
+                    <div class="card">
+                        <div class="label" style="margin-bottom: 8px;">Управление аккаунтом</div>
+                        <div class="acc-row">
+                            <div class="acc-name"><i class="ti ti-brand-telegram" style="color:var(--primary)"></i> Telegram-бот</div>
+                            <div class="acc-actions" id="p-tg-actions"></div>
                         </div>
+                        <div class="acc-row">
+                            <div class="acc-name"><i class="ti ti-logout" style="color:var(--primary)"></i> Сессия</div>
+                            <div class="acc-actions">
+                                <button class="btn-sm warn" onclick="logout()"><i class="ti ti-door-exit"></i> Выйти</button>
+                            </div>
+                        </div>
+                        <div class="modal__body" style="margin-top:10px">статус привязки: <span id="p-tg-status">...</span></div>
                     </div>
                 </div>
             `;
+            updateAccountCard(data);
         }
 
-        // Основная функция получения данных
+        function updateAccountCard(data) {
+            const actions = document.getElementById('p-tg-actions');
+            const status = document.getElementById('p-tg-status');
+            if (!actions || !status) return;
+            const bound = !!data.user_telegram_FOR_ANNOUCMENTS;
+            status.textContent = bound ? 'привязан' : 'не привязан';
+            status.style.color = bound ? '#4ade80' : 'var(--muted)';
+            actions.innerHTML = bound
+                ? '<button class="btn-sm" onclick="unbindTelegram()"><i class="ti ti-link-off"></i> Отвязать</button>'
+                : '<button class="btn-sm" onclick="bindTelegram()"><i class="ti ti-link"></i> Привязать</button>';
+        }
+
+        async function refreshDynamic() {
+            try {
+                const pr = await fetch(`${API_BASE}/me/progress`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const pj = await pr.json();
+                const el = document.getElementById('p-solved');
+                if (el) el.innerHTML = `${pj.solved ?? 0} · <span style="color: var(--accent)">#${pj.rating_position ?? '?'} в топе</span>`;
+            } catch { }
+            try {
+                const me = await fetch(`${API_BASE}/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (me.ok) {
+                    const m = await me.json();
+                    const r = document.getElementById('p-rating');
+                    if (r) r.innerHTML = `<span class="rating-value"><i class="ti ti-star" style="color:var(--accent)"></i> ${m.rating ?? 0}</span>`;
+                }
+            } catch { }
+        }
+
+        let profileRendered = false;
+
         async function updateProfileData() {
             if (!token) {
                 contentDiv.innerHTML = `
@@ -266,14 +707,97 @@
                     return;
                 }
 
-                renderProfile(data);
-
+                if (!profileRendered) {
+                    renderProfile(data);
+                    profileRendered = true;
+                    refreshDynamic();
+                    renderPalette(data.name_color);
+                    const themeName = data.theme || localStorage.getItem('theme') || 'midnight';
+                    document.body.dataset.theme = themeName;
+                    renderThemes(themeName);
+                } else {
+                    updateAccountCard(data);
+                    refreshDynamic();
+                }
             } catch (err) {
                 console.error('Fetch error:', err);
-                // Если контент еще не был загружен ни разу, показываем ошибку
-                if (contentDiv.innerText.includes('Загрузка')) {
+                if (!profileRendered && contentDiv.innerText.includes('Загрузка')) {
                     contentDiv.innerHTML = `<div class="error-box">Ошибка связи с сервером</div>`;
                 }
+            }
+        }
+
+        function openModal(title, bodyHTML, footHTML) {
+            document.getElementById('acc-modal-title').textContent = title;
+            document.getElementById('acc-modal-body').innerHTML = bodyHTML;
+            document.getElementById('acc-modal-foot').innerHTML = footHTML || '';
+            document.getElementById('acc-modal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('acc-modal').classList.remove('active');
+        }
+
+        async function bindTelegram() {
+            openModal('Привязка Telegram', '<i class="ti ti-loader-2" style="display:inline-block;animation:spin 1s linear infinite"></i> генерирую ссылку...');
+            try {
+                const res = await fetch(`${API_BASE}/user_cabinet_bot_generateLink`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                if (data.is_registered) {
+                    openModal('Привязка Telegram', 'аккаунт уже привязан к боту');
+                    return;
+                }
+                const url = data.register_link || '';
+                if (!url) {
+                    openModal('Привязка Telegram', 'не удалось получить ссылку, попробуй позже');
+                    return;
+                }
+                openModal(
+                    'Привязка Telegram',
+                    `открой ссылку в Telegram и нажми «Регистрация в боте»:` +
+                    `<a class="tg-url" href="${url}" target="_blank" rel="noopener">${url}</a>`,
+                    `<button class="btn-sm" onclick="copyTgLink('${url}')"><i class="ti ti-copy"></i> Копировать</button>
+                     <button class="btn-sm" onclick="closeModal()">Готово</button>`
+                );
+            } catch {
+                openModal('Привязка Telegram', 'ошибка сети — попробуй позже');
+            }
+        }
+
+        function copyTgLink(url) {
+            navigator.clipboard?.writeText(url).then(
+                () => showToast('ссылка скопирована'),
+                () => showToast('не удалось скопировать', true)
+            );
+        }
+
+        function unbindTelegram() {
+            openModal(
+                'Отвязать Telegram?',
+                'бот перестанет быть привязан к аккаунту. Привязать заново можно в любой момент по ссылке.',
+                `<button class="btn-sm warn" onclick="doUnbind()"><i class="ti ti-link-off"></i> Да, отвязать</button>
+                 <button class="btn-sm" onclick="closeModal()">Отмена</button>`
+            );
+        }
+
+        async function doUnbind() {
+            try {
+                const res = await fetch(`${API_BASE}/me/telegram/unbind`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    closeModal();
+                    showToast('аккаунт отвязан от бота');
+                    profileRendered = false;
+                    updateProfileData();
+                } else {
+                    showToast('не удалось отвязать, попробуй позже', true);
+                }
+            } catch {
+                showToast('ошибка сети', true);
             }
         }
 
@@ -282,11 +806,91 @@
             location.href = '/index.html';
         }
 
-        // Инициализация
+        const COLOR_RU = {
+            '#6366f1': 'индиго', '#f472b6': 'розовый', '#4ade80': 'зеленый', '#facc15': 'желтый',
+            '#38bdf8': 'небо', '#f97316': 'оранжевый', '#a78bfa': 'сирень', '#ef4444': 'красный'
+        };
+        async function renderPalette(selected) {
+            const box = document.getElementById('p-palette');
+            if (!box) return;
+            let colors = [];
+            try {
+                colors = await (await fetch(`${API_BASE}/name-colors`)).json();
+            } catch { return; }
+            if (!Array.isArray(colors)) return;
+            box.innerHTML = '';
+            colors.forEach(c => {
+                const s = document.createElement('button');
+                s.type = 'button';
+                s.className = 'pick' + (selected === c ? ' sel' : '');
+                s.style.background = c;
+                s.dataset.tip = COLOR_RU[c] || c;
+                s.setAttribute('aria-label', `цвет имени ${COLOR_RU[c] || c}`);
+                s.onclick = async () => {
+                    const res = await fetch(`${API_BASE}/me/name-color`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ color: c })
+                    });
+                    if (res.ok) {
+                        box.querySelectorAll('.pick').forEach(x => x.classList.remove('sel'));
+                        s.classList.add('sel');
+                        const lg = document.getElementById('p-login');
+                        if (lg) lg.style.color = c;
+                        showToast('цвет имени сохранен — он виден в топе и в боте');
+                    } else {
+                        showToast('не удалось сохранить цвет', true);
+                    }
+                };
+                box.appendChild(s);
+            });
+        }
+
+        const THEME_SWATCH = {
+            midnight: '#6366f1', emerald: '#10b981', sunset: '#f59e0b', rose: '#f43f5e', ocean: '#0ea5e9'
+        };
+        const THEME_TITLES = {
+            midnight: 'полночь', emerald: 'изумруд', sunset: 'закат', rose: 'роза', ocean: 'океан'
+        };
+        async function renderThemes(selected) {
+            const box = document.getElementById('p-themes');
+            if (!box) return;
+            let themes = Object.keys(THEME_SWATCH);
+            try { themes = await (await fetch(`${API_BASE}/themes`)).json(); } catch { }
+            if (!Array.isArray(themes)) return;
+            box.innerHTML = '';
+            themes.forEach(t => {
+                const s = document.createElement('button');
+                s.type = 'button';
+                s.className = 'pick' + (selected === t ? ' sel' : '');
+                s.style.background = THEME_SWATCH[t] || '#888';
+                s.dataset.tip = THEME_TITLES[t] || t;
+                s.setAttribute('aria-label', `тема ${THEME_TITLES[t] || t}`);
+                s.onclick = async () => {
+                    const res = await fetch(`${API_BASE}/me/theme`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: t })
+                    });
+                    if (res.ok) {
+                        box.querySelectorAll('.pick').forEach(x => x.classList.remove('sel'));
+                        s.classList.add('sel');
+                        document.body.dataset.theme = t;
+                        localStorage.setItem('theme', t);
+                        showToast('тема сохранена — действует на всех страницах');
+                    } else {
+                        showToast('не удалось сохранить тему', true);
+                    }
+                };
+                box.appendChild(s);
+            });
+        }
+
         updateProfileData();
 
-        // Обновление каждые 5 секунд (как в логике курсов)
-        setInterval(updateProfileData, 5000);
+        setInterval(refreshDynamic, 5000);
+
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
 
     </script>
 </body>

@@ -1,0 +1,83 @@
+# ! docker-compose.yml
+# dev: DEV_CERTS=1 + SSL_CERTFILE=/certs/cert.pem + SSL_KEYFILE=/certs/key.pem -> self-signed
+# prod: положи реальные серты в ./certs и пропиши те же пути в .env
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  back:
+    build:
+      context: .
+      dockerfile: back/Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      HOST: 0.0.0.0
+      WORKERS: ${WORKERS:-2}
+      # в контейнере mongo/redis всегда по сети compose
+      MONGO_URI: mongodb://mongo:27017/
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+    ports:
+      - "${BACK_PORT:-8004}:8004"
+    volumes:
+      - ./certs:/certs
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  front:
+    build:
+      context: .
+      dockerfile: front/Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      FRONT_HOST: 0.0.0.0
+      MONGO_URI: mongodb://mongo:27017/
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "${FRONT_PORT:-8005}:8005"
+    volumes:
+      - ./certs:/certs
+    depends_on:
+      - back
+
+  bot:
+    build:
+      context: .
+      dockerfile: back/Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      MONGO_URI: mongodb://mongo:27017/
+      REDIS_URL: redis://redis:6379/0
+    command: python -m back.auth.bot.main
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+volumes:
+  mongo-data:
+  redis-data:

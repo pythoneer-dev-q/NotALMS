@@ -1,8 +1,9 @@
-import asyncio
+# ! front/server/main.py
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import FastAPI 
-import frontRouter
+from fastapi import FastAPI
+from front.server import frontRouter
+from back.server.server_configs.settings import settings
 
 app = FastAPI()
 
@@ -10,18 +11,21 @@ app.include_router(frontRouter.frouter)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://127.0.0.1:8005",
-        "http://localhost:8005",
-        "http://127.0.0.1:8004",
-        "http://localhost:8004",
-        "file://",
-        "*",  
-    ],
+    allow_origins=settings.cors_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 if __name__ == '__main__':
-    uvicorn.run(app, host='127.0.0.1', port=8005)
+    # ssl из env, если задан, иначе http
+    ssl = {}
+    if settings.ssl_certfile and settings.ssl_keyfile:
+        ssl = dict(ssl_certfile=settings.ssl_certfile, ssl_keyfile=settings.ssl_keyfile)
+    uvicorn.run(
+        'front.server.main:app',
+        host=settings.front_host,
+        port=settings.front_port,
+        workers=settings.workers,
+        **ssl,
+    )

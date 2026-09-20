@@ -3,10 +3,12 @@ from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 import hashlib
+from back.server.server_configs.settings import settings
 
-SECRET_KEY = "твой_очень_длинный_секрет_1234567890abcde99999999"   # поменяй на свой (лучше 64+ символа)
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES =  60 * 24 * 7  # 7 дней (можно 30 минут для теста)
+# из .env, а не из кода
+SECRET_KEY = settings.secret_key
+ALGORITHM = settings.algorithm
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.access_token_expire_minutes
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 

@@ -11,3 +11,13 @@ async def GenerateOTP(user_id: int):
             return otp
     else:
         return None
+
+
+async def GenerateLoginCode(user_id: int) -> str | None:
+    # код для входа на сайт по тг
+    for _ in range(10):
+        code = ''.join(str(random.randint(0, 9)) for _ in range(6))
+        if not await db.auth_collection.find_one({'code': code, 'used': False}):
+            await db.save_login_code(user_id, code)
+            return code
+    return None

@@ -73,3 +73,33 @@ class RegVisibleTask(BaseModel):
 
 class UserRequest(BaseModel):
   click_from: str
+
+
+# правка курса из админки: все поля опциональны, None не пишется
+class AdminCourseUpdate(BaseModel):
+    title: str | None = None
+    description: str | None = None
+    difficulty: str | None = None
+    tags: list[str] | None = None
+    order: int | None = None
+    is_published: bool | None = None
+    granted_to: list[str] | None = None
+    lessons: list[str] | None = None
+    cover: str | None = None
+
+
+# правка урока: контент-блоки, заголовок, порядок, тип
+class AdminLessonUpdate(BaseModel):
+    title: str | None = None
+    content: list[dict] | None = None
+    order: int | None = None
+    type: str | None = None
+
+
+# правка задачи: mode / settings / difficulty / type / привязка к уроку
+class AdminTaskUpdate(BaseModel):
+    lesson_id: str | None = None
+    mode: str | None = None
+    difficulty: str | None = None
+    settings: dict | None = None
+    type_task: str | None = None

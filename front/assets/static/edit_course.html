@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>NotALMS — Редактор курса</title>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css">
+<script>
+    (function() {
+        var theme = localStorage.getItem('theme');
+        if (theme) document.documentElement.dataset.theme = theme;
+    })();</script>
+<style>
+:root{
+  --primary:#6366f1;--bg:#0f172a;--panel:rgba(20,40,70,.95);--text:#e2e8f0;
+  --accent:#4ade80;--error:#ef4444;--warning:#facc15;--muted:#94a3b8;
+  --bord:color-mix(in srgb,var(--primary) 30%,transparent);--bord-soft:color-mix(in srgb,var(--primary) 14%,transparent);
+  --line:rgba(255,255,255,.06);--line2:rgba(255,255,255,.12);
+  --surface:#0e0d13;--surface2:#131019;--r:14px;--loader-color:#8603D3;
+}
+body[data-theme="emerald"]{--primary:#10b981;--bg:#08130e;--panel:rgba(10,35,26,.95);--text:#dcfce7;--accent:#34d399}
+body[data-theme="sunset"]{--primary:#f59e0b;--bg:#171009;--panel:rgba(40,27,9,.95);--text:#fef3c7;--accent:#fbbf24}
+body[data-theme="rose"]{--primary:#f43f5e;--bg:#170a12;--panel:rgba(45,12,26,.95);--text:#ffe4e6;--accent:#fb7185}
+body[data-theme="ocean"]{--primary:#0ea5e9;--bg:#071224;--panel:rgba(9,34,64,.95);--text:#e0f2fe;--accent:#38bdf8}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Onest',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+.header{height:60px;display:flex;align-items:center;padding:0 16px;background:var(--panel);border-bottom:1px solid var(--primary);position:sticky;top:0;z-index:100}
+.logo{font-family:'Dela Gothic One',cursive;font-size:1.5rem;color:var(--primary)}
+.header-mid{margin-left:auto;display:flex;align-items:center;gap:10px}
+.input-sm{padding:8px 10px;border-radius:8px;border:1px solid var(--line2);background:rgba(15,23,42,.9);color:var(--text);font-size:.9rem;font-family:'Onest',sans-serif;outline:none;transition:.2s}
+.input-sm:focus{border-color:var(--primary)}
+.btn-sm{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border:0;border-radius:8px;background:var(--primary);color:#fff;font-size:.85rem;font-weight:500;cursor:pointer;transition:.18s}
+.btn-ghost{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:9px 14px;font-size:.85rem;cursor:pointer;transition:.2s}
+.btn-ghost:hover{border-color:var(--line2);color:var(--text)}
+.btn-sm:hover:not(:disabled){filter:brightness(1.1)}
+.btn-sm:disabled{opacity:.5;cursor:not-allowed}
+
+.container{padding:20px;max-width:1100px;margin:0 auto}
+.tabs{display:flex;gap:4px;margin-bottom:18px;border-radius:10px;overflow:hidden;background:rgba(255,255,255,.03);border:1px solid var(--line)}
+.tab{flex:1;text-align:center;padding:12px 8px;font-size:.92rem;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:.2s;font-family:'Onest',sans-serif}
+.tab.active{color:var(--primary);border-bottom-color:var(--primary)}
+.tabpanel{display:none}
+.tabpanel.active{display:block}
+.form-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.field{flex:1;min-width:180px}
+.field.full{width:100%}
+.field label{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:5px;display:block}
+.input,textarea,select{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line2);background:rgba(15,23,42,.9);color:var(--text);font-family:'Onest',sans-serif;font-size:1rem;outline:none;transition:.2s}
+.input:focus,textarea:focus,select:focus{border-color:var(--primary);box-shadow:0 0 0 2px color-mix(in srgb,var(--primary) 18%,transparent)}
+textarea{min-height:90px;resize:vertical;font-family:'Onest',sans-serif}
+select{background-position:right .6rem center;background-repeat:no-repeat;background-size:14px;appearance:none;padding-right:32px}
+.half{flex:1;min-width:200px}
+
+.meta-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.meta-grid .field-full{width:100%;grid-column:1/-1}
+
+.card{background:var(--surface);outline:1px solid var(--line);outline-offset:-1px;border:0;border-radius:14px;padding:18px;margin-bottom:18px}
+.card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.card-head h3{margin:0;font-size:1.05rem;color:var(--primary)}
+.summary{background:rgba(255,255,255,.03);border:1px dashed var(--line);border-radius:10px;padding:12px;margin-bottom:14px;color:var(--muted);font-size:.9rem}
+
+.lesson-row{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px}
+.lesson-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.lesson-head .info{flex:1;min-width:0}
+.lesson-head .info h4{margin:0 0 2px;font-size:.95rem}
+.lesson-head .info .sub{font-size:.78rem;color:var(--muted)}
+.lesson-actions{display:flex;gap:6px;flex-shrink:0}
+.lesson-detail{margin-top:12px}
+.toggle-detail{color:var(--muted);font-size:.8rem;cursor:pointer}
+
+.block{background:rgba(0,0,0,.18);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px}
+.block-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.block-head .tag{flex-shrink:0;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--primary);background:rgba(99,102,241,.12);border:1px solid var(--bord);padding:3px 8px;border-radius:6px}
+.block-head .drag{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:6px;padding:4px 8px;cursor:grab;font-size:1.1rem}
+.block-body{display:flex;flex-direction:column;gap:8px}
+.block-body textarea{width:100%;min-height:70px;resize:vertical}
+.block-body input[type="text"]{width:100%}
+
+.action-bar{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.btn-primary{background:var(--primary);color:#fff;padding:10px 20px;border:0;border-radius:10px;font-size:1rem;font-weight:500;cursor:pointer;transition:.18s}
+.btn-primary:hover:not(:disabled){filter:brightness(1.1)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.btn-ghost-wide{background:transparent;border:1px solid var(--bord);color:var(--text);border-radius:10px;padding:10px 16px;font-size:.9rem;cursor:pointer;transition:.18s}
+.btn-ghost-wide:hover{border-color:var(--line2)}
+
+.toast{position:fixed;inset:14px 0 auto;z-index:9500;display:flex;justify-content:center;padding:0 16px;pointer-events:none}
+.toast-card{background:var(--panel);border:1px solid var(--primary);border-radius:10px;padding:10px 18px;color:var(--text);font-size:.9rem;box-shadow:0 18px 40px -18px #000c;pointer-events:auto;animation:tin .25s ease-out;max-width:520px;font-family:'Onest',sans-serif}
+.toast-card.err{border-color:var(--error)}
+@keyframes tin{from{opacity:0;transform:translateY(-8px)}to{opacity:1}}
+
+.modal-back{position:fixed;inset:0;z-index:9000;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(4,6,14,.7);backdrop-filter:blur(3px)}
+.modal-back.visible{display:flex}
+.modal-card{width:100%;max-width:420px;background:var(--panel);border:1px solid var(--primary);border-radius:10px;padding:18px}
+.modal-card h4{margin:0 0 8px;font-size:1.05rem;color:var(--primary)}
+.modal-card p{margin:0 0 16px;color:#c3cadd;font-size:.92rem;line-height:1.5}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px}
+.btn-danger{background:var(--error)}
+body.modal-open{overflow:hidden}
+
+.loading-screen{position:fixed;inset:0;background:rgba(5,5,15,.85);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999;opacity:0;pointer-events:none;transition:.12s}
+.loading-screen.visible{opacity:1;pointer-events:auto}
+.loader-wrap{display:flex;flex-direction:column;align-items:center;gap:10px}
+.notalms-loader{width:64px;height:64px;fill:var(--loader-color)}
+.loading-text{color:var(--loader-color);font-size:13px;font-family:'Onest',sans-serif}
+
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:.75rem;padding:4px 8px;border-radius:6px;background:rgba(99,102,241,.12);border:1px solid var(--bord);color:var(--primary);margin-right:6px;margin-bottom:4px}
+.pill.del{cursor:pointer;color:var(--muted)}
+
+@media(max-width:768px){
+  .form-row{flex-direction:column;gap:8px}
+  .header{padding:0 12px}
+  .logo{font-size:1.3rem}
+}
+@media(max-width:600px){
+  .tabs{font-size:.8rem}
+  .tab{padding:10px 6px}
+  .card{padding:14px}
+}
+</style>
+</head>
+<body>
+<div class="toast" id="toast"><div class="toast-card" id="toast-card"></div></div>
+
+<header class="header">
+  <div class="logo">NotALMS — редактор</div>
+  <div class="header-mid" id="auth-bar">
+    <input id="admin-pass" class="input-sm" placeholder="admin secret" type="password" autocomplete="off" />
+    <button id="btn-login" class="btn-sm"><i class="ti ti-login-2"></i> войти</button>
+  </div>
+  <div class="header-mid" id="auth-ok" style="display:none">
+    <span class="toggle-detail" id="hint-course" title="скопировать id курса"><i class="ti ti-info-hexborg"></i></span>
+    <button id="btn-logout" class="btn-ghost"><i class="ti ti-logout"></i></button>
+  </div>
+</header>
+
+<div id="loading" class="loading-screen" aria-hidden="true">
+  <div class="loader-wrap" role="status" aria-live="polite">
+    <svg class="notalms-loader" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z" opacity=".25"/>
+      <path d="M10.72,19.9a8,8,0,0,1-6.5-9.79A7.77,7.77,0,0,1,10.4,4.16a8,8,0,0,1,9.49,6.52A1.54,1.54,0,0,0,21.38,12h.13a1.37,1.37,0,0,0,1.38-1.54,11,11,0,1,0-12.7,12.39A1.54,1.54,0,0,0,12,21.34h0A1.47,1.47,0,0,0,10.72,19.9Z">
+        <animateTransform attributeName="transform" type="rotate" dur="0.75s" values="0 12 12;360 12 12" repeatCount="indefinite"/>
+      </path>
+    </svg>
+    <div class="loading-text">загрузка...</div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="summary" id="page-summary" style="display:none">
+    <div>Редактор курса: <b id="course-id-badge"></b></div>
+    <div class="toggle-detail" id="open-course-page" style="display:none">открыть страницу курса <i class="ti ti-arrow-right"></i></div>
+  </div>
+
+  <div class="tabs" id="tabs" style="display:none">
+    <div class="tab active" data-tab="course" onclick="showTab('course')">Курс</div>
+    <div class="tab" data-tab="lessons" onclick="showTab('lessons')">Уроки</div>
+    <div class="tab" data-tab="tasks" onclick="showTab('tasks')">Задания</div>
+  </div>
+
+  
+  <div class="tabpanel active" id="panel-course">
+    <div class="card">
+      <div class="card-head"><h3>Метаданные курса</h3>
+        <span class="toggle-detail" id="reset-course" style="display:none;color:var(--warning)">× очистить форму</span>
+      </div>
+      <div class="form-row">
+        <div class="field full"><label>title</label><input id="c-title" class="input" placeholder="заголовок"></div>
+        <div class="field"><label>description</label><textarea id="c-desc" placeholder="описание под карточку"></textarea></div>
+        <div class="field"><label>cover url</label><input id="c-cover" class="input" placeholder="ссылка на обложку"></div>
+        <div class="field"><label>difficulty</label>
+          <select id="c-diff">
+            <option value=""> — </option>
+            <option value="easy">easy</option>
+            <option value="hard">hard</option>
+          </select>
+        </div>
+        <div class="field"><label>order (число)</label><input id="c-order" class="input" placeholder="-1 = в конец"></div>
+        <div class="field" style="align-items:flex-end"><label style="opacity:0">pub</label>
+          <label style="display:flex;align-items:center;gap:8px"><input id="c-pub" type="checkbox"><span>опубликовать</span></label>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field full"><label>granted_to (через запятую)</label><input id="c-granted" class="input" placeholder="all,group1,..."></div>
+        <div class="field full"><label>tags (через запятую)</label><input id="c-tags" class="input" placeholder="bio,dna,..."></div>
+        <div class="field full"><label>lessons (id уроков через запятую)</label><input id="c-lessons" class="input" placeholder="lesson_id1,lesson_id2,..."></div>
+      </div>
+      <div class="action-bar">
+        <button id="btn-save-course" class="btn-primary">сохранить курс</button>
+        <div id="course-res" class="toggle-detail"></div>
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="tabpanel" id="panel-lessons">
+    <div class="card">
+      <div class="card-head"><h3>Уроки курса</h3>
+        <button id="btn-add-lesson" class="btn-sm"><i class="ti ti-plus"></i> добавить урок</button>
+      </div>
+      <div id="lessons-list"><div class="toggle-detail">загрузка...</div></div>
+    </div>
+    <div id="lesson-edit-card" class="card" style="display:none">
+      <div class="card-head"><h3 id="lesson-edit-title">Редактирование урока</h3>
+        <button id="btn-close-lesson-edit" class="btn-ghost"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>id</label><input id="l-id" class="input" readonly></div>
+        <div class="field"><label>title</label><input id="l-title" class="input"></div>
+        <div class="field"><label>type</label>
+          <select id="l-type"><option value="theory">theory</option><option value="test">test</option></select>
+        </div>
+        <div class="field"><label>order</label><input id="l-order" class="input" placeholder="число"></div>
+      </div>
+      <div class="block-head" style="margin-bottom:8px"><span class="tag">контент-блоки</span></div>
+      <div id="lesson-blocks"><div class="toggle-detail">нет блоков</div></div>
+      <div class="action-bar">
+        <button id="btn-add-block" class="btn-ghost"><i class="ti ti-plus"></i> добавить блок</button>
+        <select id="new-block-type" class="input-sm">
+          <option value="text">text</option>
+          <option value="image">image</option>
+          <option value="video">video</option>
+          <option value="list">list</option>
+          <option value="code">code</option>
+          <option value="warning">warning</option>
+        </select>
+      </div>
+      <hr style="border:none;border-top:1px solid var(--line);margin:16px 0">
+      <div class="action-bar">
+        <button id="btn-save-lesson" class="btn-primary">сохранить урок</button>
+        <button id="btn-delete-lesson" class="btn-ghost" style="color:var(--error);border-color:var(--error)"><i class="ti ti-trash"></i> удалить урок</button>
+        <div id="lesson-res" class="toggle-detail"></div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="modal-back" id="new-lesson-modal">
+    <div class="modal-card">
+      <h4>Новый урок</h4>
+      <p>создать урок и сразу отредактировать его контент</p>
+      <div class="form-row">
+        <div class="field"><label>id</label><input id="nl-id" class="input" placeholder="lesson_id"></div>
+        <div class="field"><label>title</label><input id="nl-title" class="input" placeholder="заголовок"></div>
+        <div class="field"><label>order</label><input id="nl-order" class="input" placeholder="число"></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>type</label>
+          <select id="nl-type"><option value="theory">theory</option><option value="test">test</option></select>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-ghost" onclick="closeNewLessonModal()">отмена</button>
+        <button class="btn-primary" onclick="createNewLesson()">создать</button>
+      </div>
+      <div id="nl-res" class="toggle-detail" style="margin-top:8px"></div>
+    </div>
+  </div>
+
+  
+  <div class="tabpanel" id="panel-tasks">
+    <div class="card">
+      <div class="card-head"><h3>Задания курса</h3>
+        <span class="toggle-detail">отображаются по урокам; редактируйте mode/settings/difficulty/type</span>
+      </div>
+      <div id="tasks-list"><div class="toggle-detail">загрузка...</div></div>
+    </div>
+    <div id="task-edit-card" class="card" style="display:none">
+      <div class="card-head"><h3 id="task-edit-title">Редактирование задачи</h3>
+        <button id="btn-close-task-edit" class="btn-ghost"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>id</label><input id="t-id" class="input" readonly></div>
+        <div class="field"><label>lesson_id</label><input id="t-lesson" class="input" placeholder="lesson_id"></div>
+        <div class="field"><label>mode</label><input id="t-mode" class="input" placeholder="например 1 / dna"></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>type_task</label><input id="t-type" class="input" placeholder="task_type"></div>
+        <div class="field"><label>difficulty</label>
+          <select id="t-diff"><option value="easy">easy</option><option value="hard">hard</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field full"><label>settings (json)</label><textarea id="t-settings" placeholder='{"taskLen": 8}'></textarea></div>
+      </div>
+      <div class="action-bar">
+        <button id="btn-save-task" class="btn-primary">сохранить задачу</button>
+        <button id="btn-delete-task" class="btn-ghost" style="color:var(--error);border-color:var(--error)"><i class="ti ti-trash"></i> удалить задачу</button>
+        <div id="task-res" class="toggle-detail"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="confirm-back">
+  <div class="modal-card" role="dialog" aria-modal="true">
+    <h4 id="confirm-title">подтверждение</h4>
+    <p id="confirm-text"></p>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="confirm-no">отмена</button>
+      <button class="btn-danger" id="confirm-yes">да</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_BASE = document.querySelector('meta[name="api-base"]')?.content || `${location.protocol}//${location.hostname}:8004/v1`;
+const adminKeyName = 'notalms_admin_secret';
+const URL_PARTS = location.pathname.split('/').filter(Boolean); // ['course','<id>','edit']
+const courseID = (URL_PARTS.length === 3 && URL_PARTS[0] === 'course' && URL_PARTS[2] === 'edit') ? URL_PARTS[1] : null;
+
+const loader = {
+  el: document.getElementById('loading'),
+  cnt: 0,
+  enter(){ this.cnt++; if(this.cnt>0) this.el.classList.add('visible') },
+  leave(){ this.cnt = Math.max(0,this.cnt-1); if(this.cnt===0) this.el.classList.remove('visible') }
+};
+
+function setSecret(s){ sessionStorage.setItem(adminKeyName, s); sessionStorage.setItem('notalms_admin_course', courseID || ''); }
+function getSecret(){ return sessionStorage.getItem(adminKeyName); }
+function clearSecret(){ sessionStorage.removeItem(adminKeyName); }
+
+function escapeHtml(s){ if(s===null||s===undefined) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
+
+function parseCsv(s){ return String(s||'').split(',').map(x=>x.trim()).filter(Boolean); }
+
+async function apiFetch(path, method, body){
+  const secret = getSecret();
+  if(!secret) throw new Error('no-secret');
+  const opts = { method, headers: { 'Content-Type':'application/json', 'x-admin-secret': secret } };
+  if(body !== undefined) opts.body = JSON.stringify(body);
+  loader.enter();
+  try{
+    const res = await fetch(API_BASE + path, opts);
+    const data = await res.json().catch(()=>({error:'invalid json'}));
+    if(!res.ok) return {error: data?.detail || data?.error || ('http '+res.status)};
+    return data;
+  }catch(e){
+    return {error: e.message || 'network error'};
+  }finally{ loader.leave(); }
+}
+function apiGet(p){ return apiFetch(p,'GET'); }
+function apiPost(p,b){ return apiFetch(p,'POST',b); }
+function apiPut(p,b){ return apiFetch(p,'PUT',b); }
+function apiDelete(p){ return apiFetch(p,'DELETE',undefined); }
+
+let toastTimer=null;
+function toast(msg,isErr){
+  const box=document.getElementById('toast');
+  const card=document.getElementById('toast-card');
+  if(!box||!card) return;
+  card.textContent=msg; card.classList.toggle('err',!!isErr);
+  box.style.display='flex';
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>box.style.display='none',2600);
+}
+
+function askConfirm(text,onYes){
+  const back=document.getElementById('confirm-back');
+  document.getElementById('confirm-text').textContent=text;
+  back.classList.add('visible'); document.body.classList.add('modal-open');
+  const close=()=>{ back.classList.remove('visible'); document.body.classList.remove('modal-open'); };
+  document.getElementById('confirm-yes').onclick=()=>{ close(); onYes && onYes(); };
+  document.getElementById('confirm-no').onclick=close;
+  back.onclick=(e)=>{ if(e.target===back) close(); };
+}
+
+const tabs=['course','lessons','tasks'];
+function showTab(name){
+  tabs.forEach(t=>{
+    document.querySelector(`.tab[data-tab="${t}"]`).classList.toggle('active',t===name);
+    document.getElementById('panel-'+t).classList.toggle('active',t===name);
+  });
+}
+
+function setMsg(id,text){ const el=document.getElementById(id); if(el) el.textContent=text; }</script>
+<script>
+document.getElementById('btn-login').onclick=async()=>{
+  const pass=document.getElementById('admin-pass').value.trim();
+  if(!pass){ toast('введите пароль',true); return; }
+  const r=await apiPost('/admin/check',{secret:pass});
+  if(r&&!r.error&&r.ok){
+    setSecret(pass);
+    document.getElementById('auth-bar').style.display='none';
+    document.getElementById('auth-ok').style.display='block';
+    toast('доступ подтверждён');
+    initEditor();
+  } else {
+    clearSecret();
+    toast('неверный пароль',true);
+  }
+};
+document.getElementById('btn-logout').onclick=()=>{ clearSecret(); location.reload(); };
+
+document.getElementById('hint-course').onclick=()=>{
+  if(!courseID){ toast('нет id курса в url',true); return; }
+  navigator.clipboard.writeText(courseID).then(()=>toast('id курса скопирован')).catch(()=>toast('не удалось скопировать',true));
+};
+
+let course={};
+let lessonsCache=[];
+let tasksCache=[];
+
+async function initEditor(){
+  if(!courseID){
+    document.getElementById('page-summary').style.display='block';
+    document.getElementById('course-id-badge').textContent='(укажите id курса в url: /course/<id>/edit)';
+    toast('укажите id курса в url',true);
+    return;
+  }
+  document.getElementById('page-summary').style.display='block';
+  document.getElementById('course-id-badge').textContent=courseID;
+  document.getElementById('open-course-page').style.display='block';
+  document.getElementById('tabs').style.display='block';
+  await loadCourse();
+}
+
+document.getElementById('open-course-page').onclick=()=>{
+  if(courseID) location.href='/course/'+encodeURIComponent(courseID);
+};
+
+async function loadCourse(){
+  const r=await apiGet('/admin/course/'+encodeURIComponent(courseID));
+  if(r&&r.error){ toast('курс не загружен: '+r.error,true); return; }
+  course=r;
+  fillCourseForm(course);
+  document.getElementById('reset-course').style.display='inline';
+  document.getElementById('btn-save-course').disabled=false;
+  loadLessons();
+}
+
+function fillCourseForm(c){
+  const set=(id,v)=>{ const el=document.getElementById(id); if(el) el.value=(v===undefined||v===null?'':v); };
+  set('c-title', c.title);
+  set('c-desc', c.description);
+  set('c-cover', c.cover);
+  set('c-order', c.order!==undefined&&c.order!==null?c.order:'');
+  set('c-granted', Array.isArray(c.granted_to)?c.granted_to.join(', '):'');
+  set('c-tags', Array.isArray(c.tags)?c.tags.join(', '):'');
+  set('c-lessons', Array.isArray(c.lessons)?c.lessons.join(', '):'');
+  const d=document.getElementById('c-diff'); if(d){ d.value=c.difficulty||''; }
+  const p=document.getElementById('c-pub'); if(p){ p.checked=!!c.is_published; }
+}
+
+document.getElementById('btn-save-course').onclick=async()=>{
+  const orderRaw=document.getElementById('c-order').value.trim();
+  const body={
+    title: document.getElementById('c-title').value.trim()||undefined,
+    description: document.getElementById('c-desc').value.trim()||undefined,
+    cover: document.getElementById('c-cover').value.trim()||undefined,
+    difficulty: document.getElementById('c-diff').value||undefined,
+    order: orderRaw!=='' ? parseInt(orderRaw,10) : undefined,
+    tags: parseCsv(document.getElementById('c-tags').value),
+    lessons: parseCsv(document.getElementById('c-lessons').value),
+    granted_to: parseCsv(document.getElementById('c-granted').value),
+    is_published: document.getElementById('c-pub').checked
+  };
+  Object.keys(body).forEach(k=>{ if(body[k]===undefined) delete body[k]; });
+  setMsg('course-res','сохранение...');
+  const r=await apiPut('/admin/course/'+encodeURIComponent(courseID), body);
+  if(r&&!r.error){ toast('курс сохранен'); setMsg('course-res','сохранено'); await loadCourse(); }
+  else { toast('ошибка сохранения: '+(r?.error||'unknown'),true); setMsg('course-res','err: '+(r?.error||'unknown')); }
+};
+
+document.getElementById('reset-course').onclick=()=>{
+  askConfirm('вернуть значения курса из базы? внесённые правки будут потеряны',()=>{
+    if(course) fillCourseForm(course);
+  });
+};</script>
+<script>
+window.currentLesson=null;
+let lessonBlocks=[]; // текущие блоки в редакторе урока
+
+async function loadLessons(){
+  const r=await apiGet('/admin/course/'+encodeURIComponent(courseID)+'/lessons');
+  if(r&&r.error){ document.getElementById('lessons-list').innerHTML='<div class="toggle-detail">не удалось загрузить</div>'; return; }
+  lessonsCache = r || [];
+  renderLessons();
+  if(!window.currentLesson && lessonsCache.length){
+    loadTasksForLesson(lessonsCache[0]._id);
+  }
+}
+
+function renderLessons(){
+  const box=document.getElementById('lessons-list');
+  if(!lessonsCache.length){ box.innerHTML='<div class="toggle-detail">уроков пока нет</div>'; return; }
+  const sorted=[...lessonsCache].sort((a,b)=>(a.order||0)-(b.order||0));
+  box.innerHTML=sorted.map(l=>lessonRowHtml(l)).join('');
+}
+
+function lessonRowHtml(l){
+  return `
+  <div class="lesson-row" data-id="${escapeHtml(l._id)}">
+    <div class="lesson-head">
+      <div class="info">
+        <h4>${escapeHtml(l.title||'<без названия>')}</h4>
+        <div class="sub">id: ${escapeHtml(l._id)} · type: ${escapeHtml(l.type||'theory')} · order: ${l.order===undefined||l.order===null?'—':l.order}</div>
+      </div>
+      <div class="lesson-actions">
+        <button class="btn-ghost" onclick="editLesson('${escapeHtml(l._id)}')" title="редактировать"><i class="ti ti-pencil"></i></button>
+        <button class="btn-ghost" onclick="askDeleteLesson('${escapeHtml(l._id)}','${escapeHtml(l.title)}')" title="удалить"><i class="ti ti-trash"></i></button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function editLesson(id){
+  const l=lessonsCache.find(x=>x._id===id);
+  if(!l) return;
+  window.currentLesson={...l};
+  lessonBlocks=Array.isArray(l.content)?l.content.map(b=>({...b})):[];
+  document.getElementById('l-id').value=l._id;
+  document.getElementById('l-title').value=l.title||'';
+  document.getElementById('l-type').value=l.type||'theory';
+  document.getElementById('l-order').value=l.order!==undefined&&l.order!==null?l.order:'';
+  document.getElementById('lesson-edit-title').textContent='Урок: '+(l.title||l._id);
+  renderBlocks();
+  document.getElementById('lesson-edit-card').style.display='block';
+  document.getElementById('lesson-res').textContent='';
+  loadTasksForLesson(l._id);
+}
+
+document.getElementById('btn-close-lesson-edit').onclick=()=>{
+  window.currentLesson=null;
+  document.getElementById('lesson-edit-card').style.display='none';
+};
+
+document.getElementById('btn-add-block').onclick=()=>{
+  const t=document.getElementById('new-block-type').value;
+  addBlock(t);
+};
+
+function addBlock(type,data){
+  const div=document.createElement('div'); div.className='block'; div.dataset.type=type;
+  div.innerHTML=`
+    <div class="block-head">
+      <span class="tag">${type}</span>
+      <input type="text" class="input-sm field-order" placeholder="порядок (0=в конец)" style="max-width:110px" value="${data?.order!==undefined&&data?.order!==null?data.order:''}">
+      <button class="btn-ghost drag" title="перетащить"><i class="ti ti-grip-vertical"></i></button>
+      <button class="btn-ghost" onclick="this.closest('.block').remove()" title="удалить блок"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="block-body"></div>`;
+  const body=div.querySelector('.block-body');
+  if(type==='text'||type==='warning'||type==='code'){
+    const ta=document.createElement('textarea'); ta.className='input'; ta.placeholder=type; ta.value=data?.value||'';
+    body.appendChild(ta);
+  } else if(type==='image'){
+    const u=document.createElement('input'); u.className='input'; u.placeholder='url'; u.value=data?.src||'';
+    const a=document.createElement('input'); a.className='input'; a.placeholder='alt'; a.value=data?.alt||'';
+    body.appendChild(u); body.appendChild(a);
+  } else if(type==='video'){
+    // код встраивания с платформы (iframe/script) или просто ссылка
+    const ta=document.createElement('textarea'); ta.className='input';
+    ta.placeholder='код встраивания (iframe/script) или ссылка';
+    ta.value=data?.embed ? (data.embed_type==='script' ? '<script src="'+data.embed+'"><\/script>' : '<iframe src="'+data.embed+'"></iframe>') : (data?.url||'');
+    ta.rows=3;
+    body.appendChild(ta);
+  } else if(type==='list'){
+    const items=document.createElement('div');
+    const addLi=()=>{
+      const it=document.createElement('div'); it.style.display='flex'; it.style.gap='6px';
+      const inp=document.createElement('input'); inp.className='input';
+      const db=document.createElement('button'); db.className='btn-ghost'; db.textContent='x'; db.onclick=()=>it.remove();
+      it.appendChild(inp); it.appendChild(db); items.appendChild(it);
+      return it; // раньше не возвращали — редактор падал на уроках со списком
+    };
+    (data?.items||[]).forEach(it=>{ const row=addLi(); row.querySelector('input').value=it; });
+    const add=document.createElement('button'); add.className='btn-ghost'; add.textContent='добавить пункт'; add.onclick=addLi;
+    body.appendChild(items); body.appendChild(add);
+  }
+  document.getElementById('lesson-blocks').appendChild(div);
+}
+
+function renderBlocks(){
+  const box=document.getElementById('lesson-blocks');
+  if(!lessonBlocks.length){ box.innerHTML='<div class="toggle-detail">нет блоков — добавьте через форму ниже</div>'; return; }
+  box.innerHTML='';
+  lessonBlocks.forEach(b=>addBlock(b.type||'text', b));
+}
+
+function readBlocks(){
+  const out=[];
+  document.querySelectorAll('#lesson-blocks .block').forEach(n=>{
+    const type=n.dataset.type;
+    const orderS=n.querySelector('.field-order')?.value.trim();
+    const block={type};
+    if(orderS!=='') block.order=parseInt(orderS,10);
+    // поля данных ищем только в .block-body: в .block-head лежит поле порядка
+    const body=n.querySelector('.block-body')||n;
+    if(type==='text'||type==='warning'||type==='code'){
+      block.value=body.querySelector('textarea')?.value||'';
+    } else if(type==='image'){
+      const ins=body.querySelectorAll('input');
+      block.src=ins[0]?.value||''; block.alt=ins[1]?.value||'';
+    } else if(type==='video'){
+      // из вставленного кода достаем src (iframe/script), обычная ссылка идет в url
+      const code=body.querySelector('textarea')?.value.trim()||'';
+      if(code){
+        const ifm=code.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+        const scr=code.match(/<script[^>]+src=["']([^"']+)["']/i);
+        if(ifm){ block.embed=ifm[1]; block.embed_type='iframe'; }
+        else if(scr){ block.embed=scr[1]; block.embed_type='script'; }
+        else block.url=code;
+      }
+    } else if(type==='list'){
+      block.items=Array.from(body.querySelectorAll('input')).map(i=>i.value).filter(Boolean);
+    } else {
+      block.value=body.querySelector('textarea')?.value||'';
+    }
+    out.push(block);
+  });
+  return out;
+}
+
+document.getElementById('btn-save-lesson').onclick=async()=>{
+  if(!window.currentLesson){ toast('сначала выберите урок',true); return; }
+  const content=readBlocks();
+  const orderRaw=document.getElementById('l-order').value.trim();
+  const body={
+    title: document.getElementById('l-title').value.trim()||undefined,
+    type: document.getElementById('l-type').value,
+    order: orderRaw!=='' ? parseInt(orderRaw,10) : undefined,
+    content
+  };
+  Object.keys(body).forEach(k=>{ if(body[k]===undefined) delete body[k]; });
+  setMsg('lesson-res','сохранение...');
+  const r=await apiPut('/admin/lesson/'+encodeURIComponent(window.currentLesson._id), body);
+  if(r&&!r.error){
+    const idx=lessonsCache.findIndex(x=>x._id===window.currentLesson._id);
+    if(idx>=0){
+      const updated={ ...lessonsCache[idx], ...body, content };
+      lessonsCache[idx]=updated;
+      renderLessons();
+      window.currentLesson={...updated};
+      lessonBlocks=Array.isArray(updated.content)?updated.content.map(b=>({...b})):[];
+    }
+    toast('урок сохранен'); setMsg('lesson-res','сохранено');
+  } else { toast('ошибка: '+(r?.error||'unknown'),true); setMsg('lesson-res','err: '+(r?.error||'unknown')); }
+};
+
+function askDeleteLesson(id,title){
+  askConfirm(`удалить урок «${title||id}»? его задания также будут удалены — отменить нельзя`,()=>{
+    apiDelete('/admin/lesson/'+encodeURIComponent(id)).then(r=>{
+      if(r&&!r.error){
+        lessonsCache=lessonsCache.filter(x=>x._id!==id);
+        if(window.currentLesson&&window.currentLesson._id===id){ window.currentLesson=null; document.getElementById('lesson-edit-card').style.display='none'; }
+        renderLessons();
+        if(window.currentLesson) loadTasksForLesson(window.currentLesson._id);
+        toast('урок удалён');
+      } else { toast('ошибка удаления: '+(r?.error||'unknown'),true); }
+    });
+  });
+}
+
+document.getElementById('btn-add-lesson').onclick=()=>{
+  document.getElementById('new-lesson-modal').classList.add('visible'); document.body.classList.add('modal-open');
+  document.getElementById('nl-id').value=''; document.getElementById('nl-title').value='';
+  document.getElementById('nl-order').value=''; document.getElementById('nl-res').textContent='';
+};
+
+function closeNewLessonModal(){
+  document.getElementById('new-lesson-modal').classList.remove('visible'); document.body.classList.remove('modal-open');
+}
+
+async function createNewLesson(){
+  const id=document.getElementById('nl-id').value.trim();
+  const title=document.getElementById('nl-title').value.trim();
+  const order=parseInt(document.getElementById('nl-order').value||'-1',10);
+  const type_lesson=document.getElementById('nl-type').value;
+  if(!id||!title){ setMsg('nl-res','нужны id и заголовок'); return; }
+  setMsg('nl-res','создание...');
+  const r=await apiPost('/createLesson',{ id, course_id: courseID, title, type: type_lesson, order, content:[] });
+  if(r&&!r.error){
+    closeNewLessonModal();
+    await loadLessons();
+    const created=lessonsCache.find(x=>x._id===id) || lessonsCache[lessonsCache.length-1];
+    if(created) editLesson(created._id);
+    toast('урок создан');
+  } else { setMsg('nl-res','err: '+(r?.error||'unknown')); toast('ошибка создания',true); }
+}</script>
+<script>
+window.currentTask=null;
+
+function loadTasksForLesson(lesson_id){
+  if(!lesson_id) return;
+  apiGet('/admin/lesson/'+encodeURIComponent(lesson_id)+'/tasks').then(r=>{
+    document.getElementById('tasks-list').innerHTML='';
+    if(!r||r.error){
+      tasksCache=[];
+      document.getElementById('tasks-list').innerHTML='<div class="toggle-detail">загрузка задач...</div>';
+      return;
+    }
+    tasksCache=r;
+    renderTasks();
+  });
+}
+
+function renderTasks(){
+  const box=document.getElementById('tasks-list');
+  if(!tasksCache.length){ box.innerHTML='<div class="toggle-detail">заданий в этом уроке нет</div>'; return; }
+  const sorted=[...tasksCache].sort((a,b)=>(a.order||0)-(b.order||0));
+  box.innerHTML=sorted.map(t=>taskRowHtml(t)).join('');
+}
+
+function taskRowHtml(t){
+  return `
+  <div class="lesson-row" data-id="${escapeHtml(t._id)}">
+    <div class="lesson-head">
+      <div class="info">
+        <h4>${escapeHtml(t.title||t.type||'задача')}</h4>
+        <div class="sub">id: ${escapeHtml(t._id)} · mode: ${escapeHtml(t.mode)} · type: ${escapeHtml(t.type||'')} · difficulty: ${escapeHtml(t.difficulty||'')}</div>
+      </div>
+      <div class="lesson-actions">
+        <button class="btn-ghost" onclick="editTask('${escapeHtml(t._id)}')" title="редактировать"><i class="ti ti-pencil"></i></button>
+        <button class="btn-ghost" onclick="askDeleteTask('${escapeHtml(t._id)}','${escapeHtml(t.title||t._id)}')" title="удалить"><i class="ti ti-trash"></i></button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function editTask(id){
+  const t=tasksCache.find(x=>x._id===id);
+  if(!t) return;
+  window.currentTask={...t};
+  document.getElementById('t-id').value=t._id;
+  document.getElementById('t-lesson').value=t.lesson_id||courseLessonId()||'';
+  document.getElementById('t-mode').value=t.mode||'';
+  document.getElementById('t-type').value=t.type||t.type_task||'';
+  document.getElementById('t-diff').value=t.difficulty||'easy';
+  document.getElementById('t-settings').value=typeof t.settings==='string'?t.settings:JSON.stringify(t.settings||{});
+  document.getElementById('task-edit-title').textContent='Задача: '+(t._id);
+  document.getElementById('task-edit-card').style.display='block';
+  document.getElementById('task-res').textContent='';
+}
+
+function courseLessonId(){
+  return tasksCache[0]?.lesson_id || (window.currentLesson?window.currentLesson._id:null);
+}
+
+document.getElementById('btn-close-task-edit').onclick=()=>{
+  window.currentTask=null; document.getElementById('task-edit-card').style.display='none';
+};
+
+document.getElementById('btn-save-task').onclick=async()=>{
+  if(!window.currentTask){ toast('сначала выберите задачу',true); return; }
+  let settings={};
+  try{ settings=JSON.parse(document.getElementById('t-settings').value||'{}'); }catch(e){ toast('settings: невалидный json',true); return; }
+  const body={
+    lesson_id: document.getElementById('t-lesson').value.trim()||undefined,
+    mode: document.getElementById('t-mode').value.trim()||undefined,
+    type_task: document.getElementById('t-type').value.trim()||undefined,
+    difficulty: document.getElementById('t-diff').value||undefined,
+    settings
+  };
+  Object.keys(body).forEach(k=>{ if(body[k]===undefined) delete body[k]; });
+  setMsg('task-res','сохранение...');
+  const r=await apiPut('/admin/task/'+encodeURIComponent(window.currentTask._id), body);
+  if(r&&!r.error){
+    const idx=tasksCache.findIndex(x=>x._id===window.currentTask._id);
+    if(idx>=0){
+      const mapped={...tasksCache[idx], ...body, type: body.type_task!==undefined?body.type_task:tasksCache[idx].type};
+      delete mapped.type_task;
+      tasksCache[idx]=mapped;
+      renderTasks();
+    }
+    toast('задача сохранена'); setMsg('task-res','сохранено');
+  } else { toast('ошибка: '+(r?.error||'unknown'),true); setMsg('task-res','err: '+(r?.error||'unknown')); }
+};
+
+function askDeleteTask(id,title){
+  askConfirm(`удалить задачу «${title||id}»? её сгенерированные варианты тоже будут удалены — отменить нельзя`,()=>{
+    apiDelete('/admin/task/'+encodeURIComponent(id)).then(r=>{
+      if(r&&!r.error){
+        if(window.currentTask&&window.currentTask._id===id){ window.currentTask=null; document.getElementById('task-edit-card').style.display='none'; }
+        tasksCache=tasksCache.filter(x=>x._id!==id);
+        renderTasks();
+        toast('задача удалена');
+      } else { toast('ошибка удаления: '+(r?.error||'unknown'),true); }
+    });
+  });
+}</script>
+<script>
+(async()=>{
+  if(getSecret()){
+    const saved = sessionStorage.getItem('notalms_admin_course');
+    if(!courseID && saved){ location.href='/course/'+encodeURIComponent(saved)+'/edit'; return; }
+    const res=await apiPost('/admin/check',{secret:getSecret()});
+    if(res&&res.ok){
+      document.getElementById('auth-bar').style.display='none';
+      document.getElementById('auth-ok').style.display='block';
+      initEditor();
+    } else { clearSecret(); }
+  }
+})();</script>
+</body>
+</html>

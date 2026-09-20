@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 
 <head>
@@ -8,11 +8,16 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Oswald:wght@400;600&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="icon" href="../../../favicon.ico" sizes="32x32">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css">
     <script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js" crossorigin="anonymous"></script>
-
+    <script>
+        (function() {
+            var theme = localStorage.getItem('theme');
+            if (theme) document.documentElement.dataset.theme = theme;
+        })();
+    </script>
     <style>
         :root {
             --primary: #6366f1;
@@ -20,7 +25,15 @@
             --panel: rgba(20, 40, 70, .9);
             --card: rgba(30, 60, 100, .85);
             --text: #e2e8f0;
+            --bord: color-mix(in srgb, var(--primary) 28%, transparent);
+            --bord-soft: color-mix(in srgb, var(--primary) 14%, transparent);
         }
+
+        
+        [data-theme="emerald"] { --primary:#10b981; --bg:#08130e; --panel:rgba(10,35,26,.92); --card:rgba(14,50,38,.85); --text:#dcfce7; }
+        [data-theme="sunset"]  { --primary:#f59e0b; --bg:#171009; --panel:rgba(40,27,9,.92); --card:rgba(60,42,14,.85); --text:#fef3c7; }
+        [data-theme="rose"]    { --primary:#f43f5e; --bg:#170a12; --panel:rgba(45,12,26,.92); --card:rgba(70,16,38,.85); --text:#ffe4e6; }
+        [data-theme="ocean"]   { --primary:#0ea5e9; --bg:#071224; --panel:rgba(9,34,64,.92); --card:rgba(13,52,94,.85); --text:#e0f2fe; }
 
         * {
             box-sizing: border-box;
@@ -33,8 +46,8 @@
             color: var(--text);
         }
 
-        /* ===== EMOJI UNIVERSAL STYLE ===== */
-        /* Обязательный стиль, чтобы эмодзи-картинки стояли ровно в тексте */
+        
+        
         img.emoji {
             height: 1em;
             width: 1em;
@@ -42,7 +55,7 @@
             vertical-align: -0.1em;
         }
 
-        /* ===== LOADER (Из первого файла) ===== */
+        
         .loader-overlay {
             position: fixed;
             inset: 0;
@@ -61,12 +74,12 @@
 
         .loader-svg {
             width: 60px;
-            /* Чуть увеличил для дашборда */
+            
             height: 60px;
             fill: var(--primary);
         }
 
-        /* ===== HEADER ===== */
+        
         .header {
             display: flex;
             align-items: center;
@@ -95,7 +108,7 @@
             border-radius: 6px;
         }
 
-        /* ===== MENU ===== */
+        
         .menu {
             position: fixed;
             top: 0;
@@ -103,28 +116,71 @@
             width: 260px;
             height: 100%;
             background: var(--panel);
-            padding: 25px;
+            
+            padding: 0 25px 25px;
             border-right: 1px solid var(--primary);
             transition: .3s;
             z-index: 100;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            overscroll-behavior: contain;
         }
 
         .menu.active {
             left: 0;
         }
 
-        .menu button {
+        
+        .menu .nav-btn,
+        .menu .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
             width: 100%;
-            margin-top: 20px;
-            padding: 10px;
-            border: none;
-            border-radius: 10px;
-            background: var(--primary);
-            color: white;
+            margin-top: 6px;
+            padding: 11px 12px;
+            border: 1px solid transparent;
+            border-radius: 9px;
+            background: transparent;
+            color: var(--text);
+            font: inherit;
+            font-size: .95rem;
+            text-align: left;
             cursor: pointer;
+            transition: .18s;
         }
 
-        /* ===== NEWS ===== */
+        
+        .menu .nav-btn i,
+        .menu .menu-item i {
+            font-size: 1.15rem;
+            color: var(--primary);
+            flex-shrink: 0;
+        }
+
+        .menu .nav-btn:hover,
+        .menu .menu-item:hover {
+            background: rgba(255, 255, 255, .05);
+        }
+
+        .menu .nav-btn.active,
+        .menu .menu-item.active {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .menu .nav-btn.active i,
+        .menu .menu-item.active i {
+            color: #fff;
+        }
+
+        
+        .menu .menu-item.bottom {
+            margin-top: auto;
+        }
+
+        
         .announcements {
             margin: 20px 30px 0;
             display: flex;
@@ -144,15 +200,15 @@
             overflow: hidden;
         }
 
+        
         .news-card::before {
             content: "";
             position: absolute;
-            inset: 0;
-            background-image: repeating-linear-gradient(45deg,
-                    rgba(255, 255, 255, .04),
-                    rgba(255, 255, 255, .04) 12px,
-                    transparent 12px,
-                    transparent 24px);
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--primary);
         }
 
         .news-emoji {
@@ -188,7 +244,7 @@
             opacity: 1;
         }
 
-        /* ===== MOBILE ===== */
+        
         @media(max-width:600px) {
             .announcements {
                 margin: 12px 15px 0;
@@ -223,7 +279,24 @@
             }
         }
 
-        /* ===== CONTENT ===== */
+        
+        @media(max-width:600px) {
+            .header { padding: 10px 14px; }
+            .logo { font-size: 1.3rem !important; }
+            .content { padding: 1rem 1rem 2rem; }
+            .stats-row { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .stat { padding: 12px 14px; }
+            .stat .num { font-size: 1.5rem; }
+            .courses { grid-template-columns: 1fr; gap: 12px; }
+            .course { padding: 14px; }
+            .menu { width: 240px; }
+            .lb-row { padding: 10px 12px; }
+            .section-head h2 { font-size: 1.2rem; }
+            .toast { padding: 0 .6rem; }
+            .toast__card { padding: .7rem 1rem; font-size: .88rem; }
+        }
+
+        
         .content {
             padding: 30px;
         }
@@ -245,18 +318,386 @@
         }
 
         .course:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 0 25px rgba(99, 102, 241, .35);
+            transform: translateY(-4px);
+            box-shadow: 0 14px 28px -16px rgba(0, 0, 0, .7);
         }
 
         .course h3 {
             margin: 0 0 10px;
             color: var(--primary);
         }
+
+        
+        
+        .course-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .badge {
+            font-size: .72rem;
+            padding: 3px 8px;
+            border-radius: 6px;
+            background: color-mix(in srgb, var(--primary) 16%, transparent);
+            border: 1px solid var(--bord);
+            color: var(--primary);
+            white-space: nowrap;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+
+        .badge.easy   { background: rgba(74, 222, 128, .12); border-color: rgba(74, 222, 128, .4); color: #86efac; }
+        .badge.hard   { background: rgba(239, 68, 68, .12); border-color: rgba(239, 68, 68, .4); color: #fca5a5; }
+
+        .course-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 12px;
+        }
+
+        .course-tag {
+            font-size: .75rem;
+            padding: 3px 8px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, .04);
+            color: #94a3b8;
+        }
+
+        .course-empty {
+            text-align: center;
+            color: #64748b;
+            padding: 40px 0;
+            grid-column: 1 / -1;
+        }
+
+        
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin: 25px 0 5px;
+        }
+
+        .stat {
+            background: var(--card);
+            border: 1px solid var(--bord);
+            border-radius: 16px;
+            padding: 18px 20px;
+            box-shadow: 0 0 25px color-mix(in srgb, var(--primary) 12%, transparent);
+            transition: .3s;
+        }
+
+        .stat:hover {
+            transform: translateY(-3px);
+            border-color: var(--primary);
+        }
+
+        .stat .num {
+            font-size: 1.9rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .stat .num.gold { color: #fbbf24; }
+        .stat .lbl {
+            font-size: .78rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+
+        .section-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+
+        .leaderboard {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .lb-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: var(--card);
+            border: 1px solid var(--bord-soft);
+            border-radius: 14px;
+            padding: 12px 18px;
+            transition: .25s;
+        }
+
+        .lb-row:hover { border-color: var(--primary); }
+        .lb-row.me {
+            border-color: var(--primary);
+            box-shadow: 0 0 18px color-mix(in srgb, var(--primary) 30%, transparent);
+        }
+
+        .lb-pos {
+            font-family: 'Dela Gothic One';
+            color: var(--primary);
+            min-width: 32px;
+            text-align: center;
+        }
+
+        .lb-name { flex: 1; font-weight: 600; }
+        .lb-score { color: #fbbf24; font-weight: 600; }
+        .lb-empty { color: #64748b; text-align: center; padding: 20px 0; }
+
+        
+        
+        .menu-head {
+            position: sticky;
+            top: 0;
+            z-index: 3;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            height: 56px;
+            flex: 0 0 auto;
+            margin: 0 -25px 6px;
+            padding: 0 12px 0 25px;
+            background: var(--panel);
+            border-bottom: 1px solid var(--bord-soft);
+        }
+
+        .menu-head h3 {
+            margin: 0;
+            font-size: 1rem;
+            letter-spacing: .01em;
+        }
+
+        .menu-close {
+            flex: 0 0 auto;
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            margin: 0;
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, .1);
+            border-radius: 9px;
+            color: var(--text);
+            font-size: 1.15rem;
+            line-height: 1;
+            cursor: pointer;
+            transition: .18s;
+        }
+
+        .menu-close:hover { background: rgba(255, 255, 255, .06); border-color: rgba(255, 255, 255, .22); }
+
+        .nav-btn.active {
+            background: var(--primary) !important;
+            color: #fff !important;
+        }
+
+        .menu-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(5, 10, 25, .5);
+            opacity: 0;
+            pointer-events: none;
+            transition: .3s;
+            z-index: 90;
+        }
+
+        .menu-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+    </style>
+    <style>
+    
+    body{
+      --acc1:var(--primary);--acc2:color-mix(in srgb,var(--primary) 60%,#000);
+      --bg:#08070b;
+      --surface:#0e0d13;--surface2:#131019;
+      --line:rgba(255,255,255,.055);--line2:rgba(255,255,255,.1);
+      --grad:linear-gradient(90deg,var(--acc1),color-mix(in srgb,var(--acc2) 70%,var(--acc1)));
+      --grad-text:linear-gradient(180deg,color-mix(in srgb,var(--acc1) 72%,#fff) 28%,color-mix(in srgb,var(--acc2) 45%,transparent));
+      font-family:'Onest',sans-serif !important;
+      background:var(--bg) !important;
+    }
+    [data-theme="emerald"]{--surface:#0b1813;--surface2:#0e1e17}
+    [data-theme="sunset"]{--surface:#1b160c;--surface2:#221b0e}
+    [data-theme="rose"]{--surface:#190d14;--surface2:#20111a}
+    [data-theme="ocean"]{--surface:#0a1626;--surface2:#0d1c30}
+    *{letter-spacing:-.01em}
+    h1,h2,h3{font-weight:800 !important}
+    
+    .gtext{color:var(--acc1)}
+
+    
+    .header{
+      position:sticky;top:0;z-index:50;
+      background:#0a0910 !important;
+      border-bottom:1px solid var(--line) !important;
+      padding:.8rem 1.6rem !important;
+    }
+    .logo{
+      font-family:'Onest',sans-serif !important;
+      font-weight:800 !important;font-size:1.4rem;
+      color:var(--acc1) !important;
+      text-shadow:none !important;
+    }
+    .user{
+      border:1px solid var(--line) !important;
+      background:rgba(255,255,255,.04) !important;
+      border-radius:9px !important;padding:.45rem .9rem !important;font-weight:500 !important;
+      transition:.2s;
+    }
+    .user:hover{border-color:var(--line2) !important}
+    .burger{color:var(--muted) !important;transition:.2s}
+    .burger:hover{color:var(--text) !important}
+
+    
+    .menu{
+      background:#0a0910 !important;
+      border-right:1px solid var(--line) !important;
+    }
+    .menu .nav-btn{
+      background:transparent !important;border:1px solid transparent !important;border-radius:9px !important;
+      color:var(--muted) !important;font-family:'Onest',sans-serif !important;font-weight:500;
+      margin-top:6px !important;transition:.18s;
+    }
+    .menu .nav-btn:hover{background:rgba(255,255,255,.05) !important;color:var(--text) !important;transform:none}
+    .menu .nav-btn.active{background:var(--acc1) !important;color:#fff !important}
+    
+    .menu-head{
+      background:var(--surface) !important;
+      border-bottom:1px solid var(--line) !important;
+    }
+    .menu-head h3{font-weight:700 !important;font-family:'Onest',sans-serif}
+    .menu-close{font-family:'Onest',sans-serif;border-color:var(--line) !important;color:var(--muted) !important}
+    .menu-close:hover{border-color:var(--line2) !important;color:var(--text) !important;background:rgba(255,255,255,.05) !important}
+
+    
+    .stat{
+      background:var(--surface) !important;
+      outline:1px solid var(--line);outline-offset:-1px;
+      border:0 !important;border-radius:14px !important;
+      box-shadow:none !important;transition:.25s;
+    }
+    .stat:hover{transform:translateY(-3px);outline-color:var(--line2)}
+    .stat .num{font-weight:800 !important;font-family:'Onest',sans-serif !important}
+    .section-head h2{font-weight:800 !important}
+
+    
+    .course{
+      background:var(--surface) !important;
+      outline:1px solid var(--line);outline-offset:-1px;
+      border:0 !important;border-radius:14px !important;
+      transition:.25s !important;
+    }
+    .course:hover{
+      transform:translateY(-4px) !important;
+      outline-color:var(--line2) !important;
+      box-shadow:0 14px 34px -14px rgba(0,0,0,.7) !important;
+    }
+    .course h3{font-size:1.05rem}
+    .badge{
+      background:color-mix(in srgb,var(--primary) 15%,transparent) !important;
+      border:1px solid color-mix(in srgb,var(--primary) 35%,transparent) !important;
+      color:var(--primary) !important;font-weight:600;
+    }
+    .badge.easy{background:rgba(52,211,153,.12) !important;border-color:rgba(52,211,153,.4) !important;color:#6ee7b7 !important}
+    .badge.hard{background:rgba(248,113,113,.12) !important;border-color:rgba(248,113,113,.4) !important;color:#fca5a5 !important}
+    .course-tag{background:rgba(255,255,255,.05) !important;color:var(--muted) !important;border-radius:6px !important}
+
+    
+    .lb-row{
+      background:var(--surface) !important;
+      outline:1px solid var(--line);outline-offset:-1px;
+      border:0 !important;border-radius:12px !important;
+    }
+    .lb-row.me{
+      outline-color:color-mix(in srgb,var(--primary) 40%,transparent) !important;
+      background:color-mix(in srgb,var(--primary) 6%,var(--surface)) !important;
+      box-shadow:none !important;
+    }
+    .lb-pos{font-family:'Onest',sans-serif !important;font-weight:800 !important}
+
+    
+    .announcements .news-card{
+      border-radius:14px !important;
+      outline:1px solid var(--line);outline-offset:-1px;
+    }
+
+    
+    .content{max-width:100rem;margin:0 auto;padding:2rem 1.6rem 3rem}
+    @media(min-width:1024px){.content{padding:2.5rem 4rem 3rem}}
+
+    
+    @media(max-width: 600px) {
+      .header{padding:.6rem 1rem !important}
+      .logo{font-size:1.2rem !important}
+      .burger{font-size:1.5rem !important}
+      .content{padding:1.2rem 1rem 2rem !important}
+      .stats-row{gap:8px !important}
+      .stat{padding:10px 12px !important;border-radius:12px !important}
+      .stat .num{font-size:1.3rem !important}
+      .stat .lbl{font-size:.7rem !important}
+      .course{padding:12px !important;border-radius:12px !important}
+      .course h3{font-size:.95rem !important}
+      .badge{font-size:.65rem !important;padding:2px 6px !important}
+      .course-tag{font-size:.7rem !important;padding:2px 6px !important}
+      .section-head h2{font-size:1.1rem !important}
+      .lb-row{padding:10px 12px !important;border-radius:10px !important}
+      .lb-pos{font-size:.9rem !important;min-width:28px !important}
+      .lb-name{font-size:.9rem !important}
+      .lb-score{font-size:.9rem !important}
+      .news-card{padding:12px 14px !important;border-radius:12px !important}
+      .news-emoji{width:44px !important;height:44px !important;font-size:1.4rem !important}
+      .news-title{font-size:.95rem !important}
+      .news-desc{font-size:.8rem !important}
+      .arrow{font-size:1.4rem !important}
+      .menu{width:260px !important;padding:0 16px 16px !important}
+      .menu-head{margin:0 -16px 8px !important;padding:0 12px 0 16px !important;height:48px !important}
+      .menu-head h3{font-size:.95rem !important}
+      .menu-close{width:30px !important;height:30px !important;font-size:1rem !important}
+      .nav-btn,.menu-item{padding:10px 12px !important;font-size:.9rem !important;border-radius:8px !important}
+      .toast{padding:0 .5rem !important}
+      .toast__card{padding:.7rem 1rem !important;font-size:.85rem !important}
+    }
+
+    
+    .toast{position:fixed;inset:1.2rem 0 auto;z-index:200;display:flex;justify-content:center;padding:0 1rem;pointer-events:none}
+    .toast__card{
+      display:flex;gap:.9rem;align-items:center;padding:.8rem 1.5rem;border-radius:1rem;
+      background:linear-gradient(180deg,color-mix(in srgb,var(--acc1) 10%,var(--surface2)),var(--surface2));
+      outline:1px solid var(--line2);outline-offset:-1px;
+      box-shadow:0 20px 50px -20px #000c;
+      pointer-events:auto;animation:t-in .3s ease-out;max-width:30rem;
+      font-family:'Onest',sans-serif;
+    }
+    .toast__card.err{outline-color:color-mix(in srgb,#ef4444 45%,transparent)}
+    .toast.out{animation:t-out .3s ease-in forwards}
+    @keyframes t-in{from{opacity:0;transform:translateY(-10px)}to{opacity:1}}
+    @keyframes t-out{to{opacity:0;transform:translateY(-10px)}}
     </style>
 </head>
 
 <body>
+<div class="toast" id="toast"></div>
+<script>
+
+function showToast(msg, err = false) {
+    const t = document.getElementById('toast');
+    t.innerHTML = `<div class="toast__card${err ? ' err' : ''}"><span class="ti ${err ? 'ti-alert-triangle' : 'ti-circle-check'}" style="font-size:1.1rem;${err ? 'color:#f87171' : 'color:var(--acc1)'}"></span><span>${msg}</span></div>`;
+    clearTimeout(window._tt);
+    window._tt = setTimeout(() => { const c = t.firstChild; c && c.classList.add('out'); }, 3200);
+}</script>
 
     <div id="global-loader" class="loader-overlay hidden">
         <svg class="loader-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -270,37 +711,59 @@
     </div>
 
     <div class="menu" id="menu">
-        <h3>Меню</h3>
-        <button onclick="logout()">Выйти</button>
+        <div class="menu-head">
+            <h3>Меню</h3>
+            <button class="menu-close" onclick="closeMenu()" aria-label="Закрыть меню"><i class="ti ti-x" style="font-size:1.15rem"></i></button>
+        </div>
+        <button class="nav-btn active" id="nav-courses" onclick="showSection('courses')"><i class="ti ti-books"></i>Курсы</button>
+        <button class="nav-btn" id="nav-top" onclick="showSection('top')"><i class="ti ti-trophy"></i>Топ учеников</button>
+        <button class="menu-item" onclick="location.href='/profile'"><i class="ti ti-user-circle"></i>Профиль</button>
+        <button class="menu-item bottom" onclick="logout()"><i class="ti ti-logout"></i>Выйти</button>
     </div>
 
+    <div class="menu-overlay" id="menu-overlay" onclick="closeMenu()"></div>
+
     <header class="header">
-        <div class="burger" onclick="toggleMenu()">☰</div>
+        <div class="burger" onclick="toggleMenu()"><i class="ti ti-menu-2" style="font-size:1.8rem"></i></div>
         <div class="logo">NotALMS</div>
-        <a href="/profile" class="user" id="user-name">...</a>
+        <a href="/profile" class="user" id="user-name" title="профиль и темы">...</a>
     </header>
 
     <div class="announcements" id="announcements" style="display:none">
-        <div class="arrow" id="newsPrev">‹</div>
+        <div class="arrow" id="newsPrev"><i class="ti ti-chevron-left" style="font-size:2.2rem"></i></div>
 
         <div class="news-card">
-            <div class="news-emoji" id="newsEmoji">📢</div>
+            <div class="news-emoji" id="newsEmoji"><i class="ti ti-speakerphone" style="font-size:1.6rem;color:var(--acc1)"></i></div>
             <div>
                 <div class="news-title" id="newsTitle"></div>
                 <div class="news-desc" id="newsText"></div>
             </div>
         </div>
 
-        <div class="arrow" id="newsNext">›</div>
+        <div class="arrow" id="newsNext"><i class="ti ti-chevron-right" style="font-size:2.2rem"></i></div>
     </div>
 
     <main class="content">
-        <h2>Доступные курсы</h2>
-        <div id="courses" class="courses"></div>
+        <div class="stats-row" id="stats-row">
+            <div class="stat"><div class="num gold" id="st-rating">—</div><div class="lbl"><i class="ti ti-star" style="color:var(--acc1)"></i> мой рейтинг</div></div>
+            <div class="stat"><div class="num" id="st-solved">—</div><div class="lbl"><i class="ti ti-circle-check"></i> решено задач</div></div>
+            <div class="stat"><div class="num" id="st-place">—</div><div class="lbl"><i class="ti ti-trophy"></i> место в топе</div></div>
+            <div class="stat"><div class="num" id="st-courses">—</div><div class="lbl"><i class="ti ti-book"></i> курсов доступно</div></div>
+        </div>
+
+        <div id="section-courses">
+            <div class="section-head"><h2>Доступные курсы</h2></div>
+            <div id="courses" class="courses"></div>
+        </div>
+
+        <div id="section-top" style="display:none">
+            <div class="section-head"><h2><i class="ti ti-trophy" style="color:var(--acc1)"></i> Топ учеников</h2></div>
+            <div id="leaderboard" class="leaderboard"><div class="lb-empty">загрузка...</div></div>
+        </div>
     </main>
 
     <script>
-        const API = 'https://lmsapi.cloudpub.ru/v1';
+        const API = document.querySelector('meta[name="api-base"]')?.content || `${location.protocol}//${location.hostname}:8004/v1`;
         const token = localStorage.getItem('token');
         if (!token) location.href = '/';
 
@@ -310,7 +773,26 @@
         let news = [], index = 0, timer = null;
 
         function toggleMenu() {
-            document.getElementById('menu').classList.toggle('active');
+            const m = document.getElementById('menu');
+            const o = document.getElementById('menu-overlay');
+            m.classList.toggle('active');
+            o.classList.toggle('active');
+        }
+
+        function closeMenu() {
+            document.getElementById('menu').classList.remove('active');
+            document.getElementById('menu-overlay').classList.remove('active');
+        }
+
+        function showSection(name) {
+            const top = name === 'top';
+            document.getElementById('section-courses').style.display = top ? 'none' : '';
+            document.getElementById('section-top').style.display = top ? '' : 'none';
+            document.getElementById('nav-courses').classList.toggle('active', !top);
+            document.getElementById('nav-top').classList.toggle('active', top);
+            closeMenu();
+            window.scrollTo({ top: 0, behavior: 'instant' });
+            if (top) loadLeaderboard();
         }
 
         function logout() {
@@ -326,23 +808,29 @@
             return r.json();
         }
 
-        /* ===== NEWS ===== */
+        
+
+        function escapeEmoji(s) {
+            const d = document.createElement('div');
+            d.textContent = String(s || '');
+            return d.innerHTML;
+        }
 
         function renderNews() {
             const n = news[index];
 
             const emojiEl = document.getElementById('newsEmoji');
-            emojiEl.textContent = n.emoji || '📢';
+            emojiEl.innerHTML = n.emoji
+                ? escapeEmoji(n.emoji)
+                : '<i class="ti ti-speakerphone" style="font-size:1.6rem;color:var(--acc1)"></i>';
 
             const titleEl = document.getElementById('newsTitle');
-            titleEl.textContent = n.title || '';
+            titleEl.innerHTML = n.title || '';
 
             const textEl = document.getElementById('newsText');
-            textEl.textContent = n.text || '';
+            textEl.innerHTML = n.text || '';
 
-            // Универсальный парсинг эмодзи внутри карточки новостей
-            // folder: 'svg' делает эмодзи векторными и четкими
-            twemoji.parse(document.querySelector('.news-card'), { folder: 'svg', ext: '.svg' });
+            if (window.twemoji) twemoji.parse(document.querySelector('.news-card'), { folder: 'svg', ext: '.svg' });
         }
 
         function startAuto() {
@@ -377,43 +865,100 @@
             startAuto();
         };
 
-        /* ===== COURSES ===== */
+        
 
         async function loadCourses() {
             const list = await apiGet('/courses');
             coursesBox.innerHTML = '';
+            if (!list || !list.length) {
+                coursesBox.innerHTML = '<div class="course-empty">курсов пока нет — они появятся здесь</div>';
+                return;
+            }
             list.forEach(c => {
                 const el = document.createElement('div');
                 el.className = 'course';
-                // Добавляем эмодзи в заголовок курса, если есть, или просто текст
+                const diff = (c.difficulty || '').toLowerCase();
+                const tags = Array.isArray(c.tags) && c.tags.length
+                    ? `<div class="course-tags">${c.tags.map(t => `<span class="course-tag">${String(t)}</span>`).join('')}</div>`
+                    : '';
                 el.innerHTML = `
-          <h3>${c.title}</h3>
+          <div class="course-head"><h3>${c.title}</h3>${diff ? `<span class="badge ${diff}">${diff}</span>` : ''}</div>
           <div>${c.description || 'Без описания'}</div>
+          ${tags}
         `;
                 el.onclick = () => location.href = `/course/${c._id || c.id}`;
                 coursesBox.appendChild(el);
             });
-            // Парсим эмодзи во всем блоке курсов
-            twemoji.parse(coursesBox, { folder: 'svg', ext: '.svg' });
+            if (window.twemoji) twemoji.parse(coursesBox, { folder: 'svg', ext: '.svg' });
+            document.getElementById('st-courses').textContent = list.length;
         }
 
-        /* ===== INIT ===== */
+        
 
+        async function loadStats() {
+            try {
+                const p = await apiGet('/me/progress');
+                document.getElementById('st-solved').textContent = p.solved ?? 0;
+                document.getElementById('st-place').textContent = p.rating_position ? `#${p.rating_position}` : '—';
+            } catch { }
+            try {
+                const me = await apiGet('/search_user');
+                document.getElementById('st-rating').textContent = me.rating ?? 0;
+                if (me.theme) {
+                    document.body.dataset.theme = me.theme;
+                    localStorage.setItem('theme', me.theme);
+                }
+                const chip = document.getElementById('user-name');
+                if (chip && me.name_color) chip.style.color = me.name_color;
+            } catch { }
+        }
+
+        async function loadLeaderboard() {
+            const box = document.getElementById('leaderboard');
+            try {
+                const me = await apiGet('/me');
+                const list = await apiGet('/rating/leaderboard');
+                if (!list || !list.length) {
+                    box.innerHTML = '<div class="lb-empty">пока никто не решил ни одной задачи — стань первым</div>';
+                    return;
+                }
+                box.innerHTML = '';
+                list.forEach((u, i) => {
+                    const row = document.createElement('div');
+                    row.className = 'lb-row' + (u.user_uid === me.user_uid ? ' me' : '');
+                    const color = u.name_color ? ` style="color:${u.name_color}"` : '';
+                    row.innerHTML = `<div class="lb-pos">${i + 1}</div><div class="lb-name"${color}>${u.user_login}</div><div class="lb-score"><i class="ti ti-star" style="color:#fbbf24"></i> ${u.rating ?? 0}</div>`;
+                    box.appendChild(row);
+                });
+            } catch {
+                box.innerHTML = '<div class="lb-empty">не удалось загрузить топ</div>';
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeMenu();
+        });
+
+        
         (async () => {
             try {
                 loader.classList.remove('hidden');
 
                 const me = await apiGet('/me');
                 document.getElementById('user-name').textContent = me.user_login;
-
-                // Искусственная задержка, чтобы красиво показать лоадер (по желанию можно убрать)
-                // await new Promise(r => setTimeout(r, 500)); 
+                if (me.theme) {
+                    document.body.dataset.theme = me.theme;
+                    localStorage.setItem('theme', me.theme);
+                }
+                if (me.name_color) document.getElementById('user-name').style.color = me.name_color;
 
                 loader.classList.add('hidden');
                 setTimeout(() => loader.remove(), 300);
 
                 await loadNews();
                 await loadCourses();
+                loadStats();
+                loadLeaderboard();
 
             } catch (e) {
                 loader.remove();

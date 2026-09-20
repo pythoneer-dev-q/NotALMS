@@ -4,507 +4,1203 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NotALMS</title>
-
-    <link rel="icon" href="../../../favicon.ico" sizes="32x32">
+    <title>NotALMS — современная учебная платформа</title>
+    <meta name="description"
+        content="Платформа для курсов по любым темам: интерактивные задачи с мгновенной проверкой, рейтинг и вход через Telegram.">
+    <link rel="icon" href="/favicon.ico" sizes="32x32">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Oswald:wght@400;600&family=Roboto+Mono:wght@300;400&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
-
+    <script>
+        (function() {
+            var theme = localStorage.getItem('theme');
+            if (theme) document.documentElement.dataset.theme = theme;
+        })();
+    </script>
     <style>
+        
         :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --bg: #0f172a;
-            --text: #e2e8f0;
-            --accent: #f472b6;
-            --gray: #475569;
+            --acc1: #FF5099;
+            --acc2: #FF2E2E;
+            --bg: #08070b;
+            --surface: #0e0d13;
+            --surface2: #131019;
+            --panel: rgba(10, 9, 14, .82);
+            --line: rgba(255, 255, 255, .055);
+            --line2: rgba(255, 255, 255, .1);
+            --text: #f4f4f5;
+            --muted: rgba(255, 255, 255, .5);
+            --grad: linear-gradient(90deg, var(--acc1), var(--acc2));
+            --r: 14px;
+        }
+
+        [data-theme="emerald"] {
+            --acc1: #34d399;
+            --acc2: #0d9488;
+            --bg: #06120c;
+            --surface: #0b1813;
+            --surface2: #0e1e17
+        }
+
+        [data-theme="sunset"] {
+            --acc1: #fbbf24;
+            --acc2: #f97316;
+            --bg: #141008;
+            --surface: #1b160c;
+            --surface2: #221b0e
+        }
+
+        [data-theme="rose"] {
+            --acc1: #fb7185;
+            --acc2: #e11d48;
+            --bg: #120a0f;
+            --surface: #190d14;
+            --surface2: #20111a
+        }
+
+        [data-theme="ocean"] {
+            --acc1: #38bdf8;
+            --acc2: #0284c7;
+            --bg: #061019;
+            --surface: #0a1626;
+            --surface2: #0d1c30
+        }
+
+        * {
+            box-sizing: border-box
         }
 
         body {
             margin: 0;
-            font-family: 'Oswald', sans-serif;
             background: var(--bg);
             color: var(--text);
+            font-family: 'Onest', sans-serif;
             min-height: 100vh;
             overflow-x: hidden;
+            -webkit-font-smoothing: antialiased
         }
 
-        /* ===== LOADER ===== */
-        .loader-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--bg);
-            z-index: 9999;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: opacity 0.3s ease;
+        h1,
+        h2,
+        h3 {
+            font-weight: 800;
+            letter-spacing: -.01em;
+            margin: 0
         }
 
-        .loader-overlay.hidden {
-            opacity: 0;
-            pointer-events: none;
+        p {
+            margin: 0
         }
 
-        .loader-svg {
-            width: 80px;
-            height: 80px;
-            fill: var(--primary);
+        a {
+            color: inherit;
+            text-decoration: none
         }
 
-        .container {
-            max-width: 1200px;
+        .smooth {
+            transition: all .2s ease
+        }
+
+        
+        
+        .gtext {
+            color: var(--acc1)
+        }
+
+        
+        .card {
+            background: var(--surface);
+            outline: 1px solid var(--line);
+            outline-offset: -1px;
+            border-radius: var(--r)
+        }
+
+        .card-glow {
+            background: var(--surface);
+        }
+
+        
+        .wrap {
+            max-width: 100rem;
             margin: 0 auto;
-            padding: 0 20px;
+            padding: 0 1rem
         }
 
-        .bg-pattern {
-            position: fixed;
-            inset: 0;
-            background:
-                radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(244, 114, 182, 0.15) 0%, transparent 50%);
-            opacity: 0.3;
-            z-index: -1;
+        @media(min-width:1024px) {
+            .wrap {
+                padding: 0 4rem
+            }
         }
 
+        
         .header {
-            padding: 20px 0;
-            position: relative;
-            z-index: 10;
+            position: fixed;
+            inset: 0 0 auto;
+            z-index: 50;
+            background: rgba(5, 5, 8, .85);
+            -webkit-backdrop-filter: blur(12px);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, .05);
+            padding: .8rem 1rem;
         }
 
-        .header__inner {
+        @media(min-width:1024px) {
+            .header {
+                padding: .8rem 4rem
+            }
+        }
+
+        .header__in {
+            max-width: 100rem;
+            margin: 0 auto;
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: space-between
+        }
+
+        .header__burger {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: transparent;
+            color: var(--text);
+            cursor: pointer;
+            border-radius: 10px;
+            transition: .2s;
+        }
+
+        .header__burger:hover {
+            background: rgba(255, 255, 255, .08);
+        }
+
+        .header__burger i {
+            font-size: 1.5rem;
+        }
+
+        @media(min-width:1024px) {
+            .header__burger {
+                display: none;
+            }
         }
 
         .logo {
-            font-family: 'Dela Gothic One', cursive;
-            font-size: 2.5rem;
-            color: var(--primary);
-            text-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+            font-weight: 800;
+            font-size: 1.5rem;
+            letter-spacing: .02em;
+            cursor: pointer
         }
 
-        .burger {
+        .logo span {
+            font-size: .6em;
+            font-weight: 500;
+            color: var(--muted);
+            margin-left: .5em
+        }
+
+        .nav {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
             display: none;
-            flex-direction: column;
-            gap: 6px;
-            background: none;
-            border: none;
-            cursor: pointer;
+            gap: 3rem
         }
 
-        .burger span {
-            width: 30px;
-            height: 3px;
-            background: var(--primary);
+        @media(min-width:1024px) {
+            .nav {
+                display: flex
+            }
         }
 
-        .hero {
-            min-height: 90vh;
+        .nav a {
+            display: flex;
+            gap: .7rem;
+            align-items: center;
+            color: rgba(255, 255, 255, .5);
+            font-weight: 500;
+            font-size: 1rem;
+            transition: .2s
+        }
+
+        .nav a:hover {
+            color: var(--text);
+            transform: scale(.98)
+        }
+
+        .nav a b {
+            color: var(--acc1);
+            font-weight: 400
+        }
+
+        .header__right {
             display: flex;
             align-items: center;
+            gap: 1.2rem
         }
 
-        .hero__content {
-            max-width: 700px;
-        }
-
-        .hero__title {
-            font-size: 4rem;
-            line-height: 1.1;
-            margin-bottom: 20px;
-        }
-
-        .highlight {
-            color: var(--primary);
-            text-shadow: 0 0 15px var(--primary);
-        }
-
-        .hero__text {
-            font-size: 1.4rem;
-            margin-bottom: 40px;
-            opacity: 0.9;
-            font-weight: 300;
-        }
-
-        .hero__buttons {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            padding: 14px 32px;
-            font-size: 1.1rem;
-            border: none;
-            border-radius: 50px;
+        
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            gap: .65rem;
+            padding: .8rem 1.5rem;
+            border-radius: 12px;
+            border: 1px solid transparent;
             cursor: pointer;
-            transition: all 0.3s ease;
-            font-family: 'Oswald', sans-serif;
-        }
-
-        .btn--primary {
-            background: var(--primary);
-            color: white;
-            box-shadow: 0 5px 20px rgba(99, 102, 241, 0.4);
-        }
-
-        .btn--primary:hover {
-            background: #818cf8;
-            transform: translateY(-3px);
-        }
-
-        .btn--secondary {
-            background: transparent;
+            background: color-mix(in srgb, var(--acc1) 16%, transparent);
+            outline: 1px solid var(--line);
+            outline-offset: -1px;
             color: var(--text);
-            border: 2px solid var(--primary);
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: .2s ease;
         }
 
-        .btn--secondary:hover {
-            background: var(--primary);
-            color: white;
+        .pill:hover {
+            transform: scale(.97);
+            filter: brightness(1.15)
         }
 
-        .btn--block {
-            width: 100%;
+        .pill:active {
+            transform: scale(.94)
         }
 
-        .auth-modal {
-            position: fixed;
+        .pill--strong {
+            background: var(--acc1);
+            color: #fff;
+        }
+
+        .pill--ghost {
+            background: rgba(255, 255, 255, .04)
+        }
+
+        .pill--ghost:hover {
+            background: rgba(255, 255, 255, .08)
+        }
+    </style>
+    <style>
+        
+        .hero-band {
+            margin-top: 5.5rem;
+            position: relative;
+            overflow: hidden;
+            border-radius: 14px;
+            outline: 1px solid var(--line);
+            outline-offset: -1px;
+            background: var(--surface);
+        }
+
+        .hero-band::before {
+            content: '';
+            position: absolute;
             inset: 0;
+            background: linear-gradient(180deg, color-mix(in srgb, var(--acc1) 14%, transparent), transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero-in {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            gap: 3rem;
+            padding: 4rem 1.5rem 3.5rem
+        }
+
+        @media(min-width:768px) {
+            .hero-in {
+                padding: 5rem 4rem 4.5rem
+            }
+        }
+
+        @media(min-width:1280px) {
+            .hero-in {
+                grid-template-columns: 2fr 1fr;
+                padding-bottom: 4.5rem
+            }
+        }
+
+        .hero-txt h1 {
+            font-size: clamp(1.9rem, 4.5vw, 3.2rem);
+            line-height: 1.08
+        }
+
+        .hero-txt h2 {
+            font-size: clamp(1.9rem, 4.5vw, 3.2rem);
+            line-height: 1.08;
+            margin-top: .2rem
+        }
+
+        .hero-txt p {
+            margin-top: 1.4rem;
+            color: var(--muted);
+            font-size: 1.05rem;
+            line-height: 1.6;
+            max-width: 34rem
+        }
+
+        .hero-btns {
+            display: flex;
+            flex-wrap: wrap;
+            gap: .9rem;
+            margin-top: 2.2rem
+        }
+
+        .tg-hint {
+            margin-top: 1.1rem;
+            color: var(--muted);
+            font-size: .92rem
+        }
+
+        .tg-hint b {
+            color: var(--text);
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 1px dashed var(--line2)
+        }
+
+        .tg-hint b:hover {
+            color: var(--acc1);
+            border-color: var(--acc1)
+        }
+
+        
+        .hero-panel {
+            position: relative;
+            z-index: 3;
+            align-self: center;
+            display: flex;
+            flex-direction: column;
+            gap: 1.1rem;
+            padding: 1.6rem;
+            border-radius: var(--r);
+            outline: 1px solid var(--line);
+            outline-offset: -1px;
+            background: var(--surface2);
+        }
+
+        .hstat {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            padding-bottom: 1.1rem;
+            border-bottom: 1px solid var(--line)
+        }
+
+        .hstat:last-child {
+            padding-bottom: 0;
+            border-bottom: 0
+        }
+
+        .hstat .ico {
+            font-size: 1.6rem
+        }
+
+        .hstat b {
+            display: block;
+            font-size: 1.7rem;
+            font-weight: 700;
+            line-height: 1.1
+        }
+
+        .hstat span {
+            color: var(--muted);
+            font-size: .92rem
+        }
+
+        .hdiv {
+            display: none
+        }
+    </style>
+    <style>
+        
+        .sect {
+            padding: 5.5rem 0 1rem
+        }
+
+        .sec-title {
+            position: relative;
+            display: inline-block;
+            font-size: clamp(1.7rem, 4vw, 3rem);
+            font-weight: 800
+        }
+
+        .sec-title i {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: -2px;
+            height: .5rem;
+            border-radius: 2px;
+            background: color-mix(in srgb, var(--acc1) 55%, transparent)
+        }
+
+        .sec-title span {
+            position: relative;
+            z-index: 1
+        }
+
+        .sec-sub {
+            display: flex;
+            justify-content: center;
+            padding-top: 1.6rem
+        }
+
+        .sec-sub p {
+            max-width: 34rem;
+            text-align: center;
+            color: var(--muted);
+            font-size: 1.05rem
+        }
+
+        
+        .feat-grid {
+            display: grid;
+            gap: 1rem;
+            padding-top: 2.6rem
+        }
+
+        @media(min-width:1024px) {
+            .feat-grid {
+                grid-template-columns: repeat(3, 1fr)
+            }
+        }
+
+        .feat {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            padding: 2rem;
+            border-radius: var(--r);
+            outline: 1px solid var(--line);
+            outline-offset: -1px;
+            background: var(--surface);
+            transition: .25s ease
+        }
+
+        .feat:hover {
+            transform: translateY(-4px);
+            outline-color: var(--line2)
+        }
+
+        .feat__ico {
+            font-size: 1.7rem;
+            margin-bottom: .4rem
+        }
+
+        .feat h3 {
+            font-size: 1.25rem
+        }
+
+        .feat p {
+            color: var(--muted);
+            line-height: 1.6;
+            font-size: .98rem
+        }
+
+        .feat__more {
+            display: flex;
+            gap: .6rem;
+            align-items: center;
+            padding-top: 1rem;
+            color: var(--text);
+            font-weight: 500;
+            font-size: .95rem
+        }
+
+        .feat__more i {
+            color: var(--acc1);
+            font-style: normal;
+            transition: .2s
+        }
+
+        .feat:hover .feat__more i {
+            transform: translateX(4px)
+        }
+
+        
+        .step {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: .8rem;
+            padding: 2rem;
+            border-radius: var(--r);
+            outline: 1px solid var(--line);
+            outline-offset: -1px;
+            background: var(--surface);
+            transition: .25s
+        }
+
+        .step:hover {
+            transform: translateY(-4px);
+            outline-color: var(--line2)
+        }
+
+        .step__num {
+            width: 2.2rem;
+            height: 2.2rem;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
+            background: color-mix(in srgb, var(--acc1) 18%, var(--surface));
+            border: 1px solid color-mix(in srgb, var(--acc1) 35%, transparent);
+            color: var(--acc1);
+            font-weight: 700;
+        }
+
+        .step h3 {
+            font-size: 1.1rem
+        }
+
+        .step p {
+            color: var(--muted);
+            line-height: 1.6;
+            font-size: .95rem
+        }
+
+        .step-grid {
+            display: grid;
+            gap: 1rem;
+            padding-top: 2.6rem
+        }
+
+        @media(min-width:1024px) {
+            .step-grid {
+                grid-template-columns: repeat(3, 1fr)
+            }
+        }
+    </style>
+    <style>
+        
+        .modal {
+            position: fixed;
+            inset: 0;
             z-index: 100;
             display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem
         }
 
-        .auth-modal.active {
-            display: flex;
+        .modal.active {
+            display: flex
         }
 
-        .auth-modal__overlay {
+        .modal__overlay {
             position: absolute;
             inset: 0;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(10px);
+            background: rgba(3, 3, 6, .7);
+            -webkit-backdrop-filter: blur(6px);
+            backdrop-filter: blur(6px)
         }
 
-        .auth-modal__content {
-            background: rgba(20, 40, 70, 0.95);
-            padding: 40px;
-            border-radius: 20px;
-            width: 90%;
-            max-width: 420px;
+        .modal__card {
             position: relative;
-            border: 1px solid var(--primary);
-            box-shadow: 0 0 40px rgba(99, 102, 241, 0.3);
-        }
-
-        .auth-modal__close {
-            position: absolute;
-            top: 15px;
-            right: 20px;
-            background: none;
-            border: none;
-            font-size: 2rem;
-            color: var(--text);
-            cursor: pointer;
-        }
-
-        .auth-form input {
             width: 100%;
-            padding: 14px;
-            margin: 12px 0;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid var(--primary);
-            border-radius: 10px;
-            color: white;
-            font-size: 1rem;
+            max-width: 26rem;
+            padding: 2.2rem;
+            border-radius: 18px;
+            background: linear-gradient(180deg, color-mix(in srgb, var(--acc1) 7%, var(--surface)), var(--surface) 40%);
+            outline: 1px solid var(--line);
+            outline-offset: -1px;
+            box-shadow: 0 20px 50px -20px #000c;
+            animation: m-in .25s ease-out;
         }
 
-        .auth-form input:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            border-color: #555;
+        @keyframes m-in {
+            from {
+                opacity: 0;
+                transform: translateY(12px) scale(.98)
+            }
+
+            to {
+                opacity: 1
+            }
         }
 
-        .auth-form input::placeholder {
-            color: rgba(255, 255, 255, 0.6);
-        }
-
-        .auth-modal__toggle {
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        .link {
-            color: var(--primary);
+        .modal__close {
+            position: absolute;
+            top: .9rem;
+            right: 1rem;
+            background: none;
+            border: 0;
+            color: var(--muted);
+            font-size: 1.4rem;
             cursor: pointer;
+            transition: .2s
         }
 
-        .link:hover {
-            text-decoration: underline;
+        .modal__close:hover {
+            color: var(--text)
         }
 
-        .auth-form label input[type="checkbox"] {
-            accent-color: var(--primary);
-            width: 18px;
-            height: 18px;
-            margin-right: 8px;
-            vertical-align: middle;
+        .modal__title {
+            font-size: 1.35rem;
+            font-weight: 800;
+            margin-bottom: 1.4rem
         }
 
-        @media (max-width: 768px) {
-            .hero__title { font-size: 3rem; }
-            .hero__buttons { flex-direction: column; }
-            .btn { width: 100%; }
-            .burger { display: flex; }
+        .modal input {
+            width: 100%;
+            margin-bottom: .8rem;
+            padding: .85rem 1rem;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, .04);
+            outline: 1px solid var(--line);
+            outline-offset: -1px;
+            border: 0;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 1rem;
+            transition: .2s;
+        }
+
+        .modal input:focus {
+            outline-color: color-mix(in srgb, var(--acc1) 45%, transparent)
+        }
+
+        .modal input::placeholder {
+            color: rgba(255, 255, 255, .3)
+        }
+
+        .modal label {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            color: var(--muted);
+            font-size: .92rem;
+            margin: .4rem 0 .8rem;
+            cursor: pointer
+        }
+
+        .modal label input {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--acc1);
+            margin: 0
+        }
+
+        .modal .note {
+            color: rgba(255, 255, 255, .35);
+            font-size: .8rem;
+            margin: -.3rem 0 .9rem
+        }
+
+        .pill--block {
+            width: 100%;
+            justify-content: center;
+            margin-top: .4rem
+        }
+
+        .modal__toggle {
+            text-align: center;
+            color: var(--muted);
+            font-size: .92rem;
+            margin-top: 1.1rem
+        }
+
+        .modal__toggle .link {
+            color: var(--acc1);
+            cursor: pointer
+        }
+
+        .modal__toggle .link:hover {
+            text-decoration: underline
+        }
+
+        
+        .toast {
+            position: fixed;
+            inset: 1.2rem 0 auto;
+            z-index: 200;
+            display: flex;
+            justify-content: center;
+            padding: 0 1rem;
+            pointer-events: none
+        }
+
+        .toast__card {
+            display: flex;
+            gap: .9rem;
+            align-items: center;
+            padding: .8rem 1.5rem;
+            border-radius: 1rem;
+            background: linear-gradient(180deg, color-mix(in srgb, var(--acc1) 10%, var(--surface2)), var(--surface2));
+            outline: 1px solid var(--line2);
+            outline-offset: -1px;
+            box-shadow: 0 20px 50px -20px #000c;
+            pointer-events: auto;
+            animation: t-in .3s ease-out;
+            max-width: 30rem;
+        }
+
+        .toast__card.err {
+            outline-color: color-mix(in srgb, #ef4444 45%, transparent)
+        }
+
+        .toast.out {
+            animation: t-out .3s ease-in forwards
+        }
+
+        @keyframes t-in {
+            from {
+                opacity: 0;
+                transform: translateY(-10px)
+            }
+
+            to {
+                opacity: 1
+            }
+        }
+
+        @keyframes t-out {
+            to {
+                opacity: 0;
+                transform: translateY(-10px)
+            }
+        }
+
+        
+        .footer {
+            position: relative;
+            overflow: hidden;
+            background: #000;
+            margin-top: 6rem
+        }
+
+        
+        .footer::before {
+            content: '';
+            position: absolute;
+            inset: 0 auto auto 0;
+            width: 100%;
+            height: 1px;
+            background: rgba(255, 255, 255, .06)
+        }
+
+        .footer .fbar {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .1) 50%, transparent)
+        }
+
+        .footer__in {
+            position: relative;
+            max-width: 100rem;
+            margin: 0 auto;
+            padding: 3.5rem 1rem 2.5rem
+        }
+
+        @media(min-width:1024px) {
+            .footer__in {
+                padding: 4rem 4rem 2.5rem
+            }
+        }
+
+        .footer__grid {
+            display: flex;
+            flex-direction: column;
+            gap: 3rem
+        }
+
+        @media(min-width:1024px) {
+            .footer__grid {
+                flex-direction: row;
+                justify-content: space-between
+            }
+        }
+
+        .fbrand p {
+            color: rgba(255, 255, 255, .4);
+            font-size: .9rem;
+            line-height: 1.6;
+            max-width: 18rem;
+            margin-top: 1rem
+        }
+
+        .fcol p.fhead {
+            font-size: .7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .18em;
+            color: rgba(255, 255, 255, .3);
+            margin-bottom: 1.1rem
+        }
+
+        .fcol a {
+            display: flex;
+            align-items: center;
+            gap: .7rem;
+            color: rgba(255, 255, 255, .55);
+            font-size: .95rem;
+            margin-bottom: .9rem;
+            transition: .2s;
+            width: fit-content
+        }
+
+        .fcol a:hover {
+            color: var(--text)
+        }
+
+        .fcol a i {
+            color: var(--acc1);
+            font-style: normal;
+            font-size: .8rem;
+            opacity: 0;
+            transform: translateX(-4px);
+            transition: .2s
+        }
+
+        .fcol a:hover i {
+            opacity: 1;
+            transform: none
+        }
+
+        .footer__bottom {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: space-between;
+            color: rgba(255, 255, 255, .4);
+            font-size: .85rem;
+            margin-top: 2.5rem;
+            padding-top: 1.8rem;
+            border-top: 1px solid rgba(255, 255, 255, .06)
+        }
+
+        @media(max-width:768px) {
+            .hero-in {
+                padding: 3rem 1.4rem
+            }
+
+            
+            .hero-panel {
+                flex-direction: row;
+                justify-content: space-between;
+                gap: .8rem;
+                padding: 1.1rem;
+            }
+
+            .hstat { border-bottom: 0; padding-bottom: 0; }
+            .hstat .ico { font-size: 1.2rem; }
+            .hstat b { font-size: 1.2rem; }
+            .hstat span { font-size: .75rem; }
+            .hero-btns .pill { width: 100%; justify-content: center; }
+            .header { padding: .7rem 1rem; }
+            .sect { padding: 3.5rem 0 1rem; }
+            .feat, .step { padding: 1.4rem; }
+
+            
+            .header__mobile-panel {
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: rgba(5, 5, 8, .98);
+                -webkit-backdrop-filter: blur(12px);
+                backdrop-filter: blur(12px);
+                border-bottom: 1px solid rgba(255, 255, 255, .05);
+                padding: 1rem;
+                display: none;
+                z-index: 49;
+            }
+
+            .header__mobile-panel.open {
+                display: block;
+            }
+
+            .mobile-nav {
+                display: flex;
+                flex-direction: column;
+                gap: .5rem;
+            }
+
+            .mobile-nav a {
+                display: flex;
+                align-items: center;
+                gap: .7rem;
+                padding: .9rem 1rem;
+                border-radius: 10px;
+                color: rgba(255, 255, 255, .7);
+                font-weight: 500;
+                font-size: 1rem;
+                transition: .2s;
+                background: rgba(255, 255, 255, .03);
+            }
+
+            .mobile-nav a:hover {
+                background: rgba(255, 255, 255, .08);
+                color: var(--text);
+            }
+
+            .mobile-nav a b {
+                color: var(--acc1);
+                font-weight: 400;
+            }
         }
     </style>
 </head>
 
 <body>
-    <div id="global-loader" class="loader-overlay hidden">
-        <svg class="loader-svg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z" opacity=".25"/>
-            <path d="M10.72,19.9a8,8,0,0,1-6.5-9.79A7.77,7.77,0,0,1,10.4,4.16a8,8,0,0,1,9.49,6.52A1.54,1.54,0,0,0,21.38,12h.13a1.37,1.37,0,0,0,1.38-1.54,11,11,0,1,0-12.7,12.39A1.54,1.54,0,0,0,12,21.34h0A1.47,1.47,0,0,0,10.72,19.9Z">
-                <animateTransform attributeName="transform" type="rotate" dur="0.75s" values="0 12 12;360 12 12" repeatCount="indefinite"/>
-            </path>
-        </svg>
-    </div>
-
-    <div class="bg-pattern"></div>
+    <div class="toast" id="toast"></div>
 
     <header class="header">
-        <div class="container header__inner">
-            <h1 class="logo">NotALMS</h1>
-            <button class="burger" aria-label="Открыть меню">
-                <span></span><span></span><span></span>
-            </button>
+        <div class="header__in">
+            <button class="header__burger" id="header-burger" aria-label="Меню"><i class="ti ti-menu-2"></i></button>
+            <div class="logo gtext">NotALMS</div>
+            <div class="header__right">
+                <button class="pill pill--strong" id="login-btn">Войти</button>
+            </div>
+        </div>
+        
+        
+        <div class="header__mobile-panel" id="header-mobile-panel">
         </div>
     </header>
 
-    <main class="main">
-        <section class="hero">
-            <div class="container hero__content">
-                <h2 class="hero__title">
-                    Учись новому<br>
-                    <span class="highlight">интерактивно</span>
-                </h2>
-                <p class="hero__text">
-                    Платформа для курсов по любым темам: программирование, науки, языки, дизайн и многое другое.<br>
-                    Практические задания с мгновенной проверкой ответов.
-                </p>
-                <div class="hero__buttons">
-                    <button class="btn btn--primary" id="login-btn">Войти</button>
-                    <button class="btn btn--secondary" id="register-btn">Регистрация</button>
+    
+    <div class="wrap">
+        <section class="hero-band">
+            <div class="hero-in">
+                <div class="hero-txt">
+                    <h1>Учись новому</h1>
+                    <h2 class="gtext">интерактивно</h2>
+                    <p>Платформа для курсов по любым темам: программирование, науки, языки, дизайн.
+                        Задания с мгновенной проверкой и разбором ошибок, рейтинг и достижения.</p>
+                    <div class="hero-btns">
+                        <button class="pill pill--strong" id="register-btn">Начать бесплатно →</button>
+                        <button class="pill pill--ghost" id="login-btn2">У меня есть аккаунт</button>
+                    </div>
+                    <p class="tg-hint">Без пароля: в боте жми <b id="tg-hero-btn">«войти по ссылке»</b> — сайт
+                        авторизует сам</p>
+                </div>
+                <div class="hero-panel">
+                    <div class="hstat"><span class="ico ti ti-users"></span>
+                        <div><b id="stat-users">—</b><span>учеников</span></div>
+                    </div>
+                    <div class="hdiv"></div>
+                    <div class="hstat"><span class="ico ti ti-books"></span>
+                        <div><b id="stat-courses">—</b><span>курсов</span></div>
+                    </div>
+                    <div class="hdiv"></div>
+                    <div class="hstat"><span class="ico ti ti-wallet"></span>
+                        <div><b>0 ₽</b><span>бесплатно</span></div>
+                    </div>
                 </div>
             </div>
         </section>
+    </div>
 
-        <section class="auth-modal" id="auth-modal">
-            <div class="auth-modal__overlay"></div>
-            <div class="auth-modal__content">
-                <button class="auth-modal__close">×</button>
-                <h2 class="auth-modal__title" id="form-title">Вход</h2>
-                <form id="auth-form" class="auth-form">
-                    <input type="text" placeholder="Логин или email" required>
-                    <input type="password" placeholder="Пароль" required>
-                    
-                    <div id="extra-fields"></div>
-                    
-                    <button type="submit" class="btn btn--primary btn--block">Войти</button>
-                </form>
-                <p class="auth-modal__toggle" id="toggle-text">
-                    Нет аккаунта? <span class="link">Зарегистрироваться</span>
-                </p>
+    
+    <section class="sect" id="features">
+        <div class="wrap" style="text-align:center">
+            <div class="sec-title"><i></i><span>Почему NotALMS</span></div>
+            <div class="sec-sub">
+                <p>Всё для обучения в одном месте — теория, практика и мотивация.</p>
             </div>
-        </section>
-    </main>
+            <div class="feat-grid" style="text-align:left">
+                <div class="feat">
+                    <div class="feat__ico ti ti-bolt" style="color:var(--acc1)"></div>
+                    <h3>Мгновенная проверка</h3>
+                    <p>Ответ проверяется сразу: разбор ошибок по позициям, подсказки и очки за первое решение.</p>
+                </div>
+                <div class="feat card-glow">
+                    <div class="feat__ico ti ti-trophy" style="color:var(--acc1)"></div>
+                    <h3>Рейтинг и прогресс</h3>
+                    <p>Очки за решенные задачи, топ учеников, достижения и цвет имени — видно, как ты растешь.</p>
+                </div>
+                <div class="feat">
+                    <div class="feat__ico ti ti-palette" style="color:var(--acc1)"></div>
+                    <h3>Твой стиль</h3>
+                    <p>Пять тем оформления и цвет имени — платформа выглядит так, как нравится именно тебе.</p>
+                </div>
+            </div>
+        </div>
+    </section>
 
+    
+    <section class="sect" id="howto">
+        <div class="wrap" style="text-align:center">
+            <div class="sec-title"><i></i><span>Как это работает</span></div>
+            <div class="sec-sub">
+                <p>Три шага от регистрации до первого места в топе.</p>
+            </div>
+            <div class="step-grid" style="text-align:left">
+                <div class="step">
+                    <div class="step__num">1</div>
+                    <h3>Создай аккаунт</h3>
+                    <p>Пара полей — или вообще без пароля: бот в Telegram выдает ссылку-вход одним тапом.</p>
+                </div>
+                <div class="step">
+                    <div class="step__num">2</div>
+                    <h3>Открой курс</h3>
+                    <p>Теория с текстом, картинками и разборами — весь материал урока на одной странице.</p>
+                </div>
+                <div class="step">
+                    <div class="step__num">3</div>
+                    <h3>Решай и расти</h3>
+                    <p>Проверка ответа мгновенная, с разбором ошибок. Очки идут в рейтинг и достижения.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="fbar"></div>
+        <div class="footer__in">
+            <div class="footer__grid">
+                <div class="fbrand">
+                    <div class="logo gtext" style="font-size:1.3rem">NotALMS</div>
+                    <p>Современная учебная платформа: интерактивные курсы, рейтинг и Telegram рядом.</p>
+                </div>
+                <div class="fcol">
+                    <p class="fhead">Платформа</p>
+                    <a href="#features">Преимущества <i>→</i></a>
+                    <a href="#howto">Как это работает <i>→</i></a>
+                    <a href="/dash" id="f-dash">Мой дашборд <i>→</i></a>
+                </div>
+                <div class="fcol">
+                    <p class="fhead">Сообщество</p>
+                    <a href="https://t.me/NotALMS" target="_blank">Telegram канал <i>→</i></a>
+                </div>
+            </div>
+            <div class="footer__bottom">
+                <span>© 2026 <b style="color:rgba(255,255,255,.7)">NotALMS</b></span>
+            </div>
+        </div>
+    </footer>
+    <section class="modal" id="auth-modal">
+        <div class="modal__overlay"></div>
+        <div class="modal__card">
+            <button class="modal__close">×</button>
+            <h2 class="modal__title" id="form-title">Вход</h2>
+            <form id="auth-form">
+                <input type="text" id="login-input" placeholder="Логин" required autocomplete="username">
+                <input type="password" placeholder="Пароль" required>
+                <div id="extra-fields"></div>
+                <button type="submit" class="pill pill--strong pill--block" id="submit-btn">Войти</button>
+            </form>
+            <p class="modal__toggle" id="toggle-text">Нет аккаунта? <span class="link"
+                    id="toggle-link">Зарегистрироваться</span></p>
+            <p class="modal__toggle" id="tg-toggle-row"><span class="link" id="tg-login-btn">войти по коду из
+                    Telegram</span></p>
+            <p class="modal__toggle" id="tg-back-row" style="display:none"><span class="link" id="tg-back-btn">←
+                    вернуться ко входу по паролю</span></p>
+        </div>
+    </section>
     <script>
+        
         document.addEventListener('DOMContentLoaded', () => {
-            const API_BASE = 'https://lmsapi.cloudpub.ru/v1';
-            const loader = document.getElementById('global-loader');
-
-            // --- 1. ПРОВЕРКА СЕССИИ ПРИ ВХОДЕ ---
-            const token = localStorage.getItem('token');
-            if (token) {
-                // Если есть токен, сразу показываем лоадер и проверяем
-                loader.classList.remove('hidden');
-                
-                fetch(`${API_BASE}/me`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                })
-                .then(r => {
-                    if (r.ok) {
-                        window.location.href = '/dash'; // Токен жив, летим в дашборд
-                    } else {
-                        // Токен протух
-                        throw new Error('Invalid token');
-                    }
-                })
-                .catch(() => {
-                    localStorage.removeItem('token');
-                    loader.classList.add('hidden'); // Убираем лоадер, показываем лендинг
-                });
-            }
-
-            // --- Инициализация UI ---
+            const API_BASE = document.querySelector('meta[name="api-base"]')?.content || `${location.protocol}//${location.hostname}:8004/v1`;
             const modal = document.getElementById('auth-modal');
             const form = document.getElementById('auth-form');
-            const submitBtn = form.querySelector('button[type="submit"]');
             const formTitle = document.getElementById('form-title');
+            const submitBtn = document.getElementById('submit-btn');
+            const loginInput = document.getElementById('login-input');
             const toggleText = document.getElementById('toggle-text');
-            const loginInput = form.querySelector('input[type="text"]');
             const extraFields = document.getElementById('extra-fields');
+            const passInput = form.querySelector('input[type="password"]');
+            let isRegister = false, tgMode = false;
 
-            let isRegister = false;
-            let loginCheckTimeout = null;
-            let statusDiv = null;
-
-            const createStatusDiv = () => {
-                if (!statusDiv) {
-                    statusDiv = document.createElement('div');
-                    statusDiv.id = 'login-status';
-                    statusDiv.style.marginTop = '5px';
-                    statusDiv.style.fontSize = '0.9em';
-                    statusDiv.style.minHeight = '1.2em';
-                    loginInput.after(statusDiv);
-                }
-                return statusDiv;
-            };
-
-            const validateFormat = (login) => {
-                if (login.length < 3) return { ok: false, msg: 'Минимум 3 символа' };
-                if (login.length > 20) return { ok: false, msg: 'Максимум 20 символов' };
-                if (!/^[a-zA-Z0-9_]+$/.test(login)) return { ok: false, msg: 'Только буквы, цифры и _' };
-                return { ok: true, msg: '' };
-            };
-
-            const checkLoginAvailability = async (login) => {
-                const div = createStatusDiv();
-                const { ok, msg } = validateFormat(login);
-
-                if (!ok) {
-                    div.style.color = '#ff4444';
-                    div.textContent = msg;
-                    submitBtn.disabled = true;
-                    return;
-                }
-
-                div.textContent = 'Проверяем...';
-                div.style.color = '#ccc';
-
-                try {
-                    const resp = await fetch(`${API_BASE}/check-login/${encodeURIComponent(login)}`);
-                    const data = await resp.json();
-                    const available = !!data.available;
-                    div.style.color = available ? '#00ff00' : '#ff4444';
-                    div.textContent = data.message;
-                    submitBtn.disabled = isRegister && !available;
-                } catch (err) {
-                    div.textContent = 'Ошибка проверки';
-                    div.style.color = '#ff4444';
-                    submitBtn.disabled = true;
-                }
-            };
-
-            loginInput.oninput = () => {
-                if (!isRegister) return;
-                const login = loginInput.value.trim();
-                clearTimeout(loginCheckTimeout);
-                submitBtn.disabled = true;
-
-                const div = createStatusDiv();
-                if (login === '') {
-                    div.textContent = '';
-                    return;
-                }
-
-                const { ok, msg } = validateFormat(login);
-                if (!ok) {
-                    div.style.color = '#ff4444';
-                    div.textContent = msg;
-                    return;
-                }
-
-                loginCheckTimeout = setTimeout(() => checkLoginAvailability(login), 500);
+            window.showToast = (msg, err = false) => {
+                const t = document.getElementById('toast');
+                t.innerHTML = `<div class="toast__card${err ? ' err' : ''}"><span class="ti ${err ? 'ti-alert-triangle' : 'ti-check'}" style="font-size:1.1rem;${err ? 'color:#f87171' : 'color:var(--acc1)'}"></span><span>${msg}</span></div>`;
+                clearTimeout(window._tt);
+                window._tt = setTimeout(() => { const c = t.firstChild; c && c.classList.add('out'); }, 3200);
             };
 
             const showModal = (register = false) => {
                 isRegister = register;
+                setTgMode(false);
                 modal.classList.add('active');
                 formTitle.textContent = register ? 'Регистрация' : 'Вход';
-                submitBtn.textContent = register ? 'Зарегистрироваться' : 'Войти';
+                submitBtn.textContent = register ? 'Создать аккаунт' : 'Войти';
                 toggleText.innerHTML = register
-                    ? 'Уже есть аккаунт? <span class="link">Войти</span>'
-                    : 'Нет аккаунта? <span class="link">Зарегистрироваться</span>';
+                    ? 'Уже есть аккаунт? <span class="link" id="toggle-link">Войти</span>'
+                    : 'Нет аккаунта? <span class="link" id="toggle-link">Зарегистрироваться</span>';
+                document.getElementById('toggle-link').onclick = () => showModal(!isRegister);
                 form.reset();
-                if (statusDiv) statusDiv.textContent = '';
                 updateExtraFields();
             };
-
             const updateExtraFields = () => {
                 if (isRegister) {
-                    // Telegram заблокирован и снесен вниз
                     extraFields.innerHTML = `
-                        <input type="text" placeholder="О себе (до 150 символов)" id="about" maxlength="150" style="margin-top:8px;">
-                        
-                        <div style="opacity: 0.5; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
-                            <label style="cursor: not-allowed;">
-                                <input type="checkbox" id="notify-tg" disabled> Уведомления в Telegram (Временно недоступно)
-                            </label>
-                            <input type="number" placeholder="Telegram ID" id="tg-id" disabled style="display:none; margin-top:8px;">
-                        </div>
-                    `;
+                <input type="text" placeholder="О себе (до 150 символов)" id="about" maxlength="150">
+                <label><input type="checkbox" id="notify-tg"> Хочу получать уведомления в Telegram</label>
+                <div class="note">привязка — потом в профиле, по ссылке-приглашению от бота</div>`;
                 } else {
                     extraFields.innerHTML = '';
                 }
             };
 
+            const setTgMode = (on) => {
+                tgMode = on;
+                passInput.required = !on;
+                passInput.style.display = on ? 'none' : '';
+                document.getElementById('tg-toggle-row').style.display = on ? 'none' : '';
+                document.getElementById('tg-back-row').style.display = on ? '' : 'none';
+                toggleText.style.display = on ? 'none' : '';
+                loginInput.placeholder = on ? 'код из ссылки или бота' : 'Логин';
+                loginInput.autocomplete = on ? 'one-time-code' : 'username';
+                formTitle.textContent = on ? 'Вход по коду из Telegram' : (isRegister ? 'Регистрация' : 'Вход');
+                submitBtn.textContent = on ? 'Войти' : (isRegister ? 'Создать аккаунт' : 'Войти');
+                extraFields.style.display = on ? 'none' : '';
+                if (on) { loginInput.inputMode = 'numeric'; loginInput.maxLength = 6; loginInput.focus(); }
+                else { loginInput.inputMode = 'text'; loginInput.maxLength = 524288; }
+            };
+            document.getElementById('tg-login-btn').onclick = () => setTgMode(true);
+            document.getElementById('tg-back-btn').onclick = () => setTgMode(false);
+            document.getElementById('tg-hero-btn').onclick = () => { showModal(false); setTgMode(true); };
+
             document.getElementById('login-btn').onclick = () => showModal(false);
+            document.getElementById('login-btn2').onclick = () => showModal(false);
             document.getElementById('register-btn').onclick = () => showModal(true);
-            document.querySelector('.auth-modal__close').onclick = () => modal.classList.remove('active');
-            document.querySelector('.auth-modal__overlay').onclick = () => modal.classList.remove('active');
+            document.querySelector('.modal__close').onclick = () => modal.classList.remove('active');
+            document.querySelector('.modal__overlay').onclick = () => modal.classList.remove('active');
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape') modal.classList.remove('active'); });
 
-            toggleText.addEventListener('click', (e) => {
-                if (e.target.classList.contains('link')) showModal(!isRegister);
-            });
-
-            // --- 2. ЛОГИКА ОТПРАВКИ С ЛОАДЕРОМ ---
+            const burger = document.getElementById('header-burger');
+            const mobilePanel = document.getElementById('header-mobile-panel');
+            if (burger && mobilePanel) {
+                burger.onclick = () => mobilePanel.classList.toggle('open');
+                mobilePanel.querySelectorAll('a').forEach(a => {
+                    a.onclick = () => mobilePanel.classList.remove('open');
+                });
+                document.addEventListener('click', (e) => {
+                    if (!burger.contains(e.target) && !mobilePanel.contains(e.target)) {
+                        mobilePanel.classList.remove('open');
+                    }
+                });
+            }
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                
-                // Включаем лоадер
-                loader.classList.remove('hidden');
-                modal.classList.remove('active'); // Прячем модалку под лоадером
-
                 const login = loginInput.value.trim();
-                const password = form.querySelector('input[type="password"]').value;
+                const password = passInput.value;
 
-                const body = isRegister ? {
+                if (tgMode && !/^\d{6}$/.test(login)) {
+                    showToast('код состоит из 6 цифр — он приходит по ссылке из бота', true);
+                    return;
+                }
+
+                const body = tgMode ? { code: login } : (isRegister ? {
                     user_login: login,
                     user_password: password,
-                    notify_telegram: false, // Всегда false, раз заблокировано
+                    notify_telegram: !!document.getElementById('notify-tg')?.checked,
                     user_telegram_id: null,
                     about_user: document.getElementById('about')?.value || null
                 } : {
                     user_login: login,
                     user_password: password
-                };
+                });
 
-                const endpoint = isRegister ? `${API_BASE}/register` : `${API_BASE}/login`;
+                const endpoint = tgMode ? `${API_BASE}/login/telegram`
+                    : (isRegister ? `${API_BASE}/register` : `${API_BASE}/login`);
 
                 try {
                     const resp = await fetch(endpoint, {
@@ -513,26 +1209,113 @@
                         body: JSON.stringify(body)
                     });
                     const data = await resp.json();
-
                     if (resp.ok && data.JWTSession) {
                         localStorage.setItem('token', data.JWTSession);
-                        window.location.href = '/dash'; // Успех -> редирект
+                        window.location.href = '/dash';
                     } else {
-                        throw new Error(data.error || 'Все поля обязательны для регистрации. Если вы считает, что это ошибка, обратитесь в поддержку.');
+                        throw new Error(data.error || data.detail || 'не получилось, проверь данные');
                     }
                 } catch (err) {
-                    // Ошибка -> прячем лоадер, возвращаем модалку, показываем алерт
-                    loader.classList.add('hidden');
-                    modal.classList.add('active'); 
-                    alert(err.message || err);
+                    showToast(err.message || 'ошибка сети', true);
                 }
             });
+            (async () => {
+                try {
+                    const s = await (await fetch(`${API_BASE}/stats/public`)).json();
+                    const c = document.getElementById('stat-courses');
+                    const u = document.getElementById('stat-users');
+                    if (c) c.textContent = s.courses ?? '—';
+                    if (u) u.textContent = s.users ?? '—';
+                } catch { }
+                try {
+                    const token = localStorage.getItem('token');
+                    if (token) {
+                        const r = await fetch(`${API_BASE}/me`, { headers: { Authorization: `Bearer ${token}` } });
+                        if (r.ok) location.href = '/dash';
+                        else localStorage.removeItem('token');
+                    }
+                } catch { }
+            })();
 
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && modal.classList.contains('active'))
-                    modal.classList.remove('active');
-            });
+            function applyTheme(t) {
+                document.body.dataset.theme = t || 'midnight';
+            }
+            applyTheme(localStorage.getItem('theme'));
+            if (location.pathname === '/login') showModal(false);
+
+            async function redirectToDash() {
+                const token = localStorage.getItem('token');
+                if (!token) { location.href = '/dash'; return; }
+                try {
+                    const r = await fetch(`${API_BASE}/me`, { headers: { Authorization: `Bearer ${token}` } });
+                    if (r.ok) {
+                        const me = await r.json();
+                        if (me.theme) { applyTheme(me.theme); localStorage.setItem('theme', me.theme); }
+                    } else { localStorage.removeItem('token'); }
+                } catch { }
+                location.href = '/dash';
+            }
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const login = loginInput.value.trim();
+                const password = passInput.value;
+                if (tgMode && !/^\d{6}$/.test(login)) {
+                    showToast('код состоит из 6 цифр — он приходит по ссылке из бота', true);
+                    return;
+                }
+                const body = tgMode ? { code: login } : (isRegister ? {
+                    user_login: login,
+                    user_password: password,
+                    notify_telegram: !!document.getElementById('notify-tg')?.checked,
+                    user_telegram_id: null,
+                    about_user: document.getElementById('about')?.value || null
+                } : {
+                    user_login: login,
+                    user_password: password
+                });
+                const endpoint = tgMode ? `${API_BASE}/login/telegram`
+                    : (isRegister ? `${API_BASE}/register` : `${API_BASE}/login`);
+                try {
+                    const resp = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body)
+                    });
+                    const data = await resp.json();
+                    if (resp.ok && data.JWTSession) {
+                        localStorage.setItem('token', data.JWTSession);
+                        await redirectToDash();
+                    } else {
+                        throw new Error(data.error || data.detail || 'не получилось, проверь данные');
+                    }
+                } catch (err) {
+                    showToast(err.message || 'ошибка сети', true);
+                }
+                        });
+
+            (async () => {
+                try {
+                    const s = await (await fetch(`${API_BASE}/stats/public`)).json();
+                    const c = document.getElementById('stat-courses');
+                    const u = document.getElementById('stat-users');
+                    if (c) c.textContent = s.courses ?? '—';
+                    if (u) u.textContent = s.users ?? '—';
+                } catch { }
+                const token = localStorage.getItem('token');
+                if (token) {
+                    try {
+                        const r = await fetch(`${API_BASE}/me`, { headers: { Authorization: `Bearer ${token}` } });
+                        if (r.ok) {
+                            const me = await r.json();
+                            if (me.theme) { applyTheme(me.theme); localStorage.setItem('theme', me.theme); }
+                            location.href = '/dash';
+                        } else { localStorage.removeItem('token'); }
+                    } catch { }
+                }
+            })();
         });
     </script>
 </body>
+
 </html>

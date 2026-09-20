@@ -5,16 +5,26 @@ from back.auth.bot.config.authConfig import TOKEN
 from back.auth.bot.handlers.handlers import vrouter
 from aiogram.utils.deep_linking import create_start_link
 
-bot = Bot(
+# токена может не быть (api-процесс), тогда бот только генерит ссылки по запросу
+bot = None
+if TOKEN:
+    bot = Bot(
+            token=TOKEN,
+            default=DefProp(parse_mode='HTML', disable_notification=True)
+            )
+dp = Dispatcher()
+
+async def main_GenerateLink(username: str):
+    # api-сервер зовет только это, polling тут не стартует
+    instance = bot or Bot(
         token=TOKEN,
         default=DefProp(parse_mode='HTML', disable_notification=True)
-        )
-dp = Dispatcher(
+    )
+    return await create_start_link(bot=instance, payload=f"{username}", encode=True)
 
-)
-async def main_GenerateLink(username: str):
-    return await create_start_link(bot=bot, payload=f"{username}", encode=True)
 async def main():
+    if not TOKEN:
+        raise RuntimeError('BOT_TOKEN не задан в .env, бот не запустится')
     dp.include_router(vrouter)
     await dp.start_polling(bot)
 

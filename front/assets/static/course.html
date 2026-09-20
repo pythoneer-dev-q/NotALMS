@@ -2,24 +2,39 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <title>NotALMS — Биология</title>
+  <title>NotALMS — Курс</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Fira+Code:wght@400;600&family=Oswald:wght@400;600&display=swap" rel="stylesheet"/>
-    <link rel="icon" href="../../../favicon.ico" sizes="32x32">
-  <style>
+  <link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link rel="icon" href="../../../favicon.ico" sizes="32x32">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css">
+    <script>
+        (function() {
+            var theme = localStorage.getItem('theme');
+            if (theme) document.documentElement.dataset.theme = theme;
+        })();
+    </script>
+    <style>
     :root{
       --primary:#6366f1;--bg:#0f172a;--panel:rgba(20,40,70,.95);--text:#e2e8f0;
       --accent:#4ade80;--error:#ef4444;--warning:#facc15;--dna-font:'Fira Code',monospace;
+      --bord:color-mix(in srgb,var(--primary) 30%,transparent);--bord-soft:color-mix(in srgb,var(--primary) 14%,transparent);
+      --line:rgba(255,255,255,.06);--line2:rgba(255,255,255,.12);--muted:#94a3b8;
+      --surface:#0e0d13;--surface2:#131019;--r:14px;
     }
+    
+    [data-theme="emerald"]{--primary:#10b981;--bg:#08130e;--panel:rgba(10,35,26,.95);--text:#dcfce7;--accent:#34d399}
+    [data-theme="sunset"]{--primary:#f59e0b;--bg:#171009;--panel:rgba(40,27,9,.95);--text:#fef3c7;--accent:#fbbf24}
+    [data-theme="rose"]{--primary:#f43f5e;--bg:#170a12;--panel:rgba(45,12,26,.95);--text:#ffe4e6;--accent:#fb7185}
+    [data-theme="ocean"]{--primary:#0ea5e9;--bg:#071224;--panel:rgba(9,34,64,.95);--text:#e0f2fe;--accent:#38bdf8}
     *{box-sizing:border-box}
     body{margin:0;font-family:'Oswald',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow:hidden}
-    /* header */
+    
     .header{height:60px;display:flex;align-items:center;padding:0 16px;background:var(--panel);border-bottom:1px solid var(--primary)}
     .logo{font-family:'Dela Gothic One',cursive;font-size:1.6rem;color:var(--primary)}
     .burger{margin-left:auto;background:none;border:0;color:var(--primary);font-size:1.6rem;cursor:pointer;display:none}
-    /* layout */
+    
     .container{display:flex;height:calc(100vh - 60px)}
     .lessons-list{width:300px;background:var(--panel);border-right:1px solid var(--primary);padding:20px;display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0;transition:transform .28s ease}
     .sidebar-section{margin-bottom:25px}
@@ -29,12 +44,12 @@
     .nav-item.active{background:var(--primary);color:#fff}
     .test-badge{font-size:.7rem;padding:2px 6px;border-radius:4px;background:rgba(0,0,0,.3);font-family:var(--dna-font)}
     .course-content{flex:1;padding:40px;overflow-y:auto;position:relative}
-    /* lesson blocks */
+    
     .lesson-text{margin-bottom:15px;line-height:1.6}
     .lesson-img{max-width:100%;border-radius:8px;margin:15px 0;border:1px solid #334155}
     .lesson-list{background:rgba(255,255,255,.04);padding:15px 15px 15px 35px;border-radius:8px;border-left:3px solid var(--accent)}
     .lesson-list li{margin-bottom:6px}
-    /* warning style */
+    
     .lesson-warning{
       background: rgba(250,204,21,0.08);
       border-left:5px solid var(--warning);
@@ -47,8 +62,10 @@
       box-shadow:0 0 18px rgba(250,204,21,0.04);
     }
     .lesson-warning::before{
-      content:"⚠ важно";
-      display:block;
+      content:"";
+      display:flex;
+      align-items:center;
+      gap:6px;
       font-weight:700;
       color:var(--warning);
       margin-bottom:8px;
@@ -56,50 +73,233 @@
       text-transform:uppercase;
       letter-spacing:1px;
     }
-    /* test interface */
-    .test-container{max-width:800px;margin:0 auto;animation:fadeIn .4s ease}
-    .task-card{background:rgba(30,41,59,.6);border:1px solid var(--primary);border-radius:12px;padding:30px;position:relative;box-shadow:0 10px 30px rgba(0,0,0,.3)}
-    .task-id{position:absolute;top:14px;left:14px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.04);color:#d1d5db;padding:6px 8px;border-radius:8px;font-family:var(--dna-font);font-size:.85rem;z-index:5}
-    .task-instruction{font-size:1.2rem;margin-bottom:25px;color:var(--accent)}
-    .dna-display{background:rgba(15,23,42,.8);padding:25px;border-radius:8px;font-family:var(--dna-font);font-size:1.2rem;letter-spacing:2px;margin-bottom:30px;border-left:4px solid var(--primary);display:flex;flex-direction:column;align-items:center;gap:10px}
-    .strand{display:flex;justify-content:center;align-items:center;gap:10px;color:#94a3b8;white-space:nowrap;width:100%}
-    .strand .seq{color:#e2e8f0;font-weight:bold;font-size:1.05rem}
+    .lesson-warning::before::before{
+      content:"";
+      display:inline-block;
+      width:14px;
+      height:14px;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23facc15' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z'/%3E%3Cline x1='12' y1='9' x2='12' y2='13'/%3E%3Cline x1='12' y1='17' x2='12.01' y2='17'/%3E%3C/svg%3E");
+      background-size:contain;
+    }
+    
+    .lesson-video{position:relative;width:100%;max-width:900px;padding-top:56.25%;margin:18px 0;border-radius:12px;overflow:hidden;border:1px solid #334155;background:#0b1220}
+    .lesson-video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+    .lesson-video-file{display:block;width:100%;max-width:900px;border-radius:12px;border:1px solid #334155;margin:18px 0;background:#0b1220}
+    /* контейнер под скриптовые плееры платформ */
+    .lesson-video-embed{position:relative;width:100%;max-width:900px;min-height:320px;margin:18px 0;border-radius:12px;overflow:hidden;border:1px solid #334155;background:#0b1220}
+    .lesson-video-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+    
+    .nav-status{flex-shrink:0;display:inline-flex;align-items:center;font-size:.95rem;color:var(--accent)}
+    .nav-status .ti{font-size:1rem}
+    .nav-item.locked{opacity:.5}
+    .nav-item.done .nav-title{opacity:.75}
+    .solved-note{display:flex;gap:8px;align-items:center;padding:12px 16px;border-radius:8px;border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);color:var(--accent);font-size:.92rem}
+    .locked-note{display:flex;gap:8px;align-items:center;padding:12px 16px;border-radius:8px;border:1px solid color-mix(in srgb,var(--warning) 40%,transparent);color:var(--warning);font-size:.92rem}
+    
+    .task-card.closed{opacity:.85;}
+    .task-card.closed .task-head{border-color:color-mix(in srgb,var(--warning) 30%,transparent);}
+    .solved-note.hint{border-color:color-mix(in srgb,var(--warning) 40%,transparent);color:var(--warning);}
+    
+    .nav-status.hint{color:var(--warning);}
+    .nav-item.done{border-left:2px solid var(--accent);}
+    .nav-item.hint-closed{border-left:2px solid var(--warning);}
+    
+    .mark-read-btn{background:transparent;border:1px solid var(--line);border-radius:6px;color:var(--muted);font-size:.78rem;padding:5px 10px;cursor:pointer;transition:.2s;display:none;}
+    .mark-read-btn:hover{border-color:var(--line2);color:var(--text);}
+
+    
+    .test-container{max-width:860px;margin:0 auto;animation:fadeIn .4s ease}
+    .task-card{display:flex;flex-direction:column;padding:0;overflow:hidden;background:rgba(30,41,59,.6);border:1px solid var(--primary);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+    .task-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 22px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.02)}
+    .task-kicker{display:block;font-size:.68rem;text-transform:uppercase;letter-spacing:.14em;opacity:.55;margin-bottom:4px}
+    .task-title{margin:0;font-size:1.05rem;font-weight:700}
+    .task-head-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+    .task-body{display:flex;flex-direction:column;gap:14px;padding:22px}
+    .task-foot{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 22px;border-top:1px solid var(--line);background:rgba(255,255,255,.02);flex-wrap:wrap}
+    .attempts{font-size:.8rem;opacity:.6}
+    .task-id{font-family:var(--dna-font);font-size:.75rem;padding:5px 8px;border-radius:6px;border:1px solid var(--line);background:rgba(0,0,0,.25);color:#cbd5e1;white-space:nowrap}
+    .field-label{font-size:.68rem;text-transform:uppercase;letter-spacing:.14em;opacity:.55}
+    .task-instruction{margin:0;font-size:1.05rem;line-height:1.55;color:var(--accent)}
+    .dna-display{display:flex;flex-direction:column;gap:10px;padding:18px;border-radius:8px;border-left:4px solid var(--primary);background:rgba(15,23,42,.8);font-family:var(--dna-font);font-size:1rem}
+    
+    .strand{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;color:#94a3b8;overflow-wrap:anywhere}
+    .strand .seq{color:#e2e8f0;font-weight:bold;letter-spacing:1px;word-break:break-all}
     .strand .end{color:var(--warning);font-weight:600;font-size:.95rem}
-    .input-area{position:relative;margin-top:20px}
-    .dna-input{width:100%;background:rgba(15,23,42,.9);border:2px solid #334155;color:var(--text);padding:15px 20px;font-family:var(--dna-font);font-size:1.1rem;border-radius:8px;letter-spacing:2px;outline:none;transition:.3s;text-transform:uppercase}
-    .dna-input:focus{border-color:var(--primary);box-shadow:0 0 15px rgba(99,102,241,.2)}
+    .input-area{position:relative;display:flex;flex-direction:column;gap:8px}
+    .dna-input{width:100%;background:rgba(15,23,42,.9);border:1px solid var(--line2);color:var(--text);padding:14px 18px;font-family:var(--dna-font);font-size:1.05rem;border-radius:8px;letter-spacing:2px;outline:none;transition:.2s;text-transform:uppercase}
+    .dna-input::placeholder{color:#64748b;letter-spacing:0}
+    .dna-input:focus{border-color:var(--primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 18%,transparent)}
     .dna-input.error{border-color:var(--error);animation:shake .4s}
     .dna-input.success{border-color:var(--accent)}
-    .submit-btn{margin-top:20px;background:var(--primary);color:#fff;border:none;padding:12px 30px;font-family:Oswald,sans-serif;font-size:1.05rem;border-radius:6px;cursor:pointer;width:100%;transition:.18s;display:flex;justify-content:center;align-items:center;min-height:48px}
-    .submit-btn:hover:not(:disabled){filter:brightness(1.06)}
-    .submit-btn:disabled{opacity:.7;cursor:not-allowed}
-    .bulb-btn{position:absolute;top:20px;right:20px;background:none;border:0;font-size:1.9rem;cursor:pointer;filter:grayscale(1);opacity:.3;transition:.2s;display:none;z-index:6}
-    .bulb-btn.visible{display:block;opacity:1;filter:grayscale(0) drop-shadow(0 0 10px var(--warning));animation:pulse 2s infinite}
-    .feedback-msg{margin-top:15px;min-height:24px;font-size:.9rem;text-align:center}
+    .submit-btn{display:inline-flex;justify-content:center;align-items:center;min-height:44px;margin:0;padding:11px 26px;border:0;border-radius:8px;background:var(--primary);color:#fff;font-family:inherit;font-size:.95rem;font-weight:500;cursor:pointer;transition:.18s}
+    .submit-btn:hover:not(:disabled){filter:brightness(1.1)}
+    .submit-btn:disabled{opacity:.6;cursor:not-allowed}
+    
+    .bulb-btn{background:transparent;border:1px solid var(--line);border-radius:8px;color:var(--muted);font:inherit;font-size:.8rem;padding:7px 12px;cursor:pointer;white-space:nowrap;transition:.2s}
+    .bulb-btn:hover{border-color:var(--line2);color:var(--text)}
+    .bulb-btn.visible{border-color:color-mix(in srgb,var(--warning) 40%,transparent);color:var(--warning)}
+    .feedback-msg{min-height:20px;font-size:.88rem;line-height:1.5}
+    .feedback-msg .err-line{font-family:ui-monospace,monospace;font-size:.85rem;opacity:.9}
     .feedback-msg.error{color:var(--error)}
     .feedback-msg.success{color:var(--accent)}
-    /* loader small */
+    
     .loader-box{display:flex;justify-content:center;align-items:center;padding:20px;width:100%;height:100%}
     .loader-svg{width:50px;height:50px;fill:var(--primary)}
     .btn-loader{width:24px;height:24px;fill:#fff}
-    /* animations */
+    
     @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
     @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
     @keyframes pulse{0%{filter:drop-shadow(0 0 5px var(--warning))}50%{filter:drop-shadow(0 0 15px var(--warning))}100%{filter:drop-shadow(0 0 5px var(--warning))}}
-    /* mobile: burger + sliding sidebar */
+    
     @media (max-width:800px){
       .burger{display:block}
       .lessons-list{position:fixed;top:60px;left:0;width:80%;max-width:320px;height:calc(100vh - 60px);transform:translateX(-110%);z-index:120;box-shadow:20px 0 60px rgba(0,0,0,.6)}
       .lessons-list.open{transform:translateX(0)}
       .container{flex-direction:column}
-      .course-content{padding:20px;min-height:60vh}
+      .course-content{padding:16px;min-height:60vh}
+      
+      .task-head{padding:12px 14px;flex-wrap:wrap}
+      .task-body{padding:14px}
+      .task-foot{padding:12px 14px}
+      .task-foot .submit-btn{width:100%}
+      .dna-display{padding:14px;font-size:.9rem}
+      .dna-input{padding:12px 14px;font-size:.95rem;letter-spacing:1px}
+      .lesson-video{max-width:100%}
+      .header{padding:0 12px}
+      .logo{font-size:1.2rem !important}
     }
+  </style>
+  <style>
+  
+  body{
+    --acc1:var(--primary);--acc2:color-mix(in srgb,var(--primary) 60%,#000);
+    --bg:#08070b;--surface:#0e0d13;--surface2:#131019;
+    --line:rgba(255,255,255,.055);--line2:rgba(255,255,255,.1);
+    --muted:#94a3b8;
+    --grad:linear-gradient(90deg,var(--acc1),color-mix(in srgb,var(--acc2) 70%,var(--acc1)));
+    --grad-text:linear-gradient(180deg,color-mix(in srgb,var(--acc1) 72%,#fff) 28%,color-mix(in srgb,var(--acc2) 45%,transparent));
+    font-family:'Onest',sans-serif !important;
+    background:var(--bg) !important;
+  }
+  [data-theme="emerald"]{--surface:#0b1813;--surface2:#0e1e17}
+  [data-theme="sunset"]{--surface:#1b160c;--surface2:#221b0e}
+  [data-theme="rose"]{--surface:#190d14;--surface2:#20111a}
+  [data-theme="ocean"]{--surface:#0a1626;--surface2:#0d1c30}
+  h1,h2,h3{letter-spacing:-.01em}
+  
+  .gtext{color:var(--acc1)}
+
+  .header{
+    position:sticky;top:0;z-index:50;
+    background:rgba(5,5,8,.85) !important;
+    -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--line) !important;
+  }
+  .logo{
+    font-family:'Onest',sans-serif !important;font-weight:800 !important;
+    color:var(--acc1);
+  }
+  .burger{color:var(--muted) !important}
+  .lessons-list{
+    background:rgba(8,7,11,.9) !important;
+    -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+    border-right:1px solid var(--line) !important;
+  }
+  .sidebar-title{border-bottom:1px solid var(--line) !important;font-family:'Onest',sans-serif !important;font-weight:600}
+  .nav-item{border-radius:10px !important;font-family:'Onest',sans-serif !important;font-weight:500;transition:.2s}
+  .nav-item.active{background:var(--grad) !important;color:#fff !important}
+  .test-badge{font-family:'Onest',sans-serif !important}
+
+  .task-card{
+    background:var(--surface) !important;
+    outline:1px solid var(--line);outline-offset:-1px;
+    border:0 !important;border-radius:14px !important;
+    box-shadow:0 16px 34px -20px rgba(0,0,0,.75) !important;
+  }
+  .task-head,.task-foot{background:rgba(255,255,255,.015) !important;border-color:var(--line) !important}
+  .task-instruction{font-family:'Onest',sans-serif !important}
+  .dna-input{
+    background:rgba(255,255,255,.04) !important;
+    border:1px solid var(--line) !important;
+    color:var(--text) !important;border-radius:10px !important;
+    font-family:'Onest',sans-serif !important;
+  }
+  .dna-input:focus{outline:none;border-color:color-mix(in srgb,var(--acc1) 45%,transparent) !important}
+  .submit-btn{
+    background:var(--acc1) !important;color:#fff !important;
+    border:0 !important;border-radius:10px !important;
+    font-family:'Onest',sans-serif !important;font-weight:600;
+    transition:.2s;
+  }
+  .submit-btn:hover{filter:brightness(1.1)}
+  .submit-btn:disabled{opacity:.55}
+  .feedback-msg{font-family:'Onest',sans-serif !important}
+  
+  .bulb-btn{background:transparent !important;border:1px solid var(--line) !important;border-radius:9px !important;color:var(--muted) !important}
+  .bulb-btn:hover{border-color:var(--line2) !important;color:var(--text) !important}
+  .bulb-btn.visible{border-color:color-mix(in srgb,var(--warning) 45%,transparent) !important;color:var(--warning) !important}
+  .task-id{font-family:ui-monospace,monospace !important;letter-spacing:0}
+  .task-title{font-family:'Onest',sans-serif !important}
+  .task-kicker,.field-label{font-family:'Onest',sans-serif !important}
+  .dna-display{background:rgba(0,0,0,.28) !important;border-left-color:var(--primary) !important}
+  .strand{font-family:ui-monospace,monospace !important}
+  .lesson-text,.lesson-list{font-family:'Onest',sans-serif !important}
+
+  
+  @media(max-width: 600px) {
+    .header{padding:0 10px !important}
+    .logo{font-size:1.1rem !important}
+    .burger{font-size:1.4rem !important}
+    .course-content{padding:12px !important}
+    .task-head{padding:10px 12px !important}
+    .task-body{padding:12px !important}
+    .task-foot{padding:10px 12px !important}
+    .task-title{font-size:.95rem !important}
+    .task-instruction{font-size:.95rem !important}
+    .dna-display{padding:12px !important;font-size:.85rem !important}
+    .dna-input{padding:10px 12px !important;font-size:.9rem !important;letter-spacing:1px !important}
+    .submit-btn{padding:10px 20px !important;font-size:.9rem !important;min-height:44px !important}
+    .bulb-btn{padding:6px 10px !important;font-size:.75rem !important}
+    .lesson-text{font-size:.95rem !important;line-height:1.6 !important}
+    .lesson-list{padding:12px 12px 12px 28px !important}
+    .lesson-list li{font-size:.9rem !important}
+    .lesson-warning{padding:12px !important;font-size:.9rem !important}
+    .sidebar-title{font-size:.8rem !important;padding-bottom:4px !important}
+    .nav-item{padding:10px 12px !important;font-size:.9rem !important}
+    .test-badge{font-size:.65rem !important;padding:2px 5px !important}
+    .toast{padding:0 .5rem !important}
+    .toast__card{padding:.7rem 1rem !important;font-size:.85rem !important}
+  }
+
+  
+  .toast{position:fixed;inset:1.2rem 0 auto;z-index:200;display:flex;justify-content:center;padding:0 1rem;pointer-events:none}
+  .toast__card{
+    display:flex;gap:.9rem;align-items:center;padding:.8rem 1.5rem;border-radius:1rem;
+    background:linear-gradient(180deg,color-mix(in srgb,var(--acc1) 10%,var(--surface2)),var(--surface2));
+    outline:1px solid var(--line2);outline-offset:-1px;
+    box-shadow:0 20px 50px -20px #000c;
+    pointer-events:auto;animation:t-in .3s ease-out;max-width:30rem;
+    font-family:'Onest',sans-serif;
+  }
+  .toast__card.err{outline-color:color-mix(in srgb,#ef4444 45%,transparent)}
+  .toast.out{animation:t-out .3s ease-in forwards}
+  @keyframes t-in{from{opacity:0;transform:translateY(-10px)}to{opacity:1}}
+  @keyframes t-out{to{opacity:0;transform:translateY(-10px)}}
   </style>
 </head>
 <body>
+<div class="toast" id="toast"></div>
+<script>
+
+function showToast(msg, err = false) {
+    const t = document.getElementById('toast');
+    t.innerHTML = `<div class="toast__card${err ? ' err' : ''}"><span class="ti ${err ? 'ti-alert-triangle' : 'ti-check'}" style="font-size:1.1rem;${err ? 'color:#f87171' : 'color:var(--acc1)'}"></span><span>${msg}</span></div>`;
+    clearTimeout(window._tt);
+    window._tt = setTimeout(() => { const c = t.firstChild; c && c.classList.add('out'); }, 3400);
+}</script>
   <header class="header">
     <div class="logo">NotALMS</div>
-    <button id="burger" class="burger" aria-label="menu">☰</button>
+    <button id="burger" class="burger" aria-label="menu"><i class="ti ti-menu-2" style="font-size:1.6rem"></i></button>
   </header>
 
   <div class="container">
@@ -121,14 +321,15 @@
   </div>
 
   <script>
-  // минимальные комменты, строчными буквами
-  const API_BASE = 'https://lmsapi.cloudpub.ru/v1';
-  const token = localStorage.getItem('token') || 'dev_token';
+  const API_BASE = document.querySelector('meta[name="api-base"]')?.content || `${location.protocol}//${location.hostname}:8004/v1`;
+  const token = localStorage.getItem('token') || '';
+  if(!token) location.href = '/login';
   const courseID = location.pathname.split('/').pop();
   let currentTaskId = null;
+  let currentTaskDefId = null;   // id задачи-определения из сайдбара
+  let currentTaskTitle = '';
   let attemptCounter = 0;
 
-  // loader html
   function getLoaderHtml(customClass=''){
     return `
       <div class="loader-box ${customClass}">
@@ -141,7 +342,6 @@
       </div>`;
   }
 
-  // simple api
   async function apiRequest(endpoint, method='GET', body=null){
     try{
       const opts = { method, headers: { 'Authorization': `Bearer ${token}`, 'Content-Type':'application/json' } };
@@ -152,16 +352,34 @@
     }catch(e){ console.error('network error', e); return null; }
   }
 
-  // init
+  let readLessons = new Set();   // прочитанные уроки курса
+  let solvedTasks = new Set();   // решенные задачи
+  let hintedTasks = new Set();   // задачи, закрытые подсказкой
+  let currentLessonId = null;    // открытый урок, для отметки о прочтении
+  let readSent = false;          // отметку шлем один раз на урок
+
   async function init(){
     const lContainer = document.getElementById('lessons-container');
     lContainer.innerHTML = getLoaderHtml();
     const lessons = await apiRequest(`/search_lessons/${courseID}`);
     lContainer.innerHTML = '';
+    const [reads, solved] = await Promise.all([
+      apiRequest(`/me/reads/${courseID}`),
+      apiRequest('/me/solved')
+    ]);
+    readLessons = new Set(reads?.read || []);
+    solvedTasks = new Set((solved?.solved || []).map(String));
+    hintedTasks = new Set((solved?.hinted || []).map(String));
     if(lessons && Array.isArray(lessons)) renderSidebar(lessons);
   }
 
-  // render sidebar and attach mobile close
+  function statusHtml(isRead, isSolved, isHinted){
+    if(isSolved) return `<span class="nav-status"><i class="ti ti-circle-check"></i></span>`;
+    if(isHinted) return `<span class="nav-status hint"><i class="ti ti-bulb"></i></span>`;
+    if(isRead) return `<span class="nav-status"><i class="ti ti-eye"></i></span>`;
+    return '';
+  }
+
   function renderSidebar(lessons){
     const lContainer = document.getElementById('lessons-container');
     const tContainer = document.getElementById('tests-container');
@@ -169,41 +387,77 @@
     tContainer.innerHTML = '';
     lessons.forEach(lesson=>{
       if(lesson.type === 'theory' || !lesson.type){
+        const isRead = readLessons.has(lesson._id);
         const el = document.createElement('div');
-        el.className = 'nav-item';
-        el.textContent = lesson.title || 'без названия';
+        el.className = 'nav-item' + (isRead ? ' done' : '');
+        el.dataset.lessonId = lesson._id;
+        el.innerHTML = `<span class="nav-title">${lesson.title || 'без названия'}</span>${statusHtml(isRead, false, false)}`;
         el.onclick = ()=>{
           loadLesson(lesson);
           closeSidebarMobile();
         };
         lContainer.appendChild(el);
       }
-      // load tests for lesson
       loadTasksForLesson(lesson._id, tContainer);
     });
   }
 
   async function loadTasksForLesson(lessonID, container){
-    const smallLoader = document.createElement('div');
-    smallLoader.innerHTML = getLoaderHtml();
-    // optional: append small loader then replace
-    // container.appendChild(smallLoader);
     const tasks = await apiRequest(`/gettasks/${lessonID}`);
-    // if(smallLoader.parentNode) smallLoader.remove();
     if(!tasks) return;
     tasks.forEach(task=>{
+      const isSolved = solvedTasks.has(String(task._id));
+      const isHinted = hintedTasks.has(String(task._id));
       const el = document.createElement('div');
-      el.className = 'nav-item';
-      el.innerHTML = `<span>${task.title || 'Тест'}</span> <span class="test-badge">${task.mode || 'N'}</span>`;
-      el.onclick = ()=>{ loadTestInterface(task._id); closeSidebarMobile(); };
+      el.className = 'nav-item' + (isSolved ? ' done' : (isHinted ? ' hint-closed' : ''));
+      el.dataset.taskId = task._id;
+      el.innerHTML = `<span class="nav-title">${task.title || 'Тест'}</span><span class="test-badge">${task.mode || 'N'}</span>${statusHtml(false, isSolved, isHinted)}`;
+      el.onclick = ()=>{ currentTaskTitle = task.title || ''; currentTaskDefId = task._id; loadTestInterface(task._id); closeSidebarMobile(); };
       container.appendChild(el);
     });
   }
 
-  // lesson renderer with warning support
+  function attachReadTracker(lessonId){
+    const main = document.getElementById('main-area');
+    readSent = readLessons.has(lessonId);
+    const markBtn = document.getElementById('mark-read-btn');
+    if(markBtn){
+      markBtn.onclick = ()=> {
+        if(readSent) return;
+        readSent = true;
+        readLessons.add(lessonId);
+        apiRequest(`/lesson/read/${lessonId}`, 'POST');
+        const item = document.querySelector(`.nav-item[data-lesson-id="${lessonId}"]`);
+        if(item && !item.querySelector('.nav-status')){
+          item.classList.add('done');
+          item.insertAdjacentHTML('beforeend', statusHtml(true, false, false));
+        }
+        markBtn.style.display = 'none';
+      };
+      markBtn.style.display = readSent ? 'none' : 'flex';
+    }
+    const onScroll = () => {
+      if(readSent || !currentLessonId) return;
+      if(main.scrollTop + main.clientHeight >= main.scrollHeight - 60){
+        readSent = true;
+        readLessons.add(lessonId);
+        apiRequest(`/lesson/read/${lessonId}`, 'POST');
+        const item = document.querySelector(`.nav-item[data-lesson-id="${lessonId}"]`);
+        if(item && !item.querySelector('.nav-status')){
+          item.classList.add('done');
+          item.insertAdjacentHTML('beforeend', statusHtml(true, false, false));
+        }
+        if(markBtn) markBtn.style.display = 'none';
+      }
+    };
+    main.addEventListener('scroll', onScroll);
+  }
+
   function loadLesson(lesson){
     const main = document.getElementById('main-area');
-    let contentHtml = `<h1>${escapeHtml(lesson.title || '')}</h1>`;
+    currentLessonId = lesson._id;
+    // заголовок рисуем один раз — в шапке урока, в контенте его больше нет
+    let contentHtml = '';
     if(Array.isArray(lesson.content)){
       lesson.content.forEach(block=>{
         switch(block.type){
@@ -212,6 +466,9 @@
             break;
           case 'image':
             contentHtml += `<img class="lesson-img" src="${escapeHtml(block.src||'')}" alt="${escapeHtml(block.alt||'')}" />`;
+            break;
+          case 'video':
+            contentHtml += renderVideo(block);
             break;
           case 'list':
             if(Array.isArray(block.items)){
@@ -231,16 +488,27 @@
     } else {
       contentHtml += `<p class="lesson-text">нет контента</p>`;
     }
-    main.innerHTML = `<div style="max-width:900px;margin:0 auto;">${contentHtml}</div>`;
+        main.innerHTML = `<div style="max-width:900px;margin:0 auto;" id="lesson-root">
+      <div class="lesson-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <h1 style="margin:0;font-size:1.5rem;">${escapeHtml(lesson.title || '')}</h1>
+        <button id="mark-read-btn" class="mark-read-btn" title="отметить урок прочитанным">прочитано</button>
+      </div>
+      ${contentHtml}
+    </div>`;
+    // плееры-скрипты подключаем после вставки разметки
+    mountEmbedScripts(main);
+    main.scrollTop = 0;
+    attachReadTracker(lesson._id);
   }
 
-  // test renderer
   async function loadTestInterface(taskId){
     const main = document.getElementById('main-area');
     main.innerHTML = getLoaderHtml();
+    main.scrollTop = 0;
     const response = await apiRequest(`/getTest/${taskId}`);
     if(!response || response.error){
-      main.innerHTML = `<h3 style="color:var(--error);text-align:center">Ошибка: ${escapeHtml(response?.error || 'Не удалось загрузить')}</h3>`;
+      const locked = (response?.error || '').includes('сначала');
+      main.innerHTML = `<div class="test-container"><div class="${locked ? 'locked-note' : ''}" style="text-align:${locked ? 'left' : 'center'};color:${locked ? 'inherit' : 'var(--error)'}">${locked ? '<i class="ti ti-lock"></i> ' : ''}${escapeHtml(response?.error || 'Не удалось загрузить')}</div></div>`;
       return;
     }
     const task = response;
@@ -249,94 +517,255 @@
     const topStrand = condition.top || condition.single_chain || '';
     const bottomStrand = condition.bottom || '';
     const instruction = condition.instruction || '';
+    const hintClosed = task.hint_used || hintedTasks.has(String(currentTaskDefId));
+    if(hintClosed){
+      main.innerHTML = `
+        <div class="test-container">
+          <div class="task-card closed">
+            <div class="task-head">
+              <div>
+                <span class="task-kicker">Задание</span>
+                <h3 class="task-title">${escapeHtml(currentTaskTitle || 'Практика')}</h3>
+              </div>
+              <div class="task-head-right">
+                <span class="task-id">ID ${escapeHtml(String(task.task_id))}</span>
+                <span class="nav-status hint"><i class="ti ti-bulb"></i></span>
+              </div>
+            </div>
+            <div class="task-body">
+              <p class="task-instruction">${escapeHtml(instruction)}</p>
+              <div class="dna-display">
+                ${ topStrand ? `<div class="strand">${formatStrand(topStrand)}</div>` : '' }
+                ${ bottomStrand ? `<div class="strand">${formatStrand(bottomStrand)}</div>` : '' }
+              </div>
+              <div class="solved-note hint"><i class="ti ti-bulb"></i> подсказка использована — задание закрыто, очков не будет</div>
+            </div>
+          </div>
+        </div>`;
+      return;
+    }
+    if(task.solved || (solvedTasks.has(String(currentTaskDefId)))){
+      main.innerHTML = `
+        <div class="test-container">
+          <div class="task-card">
+            <div class="task-head">
+              <div>
+                <span class="task-kicker">Задание</span>
+                <h3 class="task-title">${escapeHtml(currentTaskTitle || 'Практика')}</h3>
+              </div>
+              <div class="task-head-right">
+                <span class="task-id">ID ${escapeHtml(String(task.task_id))}</span>
+                <span class="nav-status"><i class="ti ti-circle-check"></i></span>
+              </div>
+            </div>
+            <div class="task-body">
+              <p class="task-instruction">${escapeHtml(instruction)}</p>
+              <div class="dna-display">
+                ${ topStrand ? `<div class="strand">${formatStrand(topStrand)}</div>` : '' }
+                ${ bottomStrand ? `<div class="strand">${formatStrand(bottomStrand)}</div>` : '' }
+              </div>
+              <div class="solved-note"><i class="ti ti-circle-check"></i> задача уже решена, очки начислены — повторно сдать нельзя</div>
+            </div>
+          </div>
+        </div>`;
+      return;
+    }
     main.innerHTML = `
       <div class="test-container">
         <div class="task-card">
-          <div class="task-id">ID: ${escapeHtml(String(task.task_id))}</div>
-          <button class="bulb-btn" id="bulb-btn" title="сдаться и показать ответ">💡</button>
-          <div class="task-instruction">${escapeHtml(instruction)}</div>
-          <div class="dna-display">
-            ${ topStrand ? `<div class="strand">${formatStrand(topStrand)}</div>` : '' }
-            ${ bottomStrand ? `<div class="strand">${formatStrand(bottomStrand)}</div>` : '' }
+          <div class="task-head">
+            <div>
+              <span class="task-kicker">Задание</span>
+              <h3 class="task-title">${escapeHtml(currentTaskTitle || 'Практика')}</h3>
+            </div>
+            <div class="task-head-right">
+              <span class="task-id">ID ${escapeHtml(String(task.task_id))}</span>
+              <button class="bulb-btn" id="bulb-btn" title="показать ответ">подсказка</button>
+            </div>
           </div>
-          <div class="input-area">
-            <input type="text" id="user-input" class="dna-input" placeholder="Введите ответ (5'-...-3')" autocomplete="off">
-            <div id="feedback" class="feedback-msg"></div>
+          <div class="task-body">
+            <p class="task-instruction">${escapeHtml(instruction)}</p>
+            <div class="dna-display">
+              ${ topStrand ? `<div class="strand">${formatStrand(topStrand)}</div>` : '' }
+              ${ bottomStrand ? `<div class="strand">${formatStrand(bottomStrand)}</div>` : '' }
+            </div>
+            <div class="input-area">
+              <label class="field-label" for="user-input">Ваш ответ</label>
+              <input type="text" id="user-input" class="dna-input" placeholder="5'-...-3'" autocomplete="off">
+              <div id="feedback" class="feedback-msg"></div>
+            </div>
           </div>
-          <button class="submit-btn" id="submit-btn" onclick="submitAnswer()">ПРОВЕРИТЬ</button>
+          <div class="task-foot">
+            <span class="attempts" id="attempts">попыток: 0</span>
+            <button class="submit-btn" id="submit-btn" onclick="submitAnswer()">Проверить</button>
+          </div>
         </div>
       </div>`;
     const bulb = document.getElementById('bulb-btn'); if(bulb) bulb.onclick = ()=> useHint(currentTaskId);
+    updateAttempts();
   }
 
-  // submit
   async function submitAnswer(){
     const input = document.getElementById('user-input'); if(!input) return;
-    const feedback = document.getElementById('feedback');
-    const btn = document.getElementById('submit-btn');
+    const feedback = document.getElementById('feedback'); if(!feedback) return;
+    const btn = document.getElementById('submit-btn'); if(!btn) return;
+    if(hintedTasks.has(String(currentTaskDefId))){
+      feedback.className = 'feedback-msg error';
+      feedback.textContent = 'подсказка использована — ответ сдавать нельзя';
+      return;
+    }
     const userVal = input.value.trim().toUpperCase();
     if(!userVal) return;
     input.disabled = true; btn.disabled = true;
     const original = btn.innerHTML;
     btn.innerHTML = getLoaderHtml('btn-loader');
     const res = await apiRequest('/check_answer','POST',{ task_id: currentTaskId, user_input: userVal });
-    btn.innerHTML = original; input.disabled = false;
+    btn.innerHTML = original;
+    if(res && res.already_solved){
+      input.disabled = true; btn.disabled = true;
+      feedback.className = 'feedback-msg success';
+      feedback.textContent = 'задача уже решена — очки начислены ранее';
+      return;
+    }
+    input.disabled = false;
     if(res && res.is_correct){
       input.classList.remove('error'); input.classList.add('success');
-      feedback.className = 'feedback-msg success'; feedback.textContent = 'Верно! +100 баллов';
-      btn.disabled = true;
-    } else {
-      btn.disabled = false; attemptCounter++; input.classList.add('error'); feedback.className = 'feedback-msg error';
-      if(res && res.errors && res.errors.length){
-        feedback.innerHTML = '';
-        res.errors.slice(0,5).forEach(err=>{
-          const idx = (typeof err.index === 'number') ? (err.index+1) : '?';
-          const msg = err.msg ? escapeHtml(err.msg) : `Ожидалось: ${escapeHtml(err.expected||'')}`;
-          feedback.innerHTML += `<div>позиция ${idx}: ${msg}</div>`;
-        });
-      } else {
-        feedback.textContent = 'Неверно. Попробуйте еще раз.';
+      feedback.className = 'feedback-msg success'; feedback.textContent = `Верно! +${res.rating_awarded ?? 100} к рейтингу`;
+      btn.disabled = true; input.disabled = true;
+      updateAttempts();
+      if(res.rating_awarded && currentTaskDefId){
+        solvedTasks.add(String(currentTaskDefId));
+        const item = document.querySelector(`.nav-item[data-task-id="${currentTaskDefId}"]`);
+        if(item){
+          item.classList.add('done');
+          item.insertAdjacentHTML('beforeend', statusHtml(false, true, false));
+        }
       }
-      setTimeout(()=> input.classList.remove('error'),500);
+    } else {
+      attemptCounter++; updateAttempts();
+      btn.disabled = false; input.classList.add('error'); feedback.className = 'feedback-msg error';
+      if(res && res.errors && res.errors.length){
+        feedback.innerHTML = res.errors.slice(0,5).map(err=>{
+          const idx = (typeof err.index === 'number') ? (err.index+1) : '?';
+          const msg = err.msg ? escapeHtml(err.msg) : `ожидалось: ${escapeHtml(err.expected||'')}`;
+          return `<div class="err-line">позиция ${idx}: ${msg}</div>`;
+        }).join('');
+      } else {
+        feedback.textContent = 'Неверно, попробуйте ещё раз.';
+      }
+      setTimeout(()=> input.classList.remove('error'), 500);
       if(attemptCounter >= 3){
-        const bulb = document.getElementById('bulb-btn'); if(bulb) bulb.classList.add('visible');
-        feedback.textContent += ' (Доступна подсказка 💡)';
+        const bulb = document.getElementById('bulb-btn');
+        if(bulb) bulb.classList.add('visible');
       }
       input.focus();
     }
   }
 
-  // hint
+  function updateAttempts(){
+    const a = document.getElementById('attempts');
+    if(a) a.textContent = `попыток: ${attemptCounter}`;
+  }
+
   async function useHint(taskId){
-    if(!confirm("Использовать подсказку? Вы получите 0 баллов.")) return;
-    const input = document.getElementById('user-input'); if(!input) return;
-    input.placeholder = "Загрузка ответа..."; input.value = ''; input.disabled = true;
+    if(!taskId){ showToast('сначала открой задание', true); return; }
+    showToast('подсказка открывает ответ — очков за эту задачу не будет', true);
+    const input = document.getElementById('user-input'); if(!input){ showToast('получить подсказку не удалось', true); return; }
+    input.placeholder = 'загрузка ответа...'; input.value = ''; input.disabled = true;
     const res = await apiRequest(`/solve_task/${taskId}`, 'GET');
+    const fb = document.getElementById('feedback');
     if(res && res.solution){
-      input.value = res.solution; input.classList.add('warning');
-      const fb = document.getElementById('feedback'); if(fb){ fb.textContent = 'Ответ получен. Баллы за задание: 0'; fb.style.color = 'var(--warning)'; }
+      input.value = res.solution; input.disabled = false;
+      if(fb){ fb.className = 'feedback-msg'; fb.textContent = 'ответ показан, баллы за задание не начисляются'; fb.style.color = 'var(--warning)'; }
       const btn = document.getElementById('submit-btn'); if(btn) btn.disabled = true;
       const bulb = document.getElementById('bulb-btn'); if(bulb) bulb.classList.remove('visible');
+      hintedTasks.add(String(currentTaskDefId));
+      const item = document.querySelector(`.nav-item[data-task-id="${currentTaskDefId}"]`);
+      if(item){
+        item.classList.remove('done');
+        item.classList.add('hint-closed');
+        const old = item.querySelector('.nav-status'); if(old) old.remove();
+        item.insertAdjacentHTML('beforeend', statusHtml(false, false, true));
+      }
     } else {
-      input.disabled = false; input.placeholder = "Ошибка получения подсказки";
+      input.disabled = false; input.placeholder = "5'-...-3'";
+      if(fb){ fb.className = 'feedback-msg error'; fb.textContent = `подсказка недоступна: ${escapeHtml(res?.error || 'задача закрыта или id устарел')}`; }
     }
   }
 
-  // helpers
   function escapeHtml(s){ if(s === null || s === undefined) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
+
+  function videoEmbedUrl(url){
+    try{
+      const u = new URL(url);
+      const host = u.hostname.replace(/^www\./,'');
+      if(host === 'youtu.be')
+        return `https://www.youtube.com/embed/${u.pathname.slice(1)}`;
+      if(host.endsWith('youtube.com')){
+        if(u.pathname.startsWith('/watch'))
+          return `https://www.youtube.com/embed/${u.searchParams.get('v')||''}`;
+        if(u.pathname.startsWith('/shorts/'))
+          return `https://www.youtube.com/embed/${u.pathname.split('/')[2]}`;
+        if(u.pathname.startsWith('/embed/'))
+          return url;
+      }
+      if(host.endsWith('vk.com') || host.endsWith('vkvideo.ru')){
+        const m = u.pathname.match(/\/video(-?\d+)_(\d+)/);
+        if(m) return `https://vk.com/video_ext.php?oid=${m[1]}&id=${m[2]}`;
+      }
+      if(host.endsWith('rutube.ru')){
+        const m = u.pathname.match(/\/video\/([a-z0-9]+)/i);
+        if(m) return `https://rutube.ru/play/embed/${m[1]}`;
+      }
+      return null;
+    }catch(e){ return null; }
+  }
+  function renderVideo(block){
+    // embed из кода встраивания платформы; url — старая логика (youtube/vk/rutube/mp4)
+    if(block && block.embed){
+      if(block.embed_type === 'script'){
+        // script-плееры исполняются после вставки контента в DOM
+        return `<div class="lesson-video-embed" data-embed-script="${escapeHtml(block.embed)}"></div>`;
+      }
+      return `<div class="lesson-video"><iframe src="${escapeHtml(block.embed)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen frameborder="0"></iframe></div>`;
+    }
+    const url = block && (block.url || block.src);
+    if(!url) return `<div class="lesson-warning">видео не указано</div>`;
+    const embed = videoEmbedUrl(url);
+    if(embed)
+      return `<div class="lesson-video"><iframe src="${escapeHtml(embed)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen frameborder="0"></iframe></div>`;
+    return `<video class="lesson-video-file" controls src="${escapeHtml(url)}"></video>`;
+  }
+  // скриптовые плееры: innerHTML не исполняет <script>, вставляем вручную
+  function mountEmbedScripts(root){
+    root.querySelectorAll('.lesson-video-embed[data-embed-script]').forEach(box=>{
+      if(box.dataset.mounted) return;
+      box.dataset.mounted = '1';
+      const s = document.createElement('script');
+      s.src = box.dataset.embedScript;
+      box.appendChild(s);
+    });
+  }
   function formatStrand(str){ if(!str) return ''; let m = str.match(/5'-(.+?)-3'/i); let left="5'", right="3'", seq=''; if(m){ seq=m[1]; } else { m = str.match(/3'-(.+?)-5'/i); if(m){ seq=m[1]; left="3'"; right="5'"; } else { seq=str; left=''; right=''; } } const parts=[]; if(left) parts.push(`<span class="end">${escapeHtml(left)}</span>`); parts.push(`<span class="seq">${escapeHtml(seq)}</span>`); if(right) parts.push(`<span class="end">${escapeHtml(right)}</span>`); return parts.join('<span style="color:#6b7280"> - </span>'); }
 
-  // mobile: burger behaviour
   const burger = document.getElementById('burger'), sidebar = document.getElementById('sidebar'), mainArea = document.getElementById('main-area');
   function toggleSidebar(){ sidebar.classList.toggle('open'); }
   function closeSidebarMobile(){ if(window.innerWidth <= 800) sidebar.classList.remove('open'); }
   burger.addEventListener('click', toggleSidebar);
-  // close when tapping main
   mainArea.addEventListener('click', ()=> closeSidebarMobile());
-  // close on resize over threshold
   window.addEventListener('resize', ()=> { if(window.innerWidth > 800) sidebar.classList.remove('open'); });
 
-  // start
+  (async () => {
+    try {
+      const r = await fetch(`${API_BASE}/search_user`, { headers: { 'Authorization': `Bearer ${token}` } });
+      const u = await r.json();
+      if (u && u.theme) { document.body.dataset.theme = u.theme; localStorage.setItem('theme', u.theme); }
+      else if (localStorage.getItem('theme')) document.body.dataset.theme = localStorage.getItem('theme');
+    } catch {
+      if (localStorage.getItem('theme')) document.body.dataset.theme = localStorage.getItem('theme');
+    }
+  })();
+
   init();
   </script>
 </body>
