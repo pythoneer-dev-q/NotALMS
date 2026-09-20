@@ -107,27 +107,30 @@ async def main_answerCheck(data: dict, user=Depends(get_current_user)):
     sol = await coursesDB.search_test__id(data['task_id'])
     if not sol:
         return jsonset(content={'error': 'задача не найдена'}, status_code=404)
-    # очки только за первое решение определения задачи, а не за перегенерённый вариант
+    # считаем по определению задачи, а не по сгенерированному варианту
     key = sol.get('parent_task_id') or data['task_id']
-    if key in await coursesDB.solved_task_ids(user['user_uid']):
-        # повторно решать нельзя: прогресс уже записан
-        return jsonset(content={'is_correct': True, 'already_solved': True}, status_code=200)
-    if key in await coursesDB.hinted_task_ids(user['user_uid']):
-        # подсказка использована — задание закрыто
-        return jsonset(content={'closed': True, 'hint_used': True}, status_code=200)
+    # подсказка не блокирует, но очков за задание больше не даёт
+    hinted = key in await coursesDB.hinted_task_ids(user['user_uid'])
     sub = await biologyUtil.validate_submission(user_input=data['user_input'], solution=sol['internal_solution'])
     if sub.get('is_correct'):
-        fresh = await coursesDB.mark_task_solved(
-            user['user_uid'], key, sub.get('score', 0)
-        )
-        if fresh:
-            await usersDB.add_rating(user['user_uid'], sub.get('score', 0))
-            sub['rating_awarded'] = sub.get('score', 0)
+        # задание бесконечное: награда растет с каждым решением до 1000
+        base = 0 if hinted else (sub.get('score') or coursesDB.BASE_TASK_REWARD)
+        reward, solves = await coursesDB.mark_task_solved(user['user_uid'], key, base)
+        sub['rating_awarded'] = reward
+        sub['solve_count'] = solves
+        sub['next_reward'] = coursesDB.reward_for(coursesDB.BASE_TASK_REWARD, solves)
+        if hinted:
+            sub['hint_used'] = True
+        else:
+            await usersDB.add_rating(user['user_uid'], reward)
+        # этот вариант отработан — в следующий раз сгенерируем новое задание
+        await coursesDB.drop_tests_for(key, user['user_uid'])
     return jsonset(content=sub, status_code=200)
+
 @crouter.get('/getTest/{click_from}')
 async def main_taskGetter(click_from: str, user=Depends(get_current_user)):
     if (tmp := await coursesDB.search_tasks__id(_id=click_from)):
-        # задания идут по порядку: сначала решаем предыдущие в этом уроке
+        # задания идут по порядку: сначала закрываем предыдущие в этом уроке
         solved = await coursesDB.solved_task_ids(user['user_uid'])
         hinted = await coursesDB.hinted_task_ids(user['user_uid'])
         already = str(tmp['_id']) in solved
@@ -136,19 +139,21 @@ async def main_taskGetter(click_from: str, user=Depends(get_current_user)):
             for t in await coursesDB.tasks_in_lesson(tmp['lesson_id']):
                 if t['_id'] == tmp['_id']:
                     break  # дошли до текущего — все предыдущие закрыты
-                if str(t['_id']) not in solved and str(t['_id']) not in hinted:
+                if str(t['_id']) not in solved:
                     return jsonset(content={
                         'error': 'сначала реши предыдущие задания этого урока'
                     }, status_code=403)
-        # один и тот же вариант держим 30 минут: меньше мусора в базе и стабильные очки
-        cached = await coursesDB.recent_test(click_from, minutes=30)
+        # вариант держим 30 минут: меньше мусора в базе и стабильные очки
+        cached = await coursesDB.recent_test(click_from, user['user_uid'], minutes=30)
         if cached is None:
             cached = await biologyUtil.generate_task(
                 mode=int(tmp['mode']),
                 length=int(tmp['settings']['taskLen'])
             )
             cached['parent_task_id'] = str(click_from)
+            cached['owner_uid'] = user['user_uid']
             await coursesDB.create_test(cached)
+        solves = await coursesDB.task_solves(user['user_uid'], str(click_from))
         # наружу отдаём без ответа и служебных полей
         return jsonset(content={
             'mode': cached.get('mode'),
@@ -156,6 +161,8 @@ async def main_taskGetter(click_from: str, user=Depends(get_current_user)):
             'condition': cached.get('condition', {}),
             'tryings': cached.get('tryings', 0),
             'solved': already,
+            'solves': solves,
+            'next_reward': coursesDB.reward_for(coursesDB.BASE_TASK_REWARD, solves),
             'hint_used': hint_used
         }, status_code=200)
     return jsonset(
@@ -167,7 +174,7 @@ async def main_taskGetter(click_from: str, user=Depends(get_current_user)):
 
 @crouter.get('/solve_task/{task_id}')
 async def main_taskSolver(task_id: str, user=Depends(get_current_user)):
-    # подсказка: показываем ответ и навсегда закрываем задание
+    # подсказка показывает ответ, задание остается доступным для решения
     try:
         tid = int(task_id)  # task_id в базе int, строка не сматчилась бы
     except ValueError:
@@ -176,17 +183,15 @@ async def main_taskSolver(task_id: str, user=Depends(get_current_user)):
     key = (inst or {}).get('parent_task_id') or str(task_id)
     if key in await coursesDB.solved_task_ids(user['user_uid']):
         return jsonset(content={'error': 'задача уже решена, подсказка не нужна'}, status_code=409)
-    if key in await coursesDB.hinted_task_ids(user['user_uid']):
-        return jsonset(content={'error': 'подсказка уже использована, задание закрыто'}, status_code=409)
     canonical = (inst or {}).get('internal_solution', {}).get('canonical_5_3')
     if canonical is None:
         task = await coursesDB.search_tasks__id(_id=task_id)
         canonical = (task or {}).get('internal_solution', {}).get('canonical_5_3')
     if canonical is None:
         return jsonset(content={'error': 'подсказки для этой задачи нет'}, status_code=404)
-    # фиксируем использование подсказки: задание закрывается для юзера
+    # фиксируем использование: очков за это задание больше не будет
     await coursesDB.mark_task_hint(user['user_uid'], key)
-    return jsonset(content={'solution': f"5'-{canonical}-3'", 'closed': True}, status_code=200)
+    return jsonset(content={'solution': f"5'-{canonical}-3'", 'hint_used': True}, status_code=200)
 
 
 @crouter.get('/me/solved')

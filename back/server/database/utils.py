@@ -32,3 +32,20 @@ async def decode_token(token: str) -> dict | None:
         return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except JWTError:
         return None
+
+
+# пароль: минимум 8 символов, строчная + заглавная + спецсимвол
+PASSWORD_RULES = [
+    ('минимум 8 символов', lambda p: len(p) >= 8),
+    ('нужна строчная буква', lambda p: any(c.islower() for c in p)),
+    ('нужна заглавная буква', lambda p: any(c.isupper() for c in p)),
+    ('нужен спецсимвол', lambda p: any(not c.isalnum() for c in p)),
+]
+
+
+def password_error(password: str) -> str | None:
+    # None = пароль подходит, иначе текст первого невыполненного требования
+    for msg, ok in PASSWORD_RULES:
+        if not ok(password or ''):
+            return 'пароль: ' + msg
+    return None

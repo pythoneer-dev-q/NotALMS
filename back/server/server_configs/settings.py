@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     mongo_lmstasks: str = 'nttasks'
     mongo_lmstests: str = 'nttests'
     mongo_lmsreads: str = 'ntlesson_reads'  # прочитанные уроки
+    mongo_lmshints: str = 'nthints'  # использованные подсказки
 
     # jwt
     secret_key: str = 'твой_очень_длинный_секрет_1234567890abcde99999999'

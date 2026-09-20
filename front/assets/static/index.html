@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NotALMS — современная учебная платформа</title>
+    <title>NotALMS — учебная платформа</title>
     <meta name="description"
-        content="Платформа для курсов по любым темам: интерактивные задачи с мгновенной проверкой, рейтинг и вход через Telegram.">
+        content="Курсы по программированию, наукам и языкам. Задания с мгновенной проверкой, рейтинг, вход через Telegram.">
     <link rel="icon" href="/favicon.ico" sizes="32x32">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,25 +14,23 @@
     <link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
     <script>
-        (function() {
+        (function () {
             var theme = localStorage.getItem('theme');
             if (theme) document.documentElement.dataset.theme = theme;
         })();
     </script>
+    <script src="/assets/static/toast.js"></script>
     <style>
-        
         :root {
             --acc1: #FF5099;
             --acc2: #FF2E2E;
             --bg: #08070b;
             --surface: #0e0d13;
             --surface2: #131019;
-            --panel: rgba(10, 9, 14, .82);
             --line: rgba(255, 255, 255, .055);
             --line2: rgba(255, 255, 255, .1);
             --text: #f4f4f5;
             --muted: rgba(255, 255, 255, .5);
-            --grad: linear-gradient(90deg, var(--acc1), var(--acc2));
             --r: 14px;
         }
 
@@ -41,7 +39,7 @@
             --acc2: #0d9488;
             --bg: #06120c;
             --surface: #0b1813;
-            --surface2: #0e1e17
+            --surface2: #0e1e17;
         }
 
         [data-theme="sunset"] {
@@ -49,7 +47,7 @@
             --acc2: #f97316;
             --bg: #141008;
             --surface: #1b160c;
-            --surface2: #221b0e
+            --surface2: #221b0e;
         }
 
         [data-theme="rose"] {
@@ -57,7 +55,7 @@
             --acc2: #e11d48;
             --bg: #120a0f;
             --surface: #190d14;
-            --surface2: #20111a
+            --surface2: #20111a;
         }
 
         [data-theme="ocean"] {
@@ -65,11 +63,11 @@
             --acc2: #0284c7;
             --bg: #061019;
             --surface: #0a1626;
-            --surface2: #0d1c30
+            --surface2: #0d1c30;
         }
 
         * {
-            box-sizing: border-box
+            box-sizing: border-box;
         }
 
         body {
@@ -79,7 +77,7 @@
             font-family: 'Onest', sans-serif;
             min-height: 100vh;
             overflow-x: hidden;
-            -webkit-font-smoothing: antialiased
+            -webkit-font-smoothing: antialiased;
         }
 
         h1,
@@ -87,54 +85,35 @@
         h3 {
             font-weight: 800;
             letter-spacing: -.01em;
-            margin: 0
+            margin: 0;
         }
 
         p {
-            margin: 0
+            margin: 0;
         }
 
         a {
             color: inherit;
-            text-decoration: none
+            text-decoration: none;
         }
 
-        .smooth {
-            transition: all .2s ease
-        }
-
-        
-        
         .gtext {
-            color: var(--acc1)
+            color: var(--acc1);
         }
 
-        
-        .card {
-            background: var(--surface);
-            outline: 1px solid var(--line);
-            outline-offset: -1px;
-            border-radius: var(--r)
-        }
-
-        .card-glow {
-            background: var(--surface);
-        }
-
-        
         .wrap {
             max-width: 100rem;
             margin: 0 auto;
-            padding: 0 1rem
+            padding: 0 1rem;
         }
 
-        @media(min-width:1024px) {
+        @media (min-width: 1024px) {
             .wrap {
-                padding: 0 4rem
+                padding: 0 4rem;
             }
         }
 
-        
+        /* ===== header ===== */
         .header {
             position: fixed;
             inset: 0 0 auto;
@@ -146,9 +125,9 @@
             padding: .8rem 1rem;
         }
 
-        @media(min-width:1024px) {
+        @media (min-width: 1024px) {
             .header {
-                padding: .8rem 4rem
+                padding: .8rem 4rem;
             }
         }
 
@@ -157,7 +136,7 @@
             margin: 0 auto;
             display: flex;
             align-items: center;
-            justify-content: space-between
+            justify-content: space-between;
         }
 
         .header__burger {
@@ -182,7 +161,7 @@
             font-size: 1.5rem;
         }
 
-        @media(min-width:1024px) {
+        @media (min-width: 1024px) {
             .header__burger {
                 display: none;
             }
@@ -192,58 +171,18 @@
             font-weight: 800;
             font-size: 1.5rem;
             letter-spacing: .02em;
-            cursor: pointer
-        }
-
-        .logo span {
-            font-size: .6em;
-            font-weight: 500;
-            color: var(--muted);
-            margin-left: .5em
-        }
-
-        .nav {
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            display: none;
-            gap: 3rem
-        }
-
-        @media(min-width:1024px) {
-            .nav {
-                display: flex
-            }
-        }
-
-        .nav a {
-            display: flex;
-            gap: .7rem;
-            align-items: center;
-            color: rgba(255, 255, 255, .5);
-            font-weight: 500;
-            font-size: 1rem;
-            transition: .2s
-        }
-
-        .nav a:hover {
-            color: var(--text);
-            transform: scale(.98)
-        }
-
-        .nav a b {
-            color: var(--acc1);
-            font-weight: 400
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
         }
 
         .header__right {
             display: flex;
             align-items: center;
-            gap: 1.2rem
+            gap: 1.2rem;
         }
 
-        
+        /* ===== кнопки ===== */
         .pill {
             display: inline-flex;
             align-items: center;
@@ -264,11 +203,11 @@
 
         .pill:hover {
             transform: scale(.97);
-            filter: brightness(1.15)
+            filter: brightness(1.15);
         }
 
         .pill:active {
-            transform: scale(.94)
+            transform: scale(.94);
         }
 
         .pill--strong {
@@ -277,15 +216,14 @@
         }
 
         .pill--ghost {
-            background: rgba(255, 255, 255, .04)
+            background: rgba(255, 255, 255, .04);
         }
 
         .pill--ghost:hover {
-            background: rgba(255, 255, 255, .08)
+            background: rgba(255, 255, 255, .08);
         }
-    </style>
-    <style>
-        
+
+        /* ===== hero ===== */
         .hero-band {
             margin-top: 5.5rem;
             position: relative;
@@ -309,31 +247,31 @@
             z-index: 1;
             display: grid;
             gap: 3rem;
-            padding: 4rem 1.5rem 3.5rem
+            padding: 4rem 1.5rem 3.5rem;
         }
 
-        @media(min-width:768px) {
+        @media (min-width: 768px) {
             .hero-in {
-                padding: 5rem 4rem 4.5rem
+                padding: 5rem 4rem 4.5rem;
             }
         }
 
-        @media(min-width:1280px) {
+        @media (min-width: 1280px) {
             .hero-in {
                 grid-template-columns: 2fr 1fr;
-                padding-bottom: 4.5rem
+                padding-bottom: 4.5rem;
             }
         }
 
         .hero-txt h1 {
             font-size: clamp(1.9rem, 4.5vw, 3.2rem);
-            line-height: 1.08
+            line-height: 1.08;
         }
 
         .hero-txt h2 {
             font-size: clamp(1.9rem, 4.5vw, 3.2rem);
             line-height: 1.08;
-            margin-top: .2rem
+            margin-top: .2rem;
         }
 
         .hero-txt p {
@@ -341,35 +279,34 @@
             color: var(--muted);
             font-size: 1.05rem;
             line-height: 1.6;
-            max-width: 34rem
+            max-width: 34rem;
         }
 
         .hero-btns {
             display: flex;
             flex-wrap: wrap;
             gap: .9rem;
-            margin-top: 2.2rem
+            margin-top: 2.2rem;
         }
 
         .tg-hint {
             margin-top: 1.1rem;
             color: var(--muted);
-            font-size: .92rem
+            font-size: .92rem;
         }
 
         .tg-hint b {
             color: var(--text);
             font-weight: 500;
             cursor: pointer;
-            border-bottom: 1px dashed var(--line2)
+            border-bottom: 1px dashed var(--line2);
         }
 
         .tg-hint b:hover {
             color: var(--acc1);
-            border-color: var(--acc1)
+            border-color: var(--acc1);
         }
 
-        
         .hero-panel {
             position: relative;
             z-index: 3;
@@ -389,45 +326,44 @@
             gap: 1rem;
             align-items: center;
             padding-bottom: 1.1rem;
-            border-bottom: 1px solid var(--line)
+            border-bottom: 1px solid var(--line);
         }
 
         .hstat:last-child {
             padding-bottom: 0;
-            border-bottom: 0
+            border-bottom: 0;
         }
 
         .hstat .ico {
-            font-size: 1.6rem
+            font-size: 1.6rem;
         }
 
         .hstat b {
             display: block;
             font-size: 1.7rem;
             font-weight: 700;
-            line-height: 1.1
+            line-height: 1.1;
         }
 
         .hstat span {
             color: var(--muted);
-            font-size: .92rem
+            font-size: .92rem;
         }
 
         .hdiv {
-            display: none
+            display: none;
         }
-    </style>
-    <style>
-        
+
+        /* ===== секции ===== */
         .sect {
-            padding: 5.5rem 0 1rem
+            padding: 5.5rem 0 1rem;
         }
 
         .sec-title {
             position: relative;
             display: inline-block;
             font-size: clamp(1.7rem, 4vw, 3rem);
-            font-weight: 800
+            font-weight: 800;
         }
 
         .sec-title i {
@@ -437,37 +373,36 @@
             bottom: -2px;
             height: .5rem;
             border-radius: 2px;
-            background: color-mix(in srgb, var(--acc1) 55%, transparent)
+            background: color-mix(in srgb, var(--acc1) 55%, transparent);
         }
 
         .sec-title span {
             position: relative;
-            z-index: 1
+            z-index: 1;
         }
 
         .sec-sub {
             display: flex;
             justify-content: center;
-            padding-top: 1.6rem
+            padding-top: 1.6rem;
         }
 
         .sec-sub p {
             max-width: 34rem;
             text-align: center;
             color: var(--muted);
-            font-size: 1.05rem
+            font-size: 1.05rem;
         }
 
-        
         .feat-grid {
             display: grid;
             gap: 1rem;
-            padding-top: 2.6rem
+            padding-top: 2.6rem;
         }
 
-        @media(min-width:1024px) {
+        @media (min-width: 1024px) {
             .feat-grid {
-                grid-template-columns: repeat(3, 1fr)
+                grid-template-columns: repeat(3, 1fr);
             }
         }
 
@@ -480,50 +415,29 @@
             outline: 1px solid var(--line);
             outline-offset: -1px;
             background: var(--surface);
-            transition: .25s ease
+            transition: .25s ease;
         }
 
         .feat:hover {
             transform: translateY(-4px);
-            outline-color: var(--line2)
+            outline-color: var(--line2);
         }
 
         .feat__ico {
             font-size: 1.7rem;
-            margin-bottom: .4rem
+            margin-bottom: .4rem;
         }
 
         .feat h3 {
-            font-size: 1.25rem
+            font-size: 1.25rem;
         }
 
         .feat p {
             color: var(--muted);
             line-height: 1.6;
-            font-size: .98rem
+            font-size: .98rem;
         }
 
-        .feat__more {
-            display: flex;
-            gap: .6rem;
-            align-items: center;
-            padding-top: 1rem;
-            color: var(--text);
-            font-weight: 500;
-            font-size: .95rem
-        }
-
-        .feat__more i {
-            color: var(--acc1);
-            font-style: normal;
-            transition: .2s
-        }
-
-        .feat:hover .feat__more i {
-            transform: translateX(4px)
-        }
-
-        
         .step {
             position: relative;
             display: flex;
@@ -534,12 +448,12 @@
             outline: 1px solid var(--line);
             outline-offset: -1px;
             background: var(--surface);
-            transition: .25s
+            transition: .25s;
         }
 
         .step:hover {
             transform: translateY(-4px);
-            outline-color: var(--line2)
+            outline-color: var(--line2);
         }
 
         .step__num {
@@ -556,29 +470,28 @@
         }
 
         .step h3 {
-            font-size: 1.1rem
+            font-size: 1.1rem;
         }
 
         .step p {
             color: var(--muted);
             line-height: 1.6;
-            font-size: .95rem
+            font-size: .95rem;
         }
 
         .step-grid {
             display: grid;
             gap: 1rem;
-            padding-top: 2.6rem
+            padding-top: 2.6rem;
         }
 
-        @media(min-width:1024px) {
+        @media (min-width: 1024px) {
             .step-grid {
-                grid-template-columns: repeat(3, 1fr)
+                grid-template-columns: repeat(3, 1fr);
             }
         }
-    </style>
-    <style>
-        
+
+        /* ===== модалка авторизации ===== */
         .modal {
             position: fixed;
             inset: 0;
@@ -586,11 +499,11 @@
             display: none;
             align-items: center;
             justify-content: center;
-            padding: 1rem
+            padding: 1rem;
         }
 
         .modal.active {
-            display: flex
+            display: flex;
         }
 
         .modal__overlay {
@@ -598,7 +511,7 @@
             inset: 0;
             background: rgba(3, 3, 6, .7);
             -webkit-backdrop-filter: blur(6px);
-            backdrop-filter: blur(6px)
+            backdrop-filter: blur(6px);
         }
 
         .modal__card {
@@ -617,11 +530,11 @@
         @keyframes m-in {
             from {
                 opacity: 0;
-                transform: translateY(12px) scale(.98)
+                transform: translateY(12px) scale(.98);
             }
 
             to {
-                opacity: 1
+                opacity: 1;
             }
         }
 
@@ -634,17 +547,17 @@
             color: var(--muted);
             font-size: 1.4rem;
             cursor: pointer;
-            transition: .2s
+            transition: .2s;
         }
 
         .modal__close:hover {
-            color: var(--text)
+            color: var(--text);
         }
 
         .modal__title {
             font-size: 1.35rem;
             font-weight: 800;
-            margin-bottom: 1.4rem
+            margin-bottom: 1.4rem;
         }
 
         .modal input {
@@ -663,11 +576,11 @@
         }
 
         .modal input:focus {
-            outline-color: color-mix(in srgb, var(--acc1) 45%, transparent)
+            outline-color: color-mix(in srgb, var(--acc1) 45%, transparent);
         }
 
         .modal input::placeholder {
-            color: rgba(255, 255, 255, .3)
+            color: rgba(255, 255, 255, .3);
         }
 
         .modal label {
@@ -677,45 +590,45 @@
             color: var(--muted);
             font-size: .92rem;
             margin: .4rem 0 .8rem;
-            cursor: pointer
+            cursor: pointer;
         }
 
         .modal label input {
             width: 16px;
             height: 16px;
             accent-color: var(--acc1);
-            margin: 0
+            margin: 0;
         }
 
         .modal .note {
             color: rgba(255, 255, 255, .35);
             font-size: .8rem;
-            margin: -.3rem 0 .9rem
+            margin: -.3rem 0 .9rem;
         }
 
         .pill--block {
             width: 100%;
             justify-content: center;
-            margin-top: .4rem
+            margin-top: .4rem;
         }
 
         .modal__toggle {
             text-align: center;
             color: var(--muted);
             font-size: .92rem;
-            margin-top: 1.1rem
+            margin-top: 1.1rem;
         }
 
         .modal__toggle .link {
             color: var(--acc1);
-            cursor: pointer
+            cursor: pointer;
         }
 
         .modal__toggle .link:hover {
-            text-decoration: underline
+            text-decoration: underline;
         }
 
-        
+        /* ===== toast ===== */
         .toast {
             position: fixed;
             inset: 1.2rem 0 auto;
@@ -723,7 +636,7 @@
             display: flex;
             justify-content: center;
             padding: 0 1rem;
-            pointer-events: none
+            pointer-events: none;
         }
 
         .toast__card {
@@ -742,77 +655,71 @@
         }
 
         .toast__card.err {
-            outline-color: color-mix(in srgb, #ef4444 45%, transparent)
+            outline-color: color-mix(in srgb, #ef4444 45%, transparent);
         }
 
         .toast.out {
-            animation: t-out .3s ease-in forwards
+            animation: t-out .3s ease-in forwards;
         }
 
         @keyframes t-in {
             from {
                 opacity: 0;
-                transform: translateY(-10px)
+                transform: translateY(-10px);
             }
 
             to {
-                opacity: 1
+                opacity: 1;
             }
         }
 
         @keyframes t-out {
             to {
                 opacity: 0;
-                transform: translateY(-10px)
+                transform: translateY(-10px);
             }
         }
 
-        
+        /* ===== footer ===== */
         .footer {
             position: relative;
             overflow: hidden;
             background: #000;
-            margin-top: 6rem
+            margin-top: 6rem;
         }
 
-        
         .footer::before {
             content: '';
             position: absolute;
             inset: 0 auto auto 0;
             width: 100%;
             height: 1px;
-            background: rgba(255, 255, 255, .06)
-        }
-
-        .footer .fbar {
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .1) 50%, transparent)
+            background: rgba(255, 255, 255, .06);
         }
 
         .footer__in {
             position: relative;
             max-width: 100rem;
             margin: 0 auto;
-            padding: 3.5rem 1rem 2.5rem
+            padding: 3.5rem 1rem 2.5rem;
         }
 
-        @media(min-width:1024px) {
+        @media (min-width: 1024px) {
             .footer__in {
-                padding: 4rem 4rem 2.5rem
+                padding: 4rem 4rem 2.5rem;
             }
         }
 
         .footer__grid {
             display: flex;
             flex-direction: column;
-            gap: 3rem
+            gap: 3rem;
         }
 
-        @media(min-width:1024px) {
+        @media (min-width: 1024px) {
             .footer__grid {
                 flex-direction: row;
-                justify-content: space-between
+                justify-content: space-between;
             }
         }
 
@@ -821,7 +728,7 @@
             font-size: .9rem;
             line-height: 1.6;
             max-width: 18rem;
-            margin-top: 1rem
+            margin-top: 1rem;
         }
 
         .fcol p.fhead {
@@ -830,7 +737,7 @@
             text-transform: uppercase;
             letter-spacing: .18em;
             color: rgba(255, 255, 255, .3);
-            margin-bottom: 1.1rem
+            margin-bottom: 1.1rem;
         }
 
         .fcol a {
@@ -841,11 +748,11 @@
             font-size: .95rem;
             margin-bottom: .9rem;
             transition: .2s;
-            width: fit-content
+            width: fit-content;
         }
 
         .fcol a:hover {
-            color: var(--text)
+            color: var(--text);
         }
 
         .fcol a i {
@@ -854,12 +761,12 @@
             font-size: .8rem;
             opacity: 0;
             transform: translateX(-4px);
-            transition: .2s
+            transition: .2s;
         }
 
         .fcol a:hover i {
             opacity: 1;
-            transform: none
+            transform: none;
         }
 
         .footer__bottom {
@@ -871,15 +778,14 @@
             font-size: .85rem;
             margin-top: 2.5rem;
             padding-top: 1.8rem;
-            border-top: 1px solid rgba(255, 255, 255, .06)
+            border-top: 1px solid rgba(255, 255, 255, .06);
         }
 
-        @media(max-width:768px) {
+        @media (max-width: 768px) {
             .hero-in {
-                padding: 3rem 1.4rem
+                padding: 3rem 1.4rem;
             }
 
-            
             .hero-panel {
                 flex-direction: row;
                 justify-content: space-between;
@@ -887,16 +793,41 @@
                 padding: 1.1rem;
             }
 
-            .hstat { border-bottom: 0; padding-bottom: 0; }
-            .hstat .ico { font-size: 1.2rem; }
-            .hstat b { font-size: 1.2rem; }
-            .hstat span { font-size: .75rem; }
-            .hero-btns .pill { width: 100%; justify-content: center; }
-            .header { padding: .7rem 1rem; }
-            .sect { padding: 3.5rem 0 1rem; }
-            .feat, .step { padding: 1.4rem; }
+            .hstat {
+                border-bottom: 0;
+                padding-bottom: 0;
+            }
 
-            
+            .hstat .ico {
+                font-size: 1.2rem;
+            }
+
+            .hstat b {
+                font-size: 1.2rem;
+            }
+
+            .hstat span {
+                font-size: .75rem;
+            }
+
+            .hero-btns .pill {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .header {
+                padding: .7rem 1rem;
+            }
+
+            .sect {
+                padding: 3.5rem 0 1rem;
+            }
+
+            .feat,
+            .step {
+                padding: 1.4rem;
+            }
+
             .header__mobile-panel {
                 position: absolute;
                 top: 100%;
@@ -914,35 +845,6 @@
             .header__mobile-panel.open {
                 display: block;
             }
-
-            .mobile-nav {
-                display: flex;
-                flex-direction: column;
-                gap: .5rem;
-            }
-
-            .mobile-nav a {
-                display: flex;
-                align-items: center;
-                gap: .7rem;
-                padding: .9rem 1rem;
-                border-radius: 10px;
-                color: rgba(255, 255, 255, .7);
-                font-weight: 500;
-                font-size: 1rem;
-                transition: .2s;
-                background: rgba(255, 255, 255, .03);
-            }
-
-            .mobile-nav a:hover {
-                background: rgba(255, 255, 255, .08);
-                color: var(--text);
-            }
-
-            .mobile-nav a b {
-                color: var(--acc1);
-                font-weight: 400;
-            }
         }
     </style>
 </head>
@@ -952,27 +854,21 @@
 
     <header class="header">
         <div class="header__in">
-            <button class="header__burger" id="header-burger" aria-label="Меню"><i class="ti ti-menu-2"></i></button>
-            <div class="logo gtext">NotALMS</div>
+            <a href="/" class="logo gtext">NotALMS</a>
             <div class="header__right">
                 <button class="pill pill--strong" id="login-btn">Войти</button>
             </div>
         </div>
-        
-        
-        <div class="header__mobile-panel" id="header-mobile-panel">
-        </div>
     </header>
 
-    
     <div class="wrap">
         <section class="hero-band">
             <div class="hero-in">
                 <div class="hero-txt">
                     <h1>Учись новому</h1>
                     <h2 class="gtext">интерактивно</h2>
-                    <p>Платформа для курсов по любым темам: программирование, науки, языки, дизайн.
-                        Задания с мгновенной проверкой и разбором ошибок, рейтинг и достижения.</p>
+                    <p>Курсы по программированию, наукам и языкам. Задания проверяются сразу,
+                        с разбором ошибок. Прогресс и очки идут в рейтинг.</p>
                     <div class="hero-btns">
                         <button class="pill pill--strong" id="register-btn">Начать бесплатно →</button>
                         <button class="pill pill--ghost" id="login-btn2">У меня есть аккаунт</button>
@@ -981,15 +877,16 @@
                         авторизует сам</p>
                 </div>
                 <div class="hero-panel">
-                    <div class="hstat"><span class="ico ti ti-users"></span>
+                    <div class="hstat">
+                        <span class="ico ti ti-users"></span>
                         <div><b id="stat-users">—</b><span>учеников</span></div>
                     </div>
-                    <div class="hdiv"></div>
-                    <div class="hstat"><span class="ico ti ti-books"></span>
+                    <div class="hstat">
+                        <span class="ico ti ti-books"></span>
                         <div><b id="stat-courses">—</b><span>курсов</span></div>
                     </div>
-                    <div class="hdiv"></div>
-                    <div class="hstat"><span class="ico ti ti-wallet"></span>
+                    <div class="hstat">
+                        <span class="ico ti ti-wallet"></span>
                         <div><b>0 ₽</b><span>бесплатно</span></div>
                     </div>
                 </div>
@@ -997,12 +894,11 @@
         </section>
     </div>
 
-    
     <section class="sect" id="features">
         <div class="wrap" style="text-align:center">
             <div class="sec-title"><i></i><span>Почему NotALMS</span></div>
             <div class="sec-sub">
-                <p>Всё для обучения в одном месте — теория, практика и мотивация.</p>
+                <p>Теория, практика и прогресс в одном месте.</p>
             </div>
             <div class="feat-grid" style="text-align:left">
                 <div class="feat">
@@ -1010,21 +906,20 @@
                     <h3>Мгновенная проверка</h3>
                     <p>Ответ проверяется сразу: разбор ошибок по позициям, подсказки и очки за первое решение.</p>
                 </div>
-                <div class="feat card-glow">
+                <div class="feat">
                     <div class="feat__ico ti ti-trophy" style="color:var(--acc1)"></div>
                     <h3>Рейтинг и прогресс</h3>
-                    <p>Очки за решенные задачи, топ учеников, достижения и цвет имени — видно, как ты растешь.</p>
+                    <p>Очки за решённые задачи, топ учеников и достижения — видно, как ты растёшь.</p>
                 </div>
                 <div class="feat">
-                    <div class="feat__ico ti ti-palette" style="color:var(--acc1)"></div>
-                    <h3>Твой стиль</h3>
-                    <p>Пять тем оформления и цвет имени — платформа выглядит так, как нравится именно тебе.</p>
+                    <div class="feat__ico ti ti-brand-telegram" style="color:var(--acc1)"></div>
+                    <h3>Вход через Telegram</h3>
+                    <p>Без пароля: бот выдаёт одноразовую ссылку — и ты в аккаунте одним тапом.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    
     <section class="sect" id="howto">
         <div class="wrap" style="text-align:center">
             <div class="sec-title"><i></i><span>Как это работает</span></div>
@@ -1035,7 +930,7 @@
                 <div class="step">
                     <div class="step__num">1</div>
                     <h3>Создай аккаунт</h3>
-                    <p>Пара полей — или вообще без пароля: бот в Telegram выдает ссылку-вход одним тапом.</p>
+                    <p>Пара полей — или вообще без пароля: бот в Telegram выдаёт ссылку-вход одним тапом.</p>
                 </div>
                 <div class="step">
                     <div class="step__num">2</div>
@@ -1052,12 +947,11 @@
     </section>
 
     <footer class="footer">
-        <div class="fbar"></div>
         <div class="footer__in">
             <div class="footer__grid">
                 <div class="fbrand">
-                    <div class="logo gtext" style="font-size:1.3rem">NotALMS</div>
-                    <p>Современная учебная платформа: интерактивные курсы, рейтинг и Telegram рядом.</p>
+                    <a href="/" class="logo gtext" style="font-size:1.3rem">NotALMS</a>
+                    <p>Учебная платформа: интерактивные курсы, рейтинг и Telegram рядом.</p>
                 </div>
                 <div class="fcol">
                     <p class="fhead">Платформа</p>
@@ -1071,10 +965,11 @@
                 </div>
             </div>
             <div class="footer__bottom">
-                <span>© 2026 <b style="color:rgba(255,255,255,.7)">NotALMS</b></span>
+                <span>© 2026 NotALMS</span>
             </div>
         </div>
     </footer>
+
     <section class="modal" id="auth-modal">
         <div class="modal__overlay"></div>
         <div class="modal__card">
@@ -1094,8 +989,8 @@
                     вернуться ко входу по паролю</span></p>
         </div>
     </section>
+
     <script>
-        
         document.addEventListener('DOMContentLoaded', () => {
             const API_BASE = document.querySelector('meta[name="api-base"]')?.content || `${location.protocol}//${location.hostname}:8443/v1`;
             const modal = document.getElementById('auth-modal');
@@ -1107,13 +1002,6 @@
             const extraFields = document.getElementById('extra-fields');
             const passInput = form.querySelector('input[type="password"]');
             let isRegister = false, tgMode = false;
-
-            window.showToast = (msg, err = false) => {
-                const t = document.getElementById('toast');
-                t.innerHTML = `<div class="toast__card${err ? ' err' : ''}"><span class="ti ${err ? 'ti-alert-triangle' : 'ti-check'}" style="font-size:1.1rem;${err ? 'color:#f87171' : 'color:var(--acc1)'}"></span><span>${msg}</span></div>`;
-                clearTimeout(window._tt);
-                window._tt = setTimeout(() => { const c = t.firstChild; c && c.classList.add('out'); }, 3200);
-            };
 
             const showModal = (register = false) => {
                 isRegister = register;
@@ -1128,12 +1016,14 @@
                 form.reset();
                 updateExtraFields();
             };
+
             const updateExtraFields = () => {
                 if (isRegister) {
                     extraFields.innerHTML = `
-                <input type="text" placeholder="О себе (до 150 символов)" id="about" maxlength="150">
-                <label><input type="checkbox" id="notify-tg"> Хочу получать уведомления в Telegram</label>
-                <div class="note">привязка — потом в профиле, по ссылке-приглашению от бота</div>`;
+                        <div class="note">пароль: минимум 8 символов, строчная и заглавная буквы, спецсимвол</div>
+                        <input type="text" placeholder="О себе (до 150 символов)" id="about" maxlength="150">
+                        <label><input type="checkbox" id="notify-tg"> Хочу получать уведомления в Telegram</label>
+                        <div class="note">привязка — потом в настройках, по ссылке-приглашению от бота</div>`;
                 } else {
                     extraFields.innerHTML = '';
                 }
@@ -1154,6 +1044,7 @@
                 if (on) { loginInput.inputMode = 'numeric'; loginInput.maxLength = 6; loginInput.focus(); }
                 else { loginInput.inputMode = 'text'; loginInput.maxLength = 524288; }
             };
+
             document.getElementById('tg-login-btn').onclick = () => setTgMode(true);
             document.getElementById('tg-back-btn').onclick = () => setTgMode(false);
             document.getElementById('tg-hero-btn').onclick = () => { showModal(false); setTgMode(true); };
@@ -1164,78 +1055,6 @@
             document.querySelector('.modal__close').onclick = () => modal.classList.remove('active');
             document.querySelector('.modal__overlay').onclick = () => modal.classList.remove('active');
             document.addEventListener('keydown', (e) => { if (e.key === 'Escape') modal.classList.remove('active'); });
-
-            const burger = document.getElementById('header-burger');
-            const mobilePanel = document.getElementById('header-mobile-panel');
-            if (burger && mobilePanel) {
-                burger.onclick = () => mobilePanel.classList.toggle('open');
-                mobilePanel.querySelectorAll('a').forEach(a => {
-                    a.onclick = () => mobilePanel.classList.remove('open');
-                });
-                document.addEventListener('click', (e) => {
-                    if (!burger.contains(e.target) && !mobilePanel.contains(e.target)) {
-                        mobilePanel.classList.remove('open');
-                    }
-                });
-            }
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const login = loginInput.value.trim();
-                const password = passInput.value;
-
-                if (tgMode && !/^\d{6}$/.test(login)) {
-                    showToast('код состоит из 6 цифр — он приходит по ссылке из бота', true);
-                    return;
-                }
-
-                const body = tgMode ? { code: login } : (isRegister ? {
-                    user_login: login,
-                    user_password: password,
-                    notify_telegram: !!document.getElementById('notify-tg')?.checked,
-                    user_telegram_id: null,
-                    about_user: document.getElementById('about')?.value || null
-                } : {
-                    user_login: login,
-                    user_password: password
-                });
-
-                const endpoint = tgMode ? `${API_BASE}/login/telegram`
-                    : (isRegister ? `${API_BASE}/register` : `${API_BASE}/login`);
-
-                try {
-                    const resp = await fetch(endpoint, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(body)
-                    });
-                    const data = await resp.json();
-                    if (resp.ok && data.JWTSession) {
-                        localStorage.setItem('token', data.JWTSession);
-                        window.location.href = '/dash';
-                    } else {
-                        throw new Error(data.error || data.detail || 'не получилось, проверь данные');
-                    }
-                } catch (err) {
-                    showToast(err.message || 'ошибка сети', true);
-                }
-            });
-            (async () => {
-                try {
-                    const s = await (await fetch(`${API_BASE}/stats/public`)).json();
-                    const c = document.getElementById('stat-courses');
-                    const u = document.getElementById('stat-users');
-                    if (c) c.textContent = s.courses ?? '—';
-                    if (u) u.textContent = s.users ?? '—';
-                } catch { }
-                try {
-                    const token = localStorage.getItem('token');
-                    if (token) {
-                        const r = await fetch(`${API_BASE}/me`, { headers: { Authorization: `Bearer ${token}` } });
-                        if (r.ok) location.href = '/dash';
-                        else localStorage.removeItem('token');
-                    }
-                } catch { }
-            })();
 
             function applyTheme(t) {
                 document.body.dataset.theme = t || 'midnight';
@@ -1264,6 +1083,19 @@
                     showToast('код состоит из 6 цифр — он приходит по ссылке из бота', true);
                     return;
                 }
+
+                if (isRegister && !tgMode) {
+                    const problems = [];
+                    if (password.length < 8) problems.push('минимум 8 символов');
+                    if (!/[a-zа-яё]/.test(password)) problems.push('нужна строчная буква');
+                    if (!/[A-ZА-ЯЁ]/.test(password)) problems.push('нужна заглавная буква');
+                    if (!/[^A-Za-zА-Яа-яЁё0-9]/.test(password)) problems.push('нужен спецсимвол');
+                    if (problems.length) {
+                        showToast('пароль: ' + problems.join(', '), true);
+                        return;
+                    }
+                }
+
                 const body = tgMode ? { code: login } : (isRegister ? {
                     user_login: login,
                     user_password: password,
@@ -1287,12 +1119,18 @@
                         localStorage.setItem('token', data.JWTSession);
                         await redirectToDash();
                     } else {
+                        if (resp.status === 409 && data.exists) {
+                            showModal(false);
+                            loginInput.value = login;
+                            showToast('такой логин уже занят — введите пароль от него');
+                            return;
+                        }
                         throw new Error(data.error || data.detail || 'не получилось, проверь данные');
                     }
                 } catch (err) {
                     showToast(err.message || 'ошибка сети', true);
                 }
-                        });
+            });
 
             (async () => {
                 try {

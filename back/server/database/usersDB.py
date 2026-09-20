@@ -3,6 +3,7 @@ from back.server.database.client import get_db
 from back.server.server_configs.settings import settings
 from uuid import uuid4
 from back.server.database.utils import hash_password, create_access_token, verify_password
+from datetime import datetime, timezone
 
 database = get_db(settings.mongo_cluster)
 users = database[settings.mongo_users]
@@ -145,3 +146,44 @@ async def admin_set_user_status(user_uid: str, status: str):
         {'$set': {'status': new_val}}
     )
     return True
+
+
+def _as_utc(value):
+    # время из базы может прийти без tz — приводим к utc
+    if not value:
+        return None
+    if isinstance(value, str):
+        value = datetime.fromisoformat(value.replace('Z', '+00:00'))
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value
+
+
+async def change_username(user_uid: str, new_login: str) -> dict:
+    # занято?
+    if await users.find_one({'user_login': new_login}, {'user_uid': 1}):
+        return {'error': 'логин уже занят'}
+    # смена не чаще раза в 3 дня
+    user = await users.find_one({'user_uid': user_uid}, {'last_username_change': 1})
+    last = _as_utc((user or {}).get('last_username_change'))
+    if last is not None:
+        left = 3 - (datetime.now(timezone.utc) - last).days
+        if left > 0:
+            return {'error': f'смена логина доступна раз в 3 дня. подожди ещё {left} дн.'}
+    now = datetime.now(timezone.utc).replace(microsecond=0)
+    await users.update_one(
+        {'user_uid': user_uid},
+        {'$set': {'user_login': new_login,
+                  'last_username_change': now.isoformat(timespec='seconds', sep='T')}}
+    )
+    return {'ok': True}
+
+
+
+async def delete_user(user_uid: str):
+    # каскадное удаление: пользователь + прогресс + прочитанные уроки
+    from back.server.database import coursesDB
+    await coursesDB.progress.delete_many({'user_uid': user_uid})
+    await coursesDB.reads.delete_many({'user_uid': user_uid})
+    res = await users.find_one_and_delete({'user_uid': user_uid})
+    return res is not None

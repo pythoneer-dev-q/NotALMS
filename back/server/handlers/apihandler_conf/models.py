@@ -33,3 +33,7 @@ class UserSearch(BaseModel):
 class UserSetStatus(BaseModel):
     user_uid: str
     status: str  # 'active' | 'blocked'
+
+
+class UsernameChange(BaseModel):
+    user_login: str

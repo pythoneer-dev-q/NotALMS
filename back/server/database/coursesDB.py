@@ -152,13 +152,15 @@ async def create_test(
     return doc
 
 
-async def recent_test(task_def_id: str, minutes: int = 30):
-    # недавно сгенерированный вариант этого задания, чтобы не плодить дубли
+async def recent_test(task_def_id: str, owner_uid: str = None, minutes: int = 30):
+    # недавно сгенерированный вариант этого задания у этого же юзера
     border = (datetime.now(timezone.utc).replace(microsecond=0)).timestamp() - minutes * 60
     border_iso = datetime.fromtimestamp(border, timezone.utc).isoformat(timespec='seconds', sep='T')
-    return await tests.find_one(
-        {'parent_task_id': task_def_id, 'created_at': {'$gte': border_iso}}
-    )
+    flt = {'parent_task_id': task_def_id, 'created_at': {'$gte': border_iso}}
+    if owner_uid is not None:
+        flt['owner_uid'] = owner_uid
+    return await tests.find_one(flt)
+
 async def search_test(task_id: int):
     return await tests.find_one({'task_id': task_id})
 
@@ -223,33 +225,77 @@ async def search_task(_id: str):
     return {**doc, '_id': str(doc['_id'])}
 
 
-async def mark_task_solved(user_uid: str, task_id, points: int) -> bool:
-    # решенная задача учитывается один раз
-    if await progress.find_one({'user_uid': user_uid, 'task_id': task_id}):
-        return False
-    nowIs = datetime.now(timezone.utc).replace(microsecond=0)
-    await progress.insert_one({
-        'user_uid': user_uid,
-        'task_id': task_id,
-        'points': points,
-        'created_at': nowIs.isoformat(timespec='seconds', sep='T')
-    })
-    return True
+# награда за задания: каждое следующее решение дороже в 2 раза, потолок 1000 очков
+BASE_TASK_REWARD = 100
+MAX_TASK_REWARD = 1000
+
+
+def reward_for(base_points: int, solve_index: int) -> int:
+    # награда за (solve_index+1)-е решение: 100, 200, 400, 800, 1000, 1000...
+    return min(base_points * (2 ** solve_index), MAX_TASK_REWARD)
+
+
+async def task_solves(user_uid: str, task_id) -> int:
+    # сколько раз юзер уже решал это задание
+    row = await progress.find_one(
+        {'user_uid': user_uid, 'task_id': task_id, 'hint': {'$ne': True}}, {'solve_count': 1}
+    )
+    return int((row or {}).get('solve_count', 0))
+
+
+async def mark_task_solved(user_uid: str, task_id, base_points: int = BASE_TASK_REWARD) -> tuple[int, int]:
+    # задания бесконечные: решать можно сколько угодно, награда каждый раз выше
+    base = int(base_points or BASE_TASK_REWARD)
+    existing = await progress.find_one({'user_uid': user_uid, 'task_id': task_id, 'hint': {'$ne': True}})
+    solve_count = int((existing or {}).get('solve_count', 0))
+    reward = reward_for(base, solve_count)
+    stamp = datetime.now(timezone.utc).replace(microsecond=0).isoformat(timespec='seconds', sep='T')
+    if existing:
+        await progress.update_one(
+            {'_id': existing['_id']},
+            {'$set': {'points': reward, 'base_points': base, 'solve_count': solve_count + 1, 'created_at': stamp}}
+        )
+    else:
+        await progress.insert_one({
+            'user_uid': user_uid,
+            'task_id': task_id,
+            'points': reward,
+            'base_points': base,
+            'solve_count': 1,
+            'created_at': stamp
+        })
+    return reward, solve_count + 1
+
+
+async def drop_tests_for(task_def_id: str, owner_uid: str = None):
+    # после верного ответа вариант отработан: в следующий раз дадим новое задание
+    flt = {'parent_task_id': str(task_def_id)}
+    if owner_uid is not None:
+        flt['owner_uid'] = owner_uid
+    await tests.delete_many(flt)
+
+
+
+# ===== использованные подсказки =====
+hints = database[settings.mongo_lmshints]
 
 
 async def mark_task_hint(user_uid: str, task_id) -> bool:
-    # после подсказки задание закрыто: сдать его уже нельзя
-    if await progress.find_one({'user_uid': user_uid, 'task_id': task_id}):
+    # подсказка не блокирует задание: факт использования храним отдельно от прогресса
+    if await hints.find_one({'user_uid': user_uid, 'task_id': task_id}):
         return False
-    nowIs = datetime.now(timezone.utc).replace(microsecond=0)
-    await progress.insert_one({
+    await hints.insert_one({
         'user_uid': user_uid,
         'task_id': task_id,
-        'points': 0,
-        'hint': True,
-        'created_at': nowIs.isoformat(timespec='seconds', sep='T')
+        'created_at': datetime.now(timezone.utc).replace(microsecond=0).isoformat(timespec='seconds', sep='T')
     })
     return True
+
+
+async def hinted_task_ids(user_uid: str) -> set:
+    rows = await hints.find({'user_uid': user_uid}, {'task_id': 1, '_id': 0}).to_list(length=None)
+    return {r['task_id'] for r in rows}
+
 
 
 async def user_progress(user_uid: str):
@@ -264,24 +310,11 @@ async def user_progress_count(user_uid: str) -> int:
 
 
 async def solved_task_ids(user_uid: str) -> set:
-    # id задач-определений, уже решенных юзером (без закрытых подсказкой)
+    # id задач-определений, уже решенных юзером (включая повторы — для бесконечных заданий)
     rows = await progress.find(
         {'user_uid': user_uid, 'hint': {'$ne': True}}, {'task_id': 1, '_id': 0}
     ).to_list(length=None)
     return {r['task_id'] for r in rows}
-
-
-async def hinted_task_ids(user_uid: str) -> set:
-    # задачи, закрытые подсказкой
-    rows = await progress.find(
-        {'user_uid': user_uid, 'hint': True}, {'task_id': 1, '_id': 0}
-    ).to_list(length=None)
-    return {r['task_id'] for r in rows}
-
-
-async def closed_task_ids(user_uid: str) -> set:
-    # все закрытые задачи (решено + подсказка) — для порядка выдачи
-    return await solved_task_ids(user_uid) | await hinted_task_ids(user_uid)
 
 
 async def tasks_in_lesson(lesson_id: str):

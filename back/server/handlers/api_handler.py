@@ -1,5 +1,7 @@
 # ! back/server/handlers/api_handler.py
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Header, Depends
+from pymongo.errors import DuplicateKeyError
 from back.server.handlers.httpbearer import get_current_user
 from fastapi.responses import HTMLResponse as htmlset, JSONResponse as jsonset
 from back.server.handlers.apihandler_conf import models
@@ -14,29 +16,36 @@ arouter = APIRouter(
 
 @arouter.post('/register')
 async def main_registerReturnToken(data: models.Register):
-    if (await usersDB.search_users(data.user_login) is None):
+    login = (data.user_login or '').strip()
+    if not login or len(login) < 3 or len(login) > 32:
+        return jsonset(content={'error': 'логин должен быть от 3 до 32 символов'}, status_code=400)
+    pwd_error = utils.password_error(data.user_password)
+    if pwd_error:
+        return jsonset(content={'error': pwd_error}, status_code=400)
+    if await usersDB.search_users(login) is not None:
+        return jsonset(content={'error': 'такой логин уже занят', 'exists': True}, status_code=409)
+    try:
         result = await usersDB.register_user(
-            user_login=data.user_login,
+            user_login=login,
             user_password=data.user_password,
             user_telegram_FOR_ANNOUCMENTS=data.user_telegram_id,
             about_user=data.about_user
         )
-        # пароль-хэш наружу не отдаем
-        result.pop('hashed_password', None)
-        result['JWTSession'] = await utils.create_access_token(
-            data={
-                'role': 'user',
-                'user_uid': result.get('user_uid', '#none')
-            }
-        )
-        return jsonset(
-            content=result, status_code=200
-        )
-    return jsonset(
-        content={
-            'error': 'такой логин уже занят'
-        }, status_code=403
+    except DuplicateKeyError:
+        # успели зарегистрировать параллельно
+        return jsonset(content={'error': 'такой логин уже занят', 'exists': True}, status_code=409)
+    # пароль-хэш наружу не отдаем
+    result.pop('hashed_password', None)
+    result['JWTSession'] = await utils.create_access_token(
+        data={
+            'role': 'user',
+            'user_uid': result.get('user_uid', '#none')
+        }
     )
+    return jsonset(
+        content=result, status_code=200
+    )
+
 
 @arouter.post('/login')
 async def main_loginReturnToken(data: models.Login):  
@@ -53,10 +62,22 @@ async def main_loginReturnToken(data: models.Login):
     
     return jsonset(content={'error': 'неверный логин или пароль'}, status_code=403)
 
+def _username_cooldown(stamp, days: int = 3):
+    # когда менялся логин и когда можно снова (iso-строки для фронта)
+    if not stamp:
+        return None, None
+    if isinstance(stamp, str):
+        stamp = datetime.fromisoformat(stamp.replace('Z', '+00:00'))
+    if stamp.tzinfo is None:
+        stamp = stamp.replace(tzinfo=timezone.utc)
+    return stamp.isoformat(), (stamp + timedelta(days=days)).isoformat()
+
+
 @arouter.get('/me')
 async def me(user=Depends(get_current_user)):
     # фронту нужны рейтинг/цвет/тема — иначе шапка и статы пустые
     full = await usersDB.search_usersByID(user['user_uid']) or {}
+    changed_at, next_change = _username_cooldown(full.get('last_username_change'))
     return {
         'user_login': user['user_login'],
         'user_uid': user['user_uid'],
@@ -64,8 +85,13 @@ async def me(user=Depends(get_current_user)):
         'rating': full.get('rating', 0),
         'name_color': full.get('name_color'),
         'theme': full.get('theme'),
+        'status': full.get('status', True),
         'solved': await coursesDB.user_progress_count(user['user_uid']),
+        'username_changed_at': changed_at,
+        'username_next_change': next_change
     }
+
+
 @arouter.get('/search_user')
 async def search_user(user=Depends(get_current_user)):
     return await usersDB.search_usersByID(
@@ -200,6 +226,26 @@ async def main_unbindTelegram(user=Depends(get_current_user)):
     # отвязка бота прямо из веба (кнопка «управление аккаунтом»)
     await usersDB.unsettg_by_uid(user['user_uid'])
     return jsonset(content={'ok': True}, status_code=200)
+
+
+@arouter.put('/me/username')
+async def main_changeUsername(data: models.UsernameChange, user=Depends(get_current_user)):
+    # смена логина: не чаще раза в 3 дня
+    if not data.user_login or len(data.user_login) < 3 or len(data.user_login) > 32:
+        return jsonset(content={'error': 'логин 3–32 символа'}, status_code=400)
+    res = await usersDB.change_username(user['user_uid'], data.user_login.strip())
+    if 'error' in res:
+        return jsonset(content=res, status_code=400)
+    return jsonset(content=res, status_code=200)
+
+
+@arouter.delete('/me/delete')
+async def main_deleteUser(user=Depends(get_current_user)):
+    # удаление аккаунта
+    ok = await usersDB.delete_user(user['user_uid'])
+    if ok:
+        return jsonset(content={'ok': True}, status_code=200)
+    return jsonset(content={'error': 'пользователь не найден'}, status_code=404)
 
 
 @arouter.post('/admin/check')

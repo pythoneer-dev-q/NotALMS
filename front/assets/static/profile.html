@@ -1,20 +1,21 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NotALMS — Профиль</title>
-    <link rel="icon" href="../../../favicon.ico" sizes="32x32">
+    <link rel="icon" href="/favicon.ico" sizes="32x32">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
     <script>
-        (function() {
+        (function () {
             var theme = localStorage.getItem('theme');
             if (theme) document.documentElement.dataset.theme = theme;
         })();
     </script>
+    <script src="/assets/static/toast.js"></script>
     <style>
         :root {
             --primary: #6366f1;
@@ -22,876 +23,723 @@
             --card: #13213d;
             --text: #e2e8f0;
             --muted: #94a3b8;
-            --accent: #fbbf24; 
-            --bord: color-mix(in srgb, var(--primary) 30%, transparent);
-            --bord-soft: color-mix(in srgb, var(--primary) 14%, transparent);
+            --accent: #fbbf24;
+            --line: rgba(255, 255, 255, .08);
+            --line2: rgba(255, 255, 255, .14);
+            --acc1: #818cf8;
+            --r-btn: 18px;
         }
 
-        
-        [data-theme="emerald"] { --primary:#10b981; --bg:#08130e; --card:#0d3226; --text:#dcfce7; --muted:#6ee7b7; }
-        [data-theme="sunset"]  { --primary:#f59e0b; --bg:#171009; --card:#3c2c0e; --text:#fef3c7; --muted:#fcd34d; }
-        [data-theme="rose"]    { --primary:#f43f5e; --bg:#170a12; --card:#401022; --text:#ffe4e6; --muted:#fb7185; }
-        [data-theme="ocean"]   { --primary:#0ea5e9; --bg:#071224; --card:#0d345e; --text:#e0f2fe; --muted:#7dd3fc; }
+        [data-theme="emerald"] {
+            --primary: #10b981;
+            --bg: #08130e;
+            --card: rgba(14, 50, 38, .85);
+            --text: #dcfce7;
+            --acc1: #34d399;
+        }
 
-        * { box-sizing: border-box; }
+        [data-theme="sunset"] {
+            --primary: #f59e0b;
+            --bg: #171009;
+            --card: rgba(60, 42, 14, .85);
+            --text: #fef3c7;
+            --acc1: #fbbf24;
+        }
+
+        [data-theme="rose"] {
+            --primary: #f43f5e;
+            --bg: #170a12;
+            --card: rgba(70, 16, 38, .85);
+            --text: #ffe4e6;
+            --acc1: #fb7185;
+        }
+
+        [data-theme="ocean"] {
+            --primary: #0ea5e9;
+            --bg: #071224;
+            --card: rgba(13, 52, 94, .85);
+            --text: #e0f2fe;
+            --acc1: #38bdf8;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
 
         body {
             margin: 0;
-            font-family: 'Oswald', sans-serif;
+            font-family: 'Onest', sans-serif;
             background: var(--bg);
             color: var(--text);
             min-height: 100vh;
         }
 
-        
+        /* ===== header ===== */
         .header {
-            height: 70px;
-            padding: 0 40px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid var(--bord);
-            background: rgba(15, 23, 42, 0.9);
             position: sticky;
             top: 0;
-            z-index: 100;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 20px;
+            background: #0a0910;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .burger {
+            display: flex;
+            align-items: center;
+            font-size: 1.8rem;
+            line-height: 1;
+            cursor: pointer;
+            color: var(--muted);
+            transition: .2s;
+        }
+
+        .burger:hover {
+            color: var(--text);
         }
 
         .logo {
-            font-family: 'Dela Gothic One', cursive;
-            font-size: 1.8rem;
-            color: var(--primary);
+            font-weight: 800;
+            font-size: 1.3rem;
+            color: var(--acc1);
+            text-decoration: none;
+            margin-right: auto;
         }
 
-        
+        /* ===== liquid glass кнопки (как в dash) ===== */
+        .btn {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 14.5px;
+            letter-spacing: .1px;
+            cursor: pointer;
+            padding: 11px 20px;
+            border-radius: var(--r-btn);
+            border: 1px solid var(--line2);
+            color: var(--text);
+            background: rgba(255, 255, 255, .04);
+            -webkit-backdrop-filter: blur(14px) saturate(1.4);
+            backdrop-filter: blur(14px) saturate(1.4);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08);
+            white-space: nowrap;
+            text-decoration: none;
+            overflow: hidden;
+            transition: transform .12s, background .2s, border-color .2s, box-shadow .2s;
+        }
+
+        .btn::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: linear-gradient(180deg,
+                    rgba(255, 255, 255, .09),
+                    rgba(255, 255, 255, .02) 45%,
+                    transparent 70%);
+        }
+
+        .btn>* {
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn:hover {
+            border-color: color-mix(in srgb, var(--primary) 55%, var(--line2));
+            background: rgba(255, 255, 255, .07);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn-primary {
+            color: #fff;
+            border-color: color-mix(in srgb, var(--primary) 60%, transparent);
+            background: linear-gradient(180deg,
+                    color-mix(in srgb, var(--primary) 32%, transparent),
+                    color-mix(in srgb, var(--primary) 18%, transparent));
+            -webkit-backdrop-filter: blur(14px) saturate(1.4);
+            backdrop-filter: blur(14px) saturate(1.4);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2);
+        }
+
+        .btn-primary::before {
+            background: linear-gradient(180deg,
+                    rgba(255, 255, 255, .18),
+                    rgba(255, 255, 255, .04) 45%,
+                    transparent 70%);
+        }
+
+        .btn-primary:hover {
+            border-color: color-mix(in srgb, var(--primary) 80%, transparent);
+            background: linear-gradient(180deg,
+                    color-mix(in srgb, var(--primary) 42%, transparent),
+                    color-mix(in srgb, var(--primary) 22%, transparent));
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .25);
+        }
+
+        .btn-primary .arr {
+            transition: transform .18s;
+        }
+
+        .btn-primary:hover .arr {
+            transform: translateX(3px);
+        }
+
+        .btn-lg {
+            padding: 14px 26px;
+            font-size: 15.5px;
+            border-radius: 20px;
+        }
+
+        /* чип логина — liquid glass primary */
+        .user {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            font-weight: 600;
+            font-size: 14.5px;
+            letter-spacing: .1px;
+            cursor: pointer;
+            padding: 10px 18px;
+            border-radius: var(--r-btn);
+            border: 1px solid color-mix(in srgb, var(--primary) 60%, transparent);
+            color: #fff;
+            text-decoration: none;
+            white-space: nowrap;
+            background: linear-gradient(180deg,
+                    color-mix(in srgb, var(--primary) 32%, transparent),
+                    color-mix(in srgb, var(--primary) 18%, transparent));
+            -webkit-backdrop-filter: blur(14px) saturate(1.4);
+            backdrop-filter: blur(14px) saturate(1.4);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2);
+            overflow: hidden;
+            transition: transform .12s, background .2s, border-color .2s, box-shadow .2s;
+        }
+
+        .user::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: linear-gradient(180deg,
+                    rgba(255, 255, 255, .18),
+                    rgba(255, 255, 255, .04) 45%,
+                    transparent 70%);
+        }
+
+        .user>* {
+            position: relative;
+            z-index: 1;
+        }
+
+        .user:hover {
+            border-color: color-mix(in srgb, var(--primary) 80%, transparent);
+            background: linear-gradient(180deg,
+                    color-mix(in srgb, var(--primary) 42%, transparent),
+                    color-mix(in srgb, var(--primary) 22%, transparent));
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .25);
+        }
+
+        .user:active {
+            transform: translateY(1px);
+        }
+
+        /* ===== burger menu ===== */
+        .menu {
+            position: fixed;
+            top: 0;
+            left: -280px;
+            width: 280px;
+            height: 100%;
+            background: #0a0910;
+            border-right: 1px solid var(--line);
+            transition: .3s;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            padding: 0 16px 16px;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+
+        .menu.active {
+            left: 0;
+        }
+
+        .menu-head {
+            position: sticky;
+            top: 0;
+            z-index: 3;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            height: 56px;
+            flex: 0 0 auto;
+            margin: 0 -16px 8px;
+            padding: 0 12px 0 16px;
+            background: #0a0910;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .menu-head h3 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .menu-close {
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            background: rgba(255, 255, 255, .04);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            color: var(--muted);
+            font-size: 1.15rem;
+            line-height: 1;
+            cursor: pointer;
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            transition: .18s;
+        }
+
+        .menu-close:hover {
+            background: rgba(255, 255, 255, .08);
+            color: var(--text);
+            border-color: var(--line2);
+        }
+
+        .menu-item {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            margin-top: 6px;
+            padding: 11px 12px;
+            border: 1px solid transparent;
+            border-radius: 14px;
+            background: transparent;
+            color: var(--muted);
+            font: inherit;
+            font-size: .95rem;
+            text-decoration: none;
+            text-align: left;
+            cursor: pointer;
+            overflow: hidden;
+            transition: .18s;
+        }
+
+        .menu-item i {
+            font-size: 1.15rem;
+            color: var(--primary);
+            flex-shrink: 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        .menu-item>* {
+            position: relative;
+            z-index: 1;
+        }
+
+        .menu-item:hover {
+            background: rgba(255, 255, 255, .05);
+            color: var(--text);
+        }
+
+        .menu-item.active {
+            border-color: color-mix(in srgb, var(--primary) 60%, transparent);
+            color: #fff;
+            background: linear-gradient(180deg,
+                    color-mix(in srgb, var(--primary) 32%, transparent),
+                    color-mix(in srgb, var(--primary) 18%, transparent));
+            -webkit-backdrop-filter: blur(14px) saturate(1.4);
+            backdrop-filter: blur(14px) saturate(1.4);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2);
+        }
+
+        .menu-item.active::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: linear-gradient(180deg,
+                    rgba(255, 255, 255, .18),
+                    rgba(255, 255, 255, .04) 45%,
+                    transparent 70%);
+        }
+
+        .menu-item.active i {
+            color: #fff;
+        }
+
+        .menu-item.bottom {
+            margin-top: auto;
+        }
+
+        .menu-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(5, 10, 25, .5);
+            opacity: 0;
+            pointer-events: none;
+            transition: .3s;
+            z-index: 90;
+        }
+
+        .menu-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* ===== page ===== */
         .page {
-            padding: 40px;
-            max-width: 1200px;
+            max-width: 62rem;
             margin: 0 auto;
+            padding: 2rem 1.2rem 3rem;
         }
 
         .title {
-            font-size: 2rem;
-            margin-bottom: 30px;
+            font-size: 1.6rem;
+            font-weight: 800;
+            margin-bottom: 1.4rem;
         }
 
-        
-        .profile-grid {
+        .grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 30px;
-        }
-
-        @media (max-width: 900px) {
-            .profile-grid { grid-template-columns: 1fr; }
-        }
-
-        @media (max-width: 600px) {
-            .header { height: auto; padding: 12px 16px; }
-            .logo { font-size: 1.4rem; }
-            .page { padding: 20px 16px; }
-            .title { font-size: 1.5rem; margin-bottom: 20px; }
-            .card { padding: 20px; border-radius: 16px; }
-            .label { font-size: 0.8rem; }
-            .info { font-size: 1rem; }
-            #homeBtn { left: 12px; bottom: 12px; padding: 10px 16px; font-size: 0.9rem; }
+            gap: 16px;
         }
 
         .card {
             background: var(--card);
-            border-radius: 20px;
-            padding: 25px;
-            border: 1px solid var(--bord);
-            box-shadow: 0 0 25px color-mix(in srgb, var(--primary) 15%, transparent);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 1.3rem;
+        }
+
+        .card.wide {
+            grid-column: 1 / -1;
         }
 
         .label {
-            font-size: 0.85rem;
-            color: var(--muted);
-            margin-bottom: 4px;
+            font-size: .78rem;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: .08em;
+            color: var(--muted);
         }
 
         .info {
-            margin-bottom: 20px;
-            font-size: 1.2rem;
-        }
-
-        .rating-value {
-            color: var(--accent);
+            font-size: 1.15rem;
             font-weight: 600;
-            text-shadow: 0 0 10px rgba(251, 191, 36, 0.3);
+            margin-top: .5rem;
         }
 
-        
-        .palette {
+        .info .ti {
+            margin-right: 4px;
+        }
+
+        .bio {
+            margin-top: .5rem;
+            line-height: 1.55;
+            font-size: .95rem;
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        .ok {
+            color: #4ade80;
+        }
+
+        .bad {
+            color: #f87171;
+        }
+
+        .ach-wrap {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
-            margin-top: 8px;
-            
-            overflow: visible;
-        }
-
-        
-        .pick {
-            position: relative;
-            width: 30px;
-            height: 30px;
-            padding: 0;
-            border-radius: 9px;
-            cursor: pointer;
-            border: 2px solid rgba(255, 255, 255, .12);
-            transition: .18s;
-        }
-
-        .pick:hover { transform: translateY(-2px); border-color: rgba(255, 255, 255, .35); }
-        .pick.sel { border-color: #fff; box-shadow: 0 0 0 2px rgba(255, 255, 255, .25) inset; }
-
-        
-        .pick::after {
-            content: attr(data-tip);
-            position: absolute;
-            left: 50%;
-            bottom: calc(100% + 7px);
-            transform: translateX(-50%) translateY(3px);
-            background: #17151f;
-            color: #fff;
-            font-size: .72rem;
-            font-weight: 500;
-            line-height: 1;
-            padding: 6px 9px;
-            border-radius: 7px;
-            white-space: nowrap;
-            outline: 1px solid var(--bord-soft);
-            opacity: 0;
-            pointer-events: none;
-            transition: .15s ease;
-            z-index: 30;
-        }
-
-        
-        .pick::before {
-            content: '';
-            position: absolute;
-            left: 50%;
-            bottom: calc(100% + 3px);
-            transform: translateX(-50%) translateY(3px);
-            border: 4px solid transparent;
-            border-top-color: #17151f;
-            opacity: 0;
-            pointer-events: none;
-            transition: .15s ease;
-            z-index: 31;
-        }
-
-        .pick:hover::after,
-        .pick:hover::before {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-        }
-
-        
-        @keyframes spin { from { transform: rotate(0) } to { transform: rotate(360deg) } }
-
-        
-        .acc-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 0;
-            border-bottom: 1px solid var(--bord-soft);
-        }
-
-        .acc-row:last-child { border-bottom: 0; }
-
-        .acc-row .acc-name {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: .98rem;
-        }
-
-        .acc-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-
-        .btn-sm {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 8px 14px;
-            font-size: .88rem;
-            border-radius: 9px;
-            border: 1px solid var(--bord);
-            background: transparent;
-            color: var(--text);
-            cursor: pointer;
-            font-family: inherit;
-            transition: .18s;
-        }
-
-        .btn-sm:hover { border-color: var(--primary); color: var(--primary); }
-
-        .btn-sm.warn { border-color: color-mix(in srgb, #ef4444 40%, transparent); color: #f87171; }
-        .btn-sm.warn:hover { border-color: #ef4444; color: #ef4444; }
-
-        
-        .modal {
-            position: fixed;
-            inset: 0;
-            z-index: 100;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 1rem;
-        }
-
-        .modal.active { display: flex; }
-
-        .modal__overlay {
-            position: absolute;
-            inset: 0;
-            background: rgba(3, 3, 6, .7);
-            -webkit-backdrop-filter: blur(6px);
-            backdrop-filter: blur(6px);
-        }
-
-        .modal__card {
-            position: relative;
-            width: 100%;
-            max-width: 30rem;
-            padding: 1.8rem;
-            border-radius: 16px;
-            background: var(--card);
-            border: 1px solid var(--bord);
-            box-shadow: 0 20px 50px -20px rgba(0, 0, 0, .8);
-            animation: m-in .22s ease-out;
-        }
-
-        @keyframes m-in {
-            from { opacity: 0; transform: translateY(10px) scale(.98); }
-            to { opacity: 1; }
-        }
-
-        .modal__close {
-            position: absolute;
-            top: .8rem;
-            right: .9rem;
-            background: none;
-            border: 0;
-            color: var(--muted);
-            font-size: 1.3rem;
-            cursor: pointer;
-            transition: .18s;
-        }
-
-        .modal__close:hover { color: var(--text); }
-
-        .modal__title { font-size: 1.1rem; font-weight: 700; margin-bottom: .9rem; }
-
-        .modal__body { color: var(--muted); font-size: .93rem; line-height: 1.55; }
-
-        .modal__body .tg-url {
-            display: block;
             margin-top: .8rem;
-            padding: 10px 12px;
-            border-radius: 9px;
-            background: rgba(255, 255, 255, .04);
-            color: var(--primary);
-            word-break: break-all;
-            text-decoration: none;
-            font-size: .9rem;
-        }
-
-        .modal__body .tg-url:hover { text-decoration: underline; }
-
-        .modal__foot {
-            display: flex;
-            gap: .6rem;
-            justify-content: flex-end;
-            margin-top: 1.2rem;
-        }
-
-        
-        .achievements {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 12px;
-            margin-top: 10px;
         }
 
         .ach {
             display: flex;
-            flex-direction: column;
             align-items: center;
-            gap: 8px;
-            padding: 16px 12px;
-            border-radius: 14px;
-            background: color-mix(in srgb, var(--primary) 12%, transparent);
-            outline: 1px solid var(--line);
-            outline-offset: -1px;
-            border: 0;
-            transition: .25s;
-            text-align: center;
-        }
-
-        .ach:hover {
-            outline-color: var(--line2);
-            background: color-mix(in srgb, var(--primary) 22%, transparent);
-            transform: translateY(-2px);
-        }
-
-        .ach__icon {
-            width: 40px;
-            height: 40px;
+            gap: 10px;
+            padding: .7rem .9rem;
             border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: color-mix(in srgb, var(--primary) 18%, transparent);
+            background: color-mix(in srgb, var(--primary) 12%, transparent);
+            border: 1px solid var(--line);
+        }
+
+        .ach .ti {
             color: var(--primary);
-            font-size: 1.4rem;
+            font-size: 1.2rem;
         }
 
         .ach__title {
             font-weight: 600;
-            font-size: .9rem;
-            line-height: 1.2;
+            font-size: .88rem;
         }
 
         .ach__desc {
-            font-size: .75rem;
+            font-size: .72rem;
             color: var(--muted);
-            line-height: 1.3;
         }
 
-        
-        .btn {
-            padding: 12px 28px;
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: 0.25s;
-            text-decoration: none;
-            display: inline-block;
+        .rating-value {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
 
-        .btn:hover {
-            background: #818cf8;
-            transform: translateY(-1px);
+        .rating-value .ti {
+            color: var(--accent);
         }
 
-        .btn.disabled {
-            background: #475569;
-            cursor: not-allowed;
-            opacity: 0.6;
+        a {
+            color: var(--acc1);
         }
 
-        .error-box {
-            background: rgba(255, 77, 77, 0.1);
-            border: 1px solid #ff4d4d;
-            padding: 20px;
-            border-radius: 15px;
-            text-align: center;
+        /* ===== нижняя кнопка ===== */
+        .actions {
+            margin-top: 20px;
+            display: flex;
+            justify-content: stretch;
         }
 
-        #homeBtn {
-            position: fixed;
-            left: 20px;
-            bottom: 20px;
-            z-index: 1000;
+        .actions .btn-lg {
+            width: 100%;
+            justify-content: center;
         }
-    </style>
-    <style>
-    
-    body{
-      --acc1:var(--primary);--acc2:color-mix(in srgb,var(--primary) 60%,#000);
-      --bg:#08070b;--surface:#0e0d13;--surface2:#131019;
-      --line:rgba(255,255,255,.055);--line2:rgba(255,255,255,.1);
-      --grad:linear-gradient(90deg,var(--acc1),color-mix(in srgb,var(--acc2) 70%,var(--acc1)));
-      --grad-text:linear-gradient(180deg,color-mix(in srgb,var(--acc1) 72%,#fff) 28%,color-mix(in srgb,var(--acc2) 45%,transparent));
-      font-family:'Onest',sans-serif !important;
-      background:var(--bg) !important;
-    }
-    [data-theme="emerald"]{--surface:#0b1813;--surface2:#0e1e17}
-    [data-theme="sunset"]{--surface:#1b160c;--surface2:#221b0e}
-    [data-theme="rose"]{--surface:#190d14;--surface2:#20111a}
-    [data-theme="ocean"]{--surface:#0a1626;--surface2:#0d1c30}
-    h1,h2,h3{font-weight:700 !important}
-    
-    .gtext{color:var(--acc1)}
 
-    .header{
-      position:sticky;top:0;z-index:50;
-      background:rgba(5,5,8,.85) !important;
-      -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
-      border-bottom:1px solid var(--line) !important;
-      height:auto !important;padding:.8rem 1.6rem !important;
-    }
-    .logo{
-      font-family:'Onest',sans-serif !important;font-weight:800 !important;font-size:1.4rem;
-      color:var(--acc1);
-    }
-    .btn{
-      background:var(--acc1) !important;border:0 !important;border-radius:10px !important;
-      padding:.7rem 1.5rem !important;font-family:'Onest',sans-serif !important;font-weight:500;
-      transition:.2s;
-    }
-    .btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
-    .btn.disabled{background:rgba(255,255,255,.05) !important;color:var(--muted) !important}
+        /* ===== mobile ===== */
+        @media (max-width: 700px) {
+            .header {
+                padding: 12px 14px;
+            }
 
-    .page{max-width:100rem;margin:0 auto;padding:2.2rem 1.6rem}
-    @media(min-width:1024px){.page{padding:2.5rem 4rem}}
-    .title{font-weight:800 !important;margin-bottom:1.8rem}
-    .card{
-      background:var(--surface) !important;
-      outline:1px solid var(--line);outline-offset:-1px;
-      border:0 !important;border-radius:16px !important;
-      box-shadow:none !important;transition:.25s;
-    }
-    .card:hover{outline-color:var(--line2)}
-    .label{font-family:'Onest',sans-serif !important}
-    .info{font-size:1.1rem !important;font-weight:500}
-    .ach{
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap:.5rem;
-      padding:1rem .8rem;
-      background:color-mix(in srgb,var(--primary) 12%,transparent) !important;
-      outline:1px solid var(--line);outline-offset:-1px;
-      border:0 !important;border-radius:12px !important;font-family:'Onest',sans-serif;
-      transition:.25s;
-    }
-    .ach:hover{background:color-mix(in srgb,var(--primary) 22%,transparent) !important;outline-color:var(--line2);transform:translateY(-2px)}
-    .ach__icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--primary) 18%,transparent);color:var(--primary);font-size:1.3rem}
-    .ach__title{font-weight:600;font-size:.85rem;line-height:1.2}
-    .ach__desc{font-size:.7rem;color:var(--muted);line-height:1.3}
-    .sw{border-radius:50%}
-    .pick.sel{border-color:var(--text)}
+            .logo {
+                font-size: 1.15rem;
+            }
 
-    
-    @media(max-width: 600px) {
-      .header{padding:.7rem 1rem !important}
-      .logo{font-size:1.2rem !important}
-      .btn{padding:.6rem 1.2rem !important;font-size:.9rem !important}
-      .page{padding:1.5rem 1rem}
-      .title{font-size:1.5rem;margin-bottom:1.2rem}
-      .card{padding:1.2rem;border-radius:12px !important}
-      .label{font-size:.8rem}
-      .info{font-size:1rem !important}
-      .acc-row{flex-direction:column;align-items:flex-start;gap:.5rem;padding:.8rem 0}
-      .acc-actions{width:100%}
-      .btn-sm{width:100%;justify-content:center}
-      .palette{gap:8px}
-      .pick{width:28px;height:28px;border-radius:8px}
-      .achievements{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
-      .ach{padding:.8rem .6rem}
-      .ach__icon{width:32px;height:32px;font-size:1.1rem}
-      .ach__title{font-size:.8rem}
-      .ach__desc{font-size:.65rem}
-      #homeBtn{left:12px;bottom:12px;padding:.6rem 1rem;font-size:.9rem}
-      .modal__card{margin:1rem;padding:1.4rem;max-width:calc(100vw - 2rem)}
-      .modal__title{font-size:1rem}
-      .modal__body{font-size:.88rem}
-      .tg-url{font-size:.8rem;padding:8px 10px}
-      .modal__foot{gap:.5rem}
-      .btn-sm{padding:.6rem 1rem;font-size:.8rem}
-    }
+            .burger {
+                font-size: 1.55rem;
+            }
 
-    
-    .toast{position:fixed;inset:1.2rem 0 auto;z-index:200;display:flex;justify-content:center;padding:0 1rem;pointer-events:none}
-    .toast__card{
-      display:flex;gap:.9rem;align-items:center;padding:.8rem 1.5rem;border-radius:1rem;
-      background:linear-gradient(180deg,color-mix(in srgb,var(--acc1) 10%,var(--surface2)),var(--surface2));
-      outline:1px solid var(--line2);outline-offset:-1px;
-      box-shadow:0 20px 50px -20px #000c;
-      pointer-events:auto;animation:t-in .3s ease-out;max-width:30rem;
-      font-family:'Onest',sans-serif;
-    }
-    .toast__card.err{outline-color:color-mix(in srgb,#ef4444 45%,transparent)}
-    .toast.out{animation:t-out .3s ease-in forwards}
-    @keyframes t-in{from{opacity:0;transform:translateY(-10px)}to{opacity:1}}
-    @keyframes t-out{to{opacity:0;transform:translateY(-10px)}}
+            .user {
+                padding: .55rem .95rem;
+                font-size: .85rem;
+            }
+
+            .page {
+                padding: 1.4rem .9rem 2.4rem;
+            }
+
+            .title {
+                font-size: 1.3rem;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card {
+                padding: 1.1rem;
+            }
+
+            .menu {
+                width: 260px;
+                padding: 0 14px 14px;
+            }
+
+            .menu-head {
+                margin: 0 -14px 8px;
+                padding: 0 10px 0 14px;
+                height: 50px;
+            }
+
+            .menu-item {
+                padding: 10px 11px;
+                font-size: .9rem;
+                border-radius: 12px;
+            }
+
+            .btn {
+                padding: .55rem .9rem;
+                font-size: .88rem;
+                border-radius: 14px;
+            }
+
+            .btn-lg {
+                padding: 12px 20px;
+                font-size: .95rem;
+                border-radius: 16px;
+            }
+        }
     </style>
 </head>
 
 <body>
-<div class="toast" id="toast"></div>
-<script>
-
-function showToast(msg, err = false) {
-    const t = document.getElementById('toast');
-    t.innerHTML = `<div class="toast__card${err ? ' err' : ''}"><span class="ti ${err ? 'ti-alert-triangle' : 'ti-check'}" style="font-size:1.1rem;${err ? 'color:#f87171' : 'color:var(--acc1)'}"></span><span>${msg}</span></div>`;
-    clearTimeout(window._tt);
-    window._tt = setTimeout(() => { const c = t.firstChild; c && c.classList.add('out'); }, 3200);
-}</script>
+    <!-- burger menu -->
+    <div class="menu" id="menu">
+        <div class="menu-head">
+            <h3>Меню</h3>
+            <button class="menu-close" onclick="closeMenu()" aria-label="Закрыть меню">
+                <i class="ti ti-x"></i>
+            </button>
+        </div>
+        <a class="menu-item" href="/dash"><i class="ti ti-books"></i><span>Курсы</span></a>
+        <a class="menu-item" href="/dash#top"><i class="ti ti-trophy"></i><span>Топ учеников</span></a>
+        <a class="menu-item active" href="/profile"><i class="ti ti-user-circle"></i><span>Профиль</span></a>
+        <a class="menu-item" href="/settings"><i class="ti ti-settings"></i><span>Настройки</span></a>
+        <button class="menu-item bottom" onclick="logout()"><i class="ti ti-logout"></i><span>Выйти</span></button>
+    </div>
+    <div class="menu-overlay" id="menu-overlay" onclick="closeMenu()"></div>
 
     <div class="header">
-        <div class="logo">NotALMS</div>
-        <button class="btn" onclick="logout()">Выйти</button>
+        <div class="burger" onclick="toggleMenu()"><i class="ti ti-menu-2"></i></div>
+        <a href="/" class="logo">NotALMS</a>
+        <a href="/settings" class="user" id="user-name"><span>...</span></a>
     </div>
 
     <div class="page">
+        <div class="title">Профиль</div>
         <div id="content">
-            <div class="title">Загрузка профиля...</div>
+            <div style="color:var(--muted)">загрузка...</div>
         </div>
-    </div>
 
-    <button class="btn" id="homeBtn" onclick="location.href='/dash'"><i class="ti ti-arrow-back-up"></i> На главную</button>
-
-    
-    <div class="modal" id="acc-modal">
-        <div class="modal__overlay" onclick="closeModal()"></div>
-        <div class="modal__card">
-            <button class="modal__close" onclick="closeModal()">×</button>
-            <div class="modal__title" id="acc-modal-title"></div>
-            <div class="modal__body" id="acc-modal-body"></div>
-            <div class="modal__foot" id="acc-modal-foot"></div>
+        <!-- кнопка в настройки -->
+        <div class="actions" id="actions" style="display:none">
+            <a class="btn btn-primary btn-lg" href="/settings">
+                <i class="ti ti-settings"></i> Настройки профиля
+                <svg class="arr" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14M13 6l6 6-6 6" />
+                </svg>
+            </a>
         </div>
     </div>
 
     <script>
         const API_BASE = document.querySelector('meta[name="api-base"]')?.content || `${location.protocol}//${location.hostname}:8443/v1`;
         const token = localStorage.getItem('token');
-        const contentDiv = document.getElementById('content');
+        if (!token) location.href = '/';
+
+        function toggleMenu() {
+            document.getElementById('menu').classList.toggle('active');
+            document.getElementById('menu-overlay').classList.toggle('active');
+        }
+        function closeMenu() {
+            document.getElementById('menu').classList.remove('active');
+            document.getElementById('menu-overlay').classList.remove('active');
+        }
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
+
+        function logout() {
+            localStorage.removeItem('token');
+            location.href = '/';
+        }
+
+        function esc(s) {
+            return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
 
         function achListHTML(list) {
-            if (!list || !list.length) return '<div class="ach" style="grid-column:1/-1;color:var(--muted)"><i class="ti ti-award" style="font-size:1.5rem;margin-bottom:.5rem;display:block"></i>Пока нет достижений</div>';
-            
-            const achIcons = {
-                'registered': 'ti-user-plus',
-                'first_solve': 'ti-circle-check',
-                'streak_3': 'ti-flame',
-                'streak_7': 'ti-fire',
-                'top_10': 'ti-trophy',
-                'top_3': 'ti-medal',
-                'top_1': 'ti-crown',
-                'perfect_score': 'ti-star',
-                'night_owl': 'ti-moon',
-                'early_bird': 'ti-sun',
-                'course_complete': 'ti-certificate',
-            };
-            
-            return list.map(a => {
-                if (typeof a === 'string') {
-                    return `<div class="ach"><div class="ach__icon"><i class="ti ti-award"></i></div><div class="ach__title">${a}</div></div>`;
+            if (!Array.isArray(list) || !list.length) return '<div class="muted">пока нет достижений</div>';
+            return '<div class="ach-wrap">' + list.map(a => {
+                const title = Object.keys(a)[0] || 'достижение';
+                const desc = a[title] || '';
+                return `<div class="ach"><i class="ti ti-award"></i><div><div class="ach__title">${esc(title)}</div><div class="ach__desc">${esc(desc)}</div></div></div>`;
+            }).join('') + '</div>';
+        }
+
+        async function load() {
+            try {
+                const res = await fetch(`${API_BASE}/search_user`, { headers: { Authorization: `Bearer ${token}` } });
+                const data = await res.json();
+                if (!res.ok || data.error) {
+                    document.getElementById('content').innerHTML = `<div class="card wide">${esc(data.error || 'не удалось загрузить профиль')}</div>`;
+                    return;
                 }
-                const key = Object.keys(a)[0];
-                const desc = a[key];
-                const icon = achIcons[key] || 'ti-award';
-                return `<div class="ach"><div class="ach__icon"><i class="ti ${icon}"></i></div><div class="ach__title">${key}</div><div class="ach__desc">${desc}</div></div>`;
-            }).join('');
-        }
+                const color = data.name_color ? ` style="color:${data.name_color}"` : '';
+                document.body.dataset.theme = data.theme || localStorage.getItem('theme') || 'midnight';
+                document.documentElement.dataset.theme = data.theme || localStorage.getItem('theme') || 'midnight';
 
-        function renderProfile(data) {
-            contentDiv.innerHTML = `
-                <div class="title">Профиль пользователя</div>
+                const chip = document.getElementById('user-name');
+                if (chip) {
+                    const label = chip.querySelector('span') || chip;
+                    label.textContent = data.user_login;
+                    if (data.name_color) chip.style.color = data.name_color;
+                }
 
-                <div class="profile-grid">
+                document.getElementById('content').innerHTML = `
+                <div class="grid">
                     <div class="card">
-                        <div class="info">
-                            <div class="label">Логин</div>
-                            <b id="p-login" style="${data.name_color ? `color:${data.name_color}` : ''}">${data.user_login}</b>
-                            <div class="label" style="margin-top:14px">Цвет имени</div>
-                            <div class="palette" id="p-palette"></div>
-                            <div class="label" style="margin-top:14px">Тема сайта</div>
-                            <div class="palette" id="p-themes"></div>
-                        </div>
-
-                        <div class="info">
-                            <div class="label">Текущий рейтинг</div>
-                            <span id="p-rating">—</span>
-                        </div>
-
-                        <div class="info">
-                            <div class="label">Решено задач</div>
-                            <span id="p-solved">—</span>
-                        </div>
-
-                        <div class="info">
-                            <div class="label">О себе</div>
-                            ${data.biography || '<i>Не указано</i>'}
-                        </div>
-
-                        <div class="info">
-                            <div class="label">Статус</div>
-                            <span style="color: ${data.status ? '#4ade80' : '#f87171'}">
-                                ${data.status ? '● Активен' : '● Заблокирован'}
-                            </span>
-                        </div>
+                        <div class="label">Логин</div>
+                        <div class="info"${color}><i class="ti ti-user"></i> ${esc(data.user_login)}</div>
+                        <div class="label" style="margin-top:1rem">Статус</div>
+                        <div class="info ${data.status ? 'ok' : 'bad'}">${data.status ? '● активен' : '● заблокирован'}</div>
                     </div>
-
                     <div class="card">
-                        <div class="label" style="margin-bottom: 15px;">Достижения</div>
-                        <div class="achievements" id="p-ach">${achListHTML(data.achivements)}</div>
+                        <div class="label">О себе</div>
+                        <div class="bio">${data.biography ? esc(data.biography) : '<span class="muted">не указано</span>'}</div>
                     </div>
-
                     <div class="card">
-                        <div class="label" style="margin-bottom: 8px;">Управление аккаунтом</div>
-                        <div class="acc-row">
-                            <div class="acc-name"><i class="ti ti-brand-telegram" style="color:var(--primary)"></i> Telegram-бот</div>
-                            <div class="acc-actions" id="p-tg-actions"></div>
-                        </div>
-                        <div class="acc-row">
-                            <div class="acc-name"><i class="ti ti-logout" style="color:var(--primary)"></i> Сессия</div>
-                            <div class="acc-actions">
-                                <button class="btn-sm warn" onclick="logout()"><i class="ti ti-door-exit"></i> Выйти</button>
-                            </div>
-                        </div>
-                        <div class="modal__body" style="margin-top:10px">статус привязки: <span id="p-tg-status">...</span></div>
+                        <div class="label">Рейтинг</div>
+                        <div class="info"><span class="rating-value" id="p-rating"><i class="ti ti-star"></i> ${data.rating ?? 0}</span></div>
+                        <div class="label" style="margin-top:1rem">Решено задач</div>
+                        <div class="info" id="p-solved">${data.solved ?? 0}</div>
                     </div>
-                </div>
-            `;
-            updateAccountCard(data);
-        }
+                    <div class="card">
+                        <div class="label">Telegram</div>
+                        <div class="info"><i class="ti ti-brand-telegram"></i> ${data.user_telegram_FOR_ANNOUCMENTS ? '<span class="ok">привязан</span>' : '<span class="muted">не привязан</span>'}</div>
+                        <div class="bio">привязка и отвязка — в <a href="/settings">настройках</a></div>
+                    </div>
+                    <div class="card wide">
+                        <div class="label">Достижения</div>
+                        ${achListHTML(data.achivements)}
+                    </div>
+                </div>`;
 
-        function updateAccountCard(data) {
-            const actions = document.getElementById('p-tg-actions');
-            const status = document.getElementById('p-tg-status');
-            if (!actions || !status) return;
-            const bound = !!data.user_telegram_FOR_ANNOUCMENTS;
-            status.textContent = bound ? 'привязан' : 'не привязан';
-            status.style.color = bound ? '#4ade80' : 'var(--muted)';
-            actions.innerHTML = bound
-                ? '<button class="btn-sm" onclick="unbindTelegram()"><i class="ti ti-link-off"></i> Отвязать</button>'
-                : '<button class="btn-sm" onclick="bindTelegram()"><i class="ti ti-link"></i> Привязать</button>';
+                document.getElementById('actions').style.display = 'flex';
+                refreshDynamic();
+            } catch {
+                document.getElementById('content').innerHTML = '<div class="card wide">ошибка связи с сервером</div>';
+            }
         }
 
         async function refreshDynamic() {
             try {
-                const pr = await fetch(`${API_BASE}/me/progress`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const pj = await pr.json();
+                const pj = await (await fetch(`${API_BASE}/me/progress`, { headers: { Authorization: `Bearer ${token}` } })).json();
                 const el = document.getElementById('p-solved');
-                if (el) el.innerHTML = `${pj.solved ?? 0} · <span style="color: var(--accent)">#${pj.rating_position ?? '?'} в топе</span>`;
+                if (el) el.innerHTML = `${pj.solved ?? 0} <span class="muted">· #${pj.rating_position ?? '?'} в топе</span>`;
             } catch { }
             try {
-                const me = await fetch(`${API_BASE}/me`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (me.ok) {
-                    const m = await me.json();
-                    const r = document.getElementById('p-rating');
-                    if (r) r.innerHTML = `<span class="rating-value"><i class="ti ti-star" style="color:var(--accent)"></i> ${m.rating ?? 0}</span>`;
-                }
+                const m = await (await fetch(`${API_BASE}/me`, { headers: { Authorization: `Bearer ${token}` } })).json();
+                const r = document.getElementById('p-rating');
+                if (r && m.rating != null) r.innerHTML = `<i class="ti ti-star"></i> ${m.rating}`;
             } catch { }
         }
 
-        let profileRendered = false;
-
-        async function updateProfileData() {
-            if (!token) {
-                contentDiv.innerHTML = `
-                    <div class="error-box">
-                        <div style="font-size: 1.2rem; margin-bottom: 15px;">Вы не авторизованы</div>
-                        <button class="btn" onclick="location.href='/index.html'">Войти</button>
-                    </div>
-                `;
-                return;
-            }
-
-            try {
-                const response = await fetch(`${API_BASE}/search_user`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await response.json();
-
-                if (data.error) {
-                    contentDiv.innerHTML = `<div class="error-box">${data.error}</div>`;
-                    return;
-                }
-
-                if (!profileRendered) {
-                    renderProfile(data);
-                    profileRendered = true;
-                    refreshDynamic();
-                    renderPalette(data.name_color);
-                    const themeName = data.theme || localStorage.getItem('theme') || 'midnight';
-                    document.body.dataset.theme = themeName;
-                    renderThemes(themeName);
-                } else {
-                    updateAccountCard(data);
-                    refreshDynamic();
-                }
-            } catch (err) {
-                console.error('Fetch error:', err);
-                if (!profileRendered && contentDiv.innerText.includes('Загрузка')) {
-                    contentDiv.innerHTML = `<div class="error-box">Ошибка связи с сервером</div>`;
-                }
-            }
-        }
-
-        function openModal(title, bodyHTML, footHTML) {
-            document.getElementById('acc-modal-title').textContent = title;
-            document.getElementById('acc-modal-body').innerHTML = bodyHTML;
-            document.getElementById('acc-modal-foot').innerHTML = footHTML || '';
-            document.getElementById('acc-modal').classList.add('active');
-        }
-
-        function closeModal() {
-            document.getElementById('acc-modal').classList.remove('active');
-        }
-
-        async function bindTelegram() {
-            openModal('Привязка Telegram', '<i class="ti ti-loader-2" style="display:inline-block;animation:spin 1s linear infinite"></i> генерирую ссылку...');
-            try {
-                const res = await fetch(`${API_BASE}/user_cabinet_bot_generateLink`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await res.json();
-                if (data.is_registered) {
-                    openModal('Привязка Telegram', 'аккаунт уже привязан к боту');
-                    return;
-                }
-                const url = data.register_link || '';
-                if (!url) {
-                    openModal('Привязка Telegram', 'не удалось получить ссылку, попробуй позже');
-                    return;
-                }
-                openModal(
-                    'Привязка Telegram',
-                    `открой ссылку в Telegram и нажми «Регистрация в боте»:` +
-                    `<a class="tg-url" href="${url}" target="_blank" rel="noopener">${url}</a>`,
-                    `<button class="btn-sm" onclick="copyTgLink('${url}')"><i class="ti ti-copy"></i> Копировать</button>
-                     <button class="btn-sm" onclick="closeModal()">Готово</button>`
-                );
-            } catch {
-                openModal('Привязка Telegram', 'ошибка сети — попробуй позже');
-            }
-        }
-
-        function copyTgLink(url) {
-            navigator.clipboard?.writeText(url).then(
-                () => showToast('ссылка скопирована'),
-                () => showToast('не удалось скопировать', true)
-            );
-        }
-
-        function unbindTelegram() {
-            openModal(
-                'Отвязать Telegram?',
-                'бот перестанет быть привязан к аккаунту. Привязать заново можно в любой момент по ссылке.',
-                `<button class="btn-sm warn" onclick="doUnbind()"><i class="ti ti-link-off"></i> Да, отвязать</button>
-                 <button class="btn-sm" onclick="closeModal()">Отмена</button>`
-            );
-        }
-
-        async function doUnbind() {
-            try {
-                const res = await fetch(`${API_BASE}/me/telegram/unbind`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (res.ok) {
-                    closeModal();
-                    showToast('аккаунт отвязан от бота');
-                    profileRendered = false;
-                    updateProfileData();
-                } else {
-                    showToast('не удалось отвязать, попробуй позже', true);
-                }
-            } catch {
-                showToast('ошибка сети', true);
-            }
-        }
-
-        function logout() {
-            localStorage.removeItem('token');
-            location.href = '/index.html';
-        }
-
-        const COLOR_RU = {
-            '#6366f1': 'индиго', '#f472b6': 'розовый', '#4ade80': 'зеленый', '#facc15': 'желтый',
-            '#38bdf8': 'небо', '#f97316': 'оранжевый', '#a78bfa': 'сирень', '#ef4444': 'красный'
-        };
-        async function renderPalette(selected) {
-            const box = document.getElementById('p-palette');
-            if (!box) return;
-            let colors = [];
-            try {
-                colors = await (await fetch(`${API_BASE}/name-colors`)).json();
-            } catch { return; }
-            if (!Array.isArray(colors)) return;
-            box.innerHTML = '';
-            colors.forEach(c => {
-                const s = document.createElement('button');
-                s.type = 'button';
-                s.className = 'pick' + (selected === c ? ' sel' : '');
-                s.style.background = c;
-                s.dataset.tip = COLOR_RU[c] || c;
-                s.setAttribute('aria-label', `цвет имени ${COLOR_RU[c] || c}`);
-                s.onclick = async () => {
-                    const res = await fetch(`${API_BASE}/me/name-color`, {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ color: c })
-                    });
-                    if (res.ok) {
-                        box.querySelectorAll('.pick').forEach(x => x.classList.remove('sel'));
-                        s.classList.add('sel');
-                        const lg = document.getElementById('p-login');
-                        if (lg) lg.style.color = c;
-                        showToast('цвет имени сохранен — он виден в топе и в боте');
-                    } else {
-                        showToast('не удалось сохранить цвет', true);
-                    }
-                };
-                box.appendChild(s);
-            });
-        }
-
-        const THEME_SWATCH = {
-            midnight: '#6366f1', emerald: '#10b981', sunset: '#f59e0b', rose: '#f43f5e', ocean: '#0ea5e9'
-        };
-        const THEME_TITLES = {
-            midnight: 'полночь', emerald: 'изумруд', sunset: 'закат', rose: 'роза', ocean: 'океан'
-        };
-        async function renderThemes(selected) {
-            const box = document.getElementById('p-themes');
-            if (!box) return;
-            let themes = Object.keys(THEME_SWATCH);
-            try { themes = await (await fetch(`${API_BASE}/themes`)).json(); } catch { }
-            if (!Array.isArray(themes)) return;
-            box.innerHTML = '';
-            themes.forEach(t => {
-                const s = document.createElement('button');
-                s.type = 'button';
-                s.className = 'pick' + (selected === t ? ' sel' : '');
-                s.style.background = THEME_SWATCH[t] || '#888';
-                s.dataset.tip = THEME_TITLES[t] || t;
-                s.setAttribute('aria-label', `тема ${THEME_TITLES[t] || t}`);
-                s.onclick = async () => {
-                    const res = await fetch(`${API_BASE}/me/theme`, {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ name: t })
-                    });
-                    if (res.ok) {
-                        box.querySelectorAll('.pick').forEach(x => x.classList.remove('sel'));
-                        s.classList.add('sel');
-                        document.body.dataset.theme = t;
-                        localStorage.setItem('theme', t);
-                        showToast('тема сохранена — действует на всех страницах');
-                    } else {
-                        showToast('не удалось сохранить тему', true);
-                    }
-                };
-                box.appendChild(s);
-            });
-        }
-
-        updateProfileData();
-
-        setInterval(refreshDynamic, 5000);
-
-        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
-
+        load();
     </script>
 </body>
 

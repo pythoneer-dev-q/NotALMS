@@ -1,6 +1,7 @@
 # ! front/server/main.py
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from fastapi import FastAPI
 from front.server import frontRouter
 from back.server.server_configs.settings import settings
@@ -8,6 +9,8 @@ from back.server.server_configs.settings import settings
 app = FastAPI()
 
 app.include_router(frontRouter.frouter)
+# статика ассетов: include_router не переносит Mount с роутера, вешаем на app
+app.mount('/assets', StaticFiles(directory=frontRouter.ASSETS_DIR), name='assets')
 
 app.add_middleware(
     CORSMiddleware,

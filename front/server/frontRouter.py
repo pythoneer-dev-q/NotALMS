@@ -1,7 +1,7 @@
+
 # front/server/frontRouter.py
 from fastapi import APIRouter
 from fastapi.responses import HTMLResponse, FileResponse
-from fastapi.staticfiles import StaticFiles
 import os
 
 frouter = APIRouter()
@@ -63,9 +63,9 @@ async def tgLogin(code: str):
     # диплинк из бота: авто-вход по одноразовому коду
     return open(f'{STATIC_DIR}/tglogin.html', encoding='utf-8').read()
 
-
-# статика ассетов и favicon
-frouter.mount('/assets', StaticFiles(directory=ASSETS_DIR), name='assets')
+@frouter.get('/settings', response_class=HTMLResponse)
+async def settings():
+    return open(f'{STATIC_DIR}/settings.html', encoding='utf-8').read()
 
 
 @frouter.get('/favicon.ico', include_in_schema=False)

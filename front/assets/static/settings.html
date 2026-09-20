@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NotALMS — Настройки</title>
+    <link rel="icon" href="/favicon.ico" sizes="32x32">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script>
+        (function () {
+            var theme = localStorage.getItem('theme');
+            if (theme) document.documentElement.dataset.theme = theme;
+        })();
+    </script>
+    <script src="/assets/static/toast.js"></script>
+    <style>
+        :root {
+            --primary: #6366f1;
+            --bg: #0f172a;
+            --card: #13213d;
+            --text: #e2e8f0;
+            --muted: #94a3b8;
+            --line: rgba(255, 255, 255, .08);
+            --line2: rgba(255, 255, 255, .14);
+            --acc1: #818cf8;
+            --r-btn: 18px;
+        }
+
+        [data-theme="emerald"] {
+            --primary: #10b981;
+            --bg: #08130e;
+            --card: rgba(14, 50, 38, .85);
+            --text: #dcfce7;
+            --acc1: #34d399;
+        }
+
+        [data-theme="sunset"] {
+            --primary: #f59e0b;
+            --bg: #171009;
+            --card: rgba(60, 42, 14, .85);
+            --text: #fef3c7;
+            --acc1: #fbbf24;
+        }
+
+        [data-theme="rose"] {
+            --primary: #f43f5e;
+            --bg: #170a12;
+            --card: rgba(70, 16, 38, .85);
+            --text: #ffe4e6;
+            --acc1: #fb7185;
+        }
+
+        [data-theme="ocean"] {
+            --primary: #0ea5e9;
+            --bg: #071224;
+            --card: rgba(13, 52, 94, .85);
+            --text: #e0f2fe;
+            --acc1: #38bdf8;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Onest', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* ===== header ===== */
+        .header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 20px;
+            background: #0a0910;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .burger {
+            display: flex;
+            align-items: center;
+            font-size: 1.8rem;
+            line-height: 1;
+            cursor: pointer;
+            color: var(--muted);
+            transition: .2s;
+        }
+
+        .burger:hover {
+            color: var(--text);
+        }
+
+        .logo {
+            font-weight: 800;
+            font-size: 1.3rem;
+            color: var(--acc1);
+            text-decoration: none;
+            margin-right: auto;
+        }
+
+        /* ===== liquid glass кнопки ===== */
+        .btn {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 14.5px;
+            letter-spacing: .1px;
+            cursor: pointer;
+            padding: 11px 20px;
+            border-radius: var(--r-btn);
+            border: 1px solid var(--line2);
+            color: var(--text);
+            background: rgba(255, 255, 255, .04);
+            -webkit-backdrop-filter: blur(14px) saturate(1.4);
+            backdrop-filter: blur(14px) saturate(1.4);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08);
+            white-space: nowrap;
+            text-decoration: none;
+            overflow: hidden;
+            transition: transform .12s, background .2s, border-color .2s, box-shadow .2s;
+        }
+
+        .btn::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: linear-gradient(180deg,
+                    rgba(255, 255, 255, .09),
+                    rgba(255, 255, 255, .02) 45%,
+                    transparent 70%);
+        }
+
+        .btn>* {
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn:hover {
+            border-color: color-mix(in srgb, var(--primary) 55%, var(--line2));
+            background: rgba(255, 255, 255, .07);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .12);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn-primary {
+            color: #fff;
+            border-color: color-mix(in srgb, var(--primary) 60%, transparent);
+            background: linear-gradient(180deg,
+                    color-mix(in srgb, var(--primary) 32%, transparent),
+                    color-mix(in srgb, var(--primary) 18%, transparent));
+            -webkit-backdrop-filter: blur(14px) saturate(1.4);
+            backdrop-filter: blur(14px) saturate(1.4);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2);
+        }
+
+        .btn-primary::before {
+            background: linear-gradient(180deg,
+                    rgba(255, 255, 255, .18),
+                    rgba(255, 255, 255, .04) 45%,
+                    transparent 70%);
+        }
+
+        .btn-primary:hover {
+            border-color: color-mix(in srgb, var(--primary) 80%, transparent);
+            background: linear-gradient(180deg,
+                    color-mix(in srgb, var(--primary) 42%, transparent),
+                    color-mix(in srgb, var(--primary) 22%, transparent));
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .25);
+        }
+
+        .btn-primary .arr {
+            transition: transform .18s;
+        }
+
+        .btn-primary:hover .arr {
+            transform: translateX(3px);
+        }
+
+        .btn.warn {
+            color: #f87171;
+            border-color: rgba(239, 68, 68, .45);
+            background: rgba(239, 68, 68, .06);
+        }
+
+        .btn.warn::before {
+            background: linear-gradient(180deg,
+                    rgba(255, 255, 255, .08),
+                    transparent 70%);
+        }
+
+        .btn.warn:hover {
+            border-color: rgba(239, 68, 68, .7);
+            background: rgba(239, 68, 68, .14);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1);
+        }
+
+        .user {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            font-weight: 600;
+            font-size: 14.5px;
+            letter-spacing: .1px;
+            cursor: pointer;
+            padding: 10px 18px;
+            border-radius: var(--r-btn);
+            border: 1px solid color-mix(in srgb, var(--primary) 60%, transparent);
+            color: #fff;
+            text-decoration: none;
+            white-space: nowrap;
+            background: linear-gradient(180deg,
+                    color-mix(in srgb, var(--primary) 32%, transparent),
+                    color-mix(in srgb, var(--primary) 18%, transparent));
+            -webkit-backdrop-filter: blur(14px) saturate(1.4);
+            backdrop-filter: blur(14px) saturate(1.4);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2);
+            overflow: hidden;
+            transition: transform .12s, background .2s, border-color .2s, box-shadow .2s;
+        }
+
+        .user::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: linear-gradient(180deg,
+                    rgba(255, 255, 255, .18),
+                    rgba(255, 255, 255, .04) 45%,
+                    transparent 70%);
+        }
+
+        .user>* {
+            position: relative;
+            z-index: 1;
+        }
+
+        .user:hover {
+            border-color: color-mix(in srgb, var(--primary) 80%, transparent);
+            background: linear-gradient(180deg,
+                    color-mix(in srgb, var(--primary) 42%, transparent),
+                    color-mix(in srgb, var(--primary) 22%, transparent));
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .25);
+        }
+
+        .user:active {
+            transform: translateY(1px);
+        }
+
+        /* ===== burger menu ===== */
+        .menu {
+            position: fixed;
+            top: 0;
+            left: -280px;
+            width: 280px;
+            height: 100%;
+            background: #0a0910;
+            border-right: 1px solid var(--line);
+            transition: .3s;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            padding: 0 16px 16px;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+        }
+
+        .menu.active {
+            left: 0;
+        }
+
+        .menu-head {
+            position: sticky;
+            top: 0;
+            z-index: 3;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            height: 56px;
+            flex: 0 0 auto;
+            margin: 0 -16px 8px;
+            padding: 0 12px 0 16px;
+            background: #0a0910;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .menu-head h3 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .menu-close {
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            background: rgba(255, 255, 255, .04);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            color: var(--muted);
+            font-size: 1.15rem;
+            line-height: 1;
+            cursor: pointer;
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            transition: .18s;
+        }
+
+        .menu-close:hover {
+            background: rgba(255, 255, 255, .08);
+            color: var(--text);
+            border-color: var(--line2);
+        }
+
+        .menu-item {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            margin-top: 6px;
+            padding: 11px 12px;
+            border: 1px solid transparent;
+            border-radius: 14px;
+            background: transparent;
+            color: var(--muted);
+            font: inherit;
+            font-size: .95rem;
+            text-decoration: none;
+            text-align: left;
+            cursor: pointer;
+            overflow: hidden;
+            transition: .18s;
+        }
+
+        .menu-item i {
+            font-size: 1.15rem;
+            color: var(--primary);
+            flex-shrink: 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        .menu-item>* {
+            position: relative;
+            z-index: 1;
+        }
+
+        .menu-item:hover {
+            background: rgba(255, 255, 255, .05);
+            color: var(--text);
+        }
+
+        .menu-item.active {
+            border-color: color-mix(in srgb, var(--primary) 60%, transparent);
+            color: #fff;
+            background: linear-gradient(180deg,
+                    color-mix(in srgb, var(--primary) 32%, transparent),
+                    color-mix(in srgb, var(--primary) 18%, transparent));
+            -webkit-backdrop-filter: blur(14px) saturate(1.4);
+            backdrop-filter: blur(14px) saturate(1.4);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2);
+        }
+
+        .menu-item.active::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: linear-gradient(180deg,
+                    rgba(255, 255, 255, .18),
+                    rgba(255, 255, 255, .04) 45%,
+                    transparent 70%);
+        }
+
+        .menu-item.active i {
+            color: #fff;
+        }
+
+        .menu-item.bottom {
+            margin-top: auto;
+        }
+
+        .menu-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(5, 10, 25, .5);
+            opacity: 0;
+            pointer-events: none;
+            transition: .3s;
+            z-index: 90;
+        }
+
+        .menu-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* ===== page ===== */
+        .page {
+            max-width: 62rem;
+            margin: 0 auto;
+            padding: 2rem 1.2rem 3rem;
+        }
+
+        .title {
+            font-size: 1.6rem;
+            font-weight: 800;
+            margin-bottom: 1.4rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 1.3rem;
+        }
+
+        .card.wide {
+            grid-column: 1 / -1;
+        }
+
+        .card.danger {
+            border-color: rgba(239, 68, 68, .3);
+        }
+
+        .label {
+            font-size: .78rem;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            color: var(--muted);
+        }
+
+        .desc {
+            font-size: .85rem;
+            color: var(--muted);
+            margin-top: .4rem;
+            line-height: 1.5;
+        }
+
+        .ok {
+            color: #4ade80;
+        }
+
+        .muted {
+            color: var(--muted);
+        }
+
+        .row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: .8rem;
+            flex-wrap: wrap;
+        }
+
+        /* ===== переключатели темы / цвета (liquid glass) ===== */
+        .themes,
+        .palette {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: .9rem;
+        }
+
+        .tbtn {
+            position: relative;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, .04);
+            border: 1px solid var(--line2);
+            color: var(--text);
+            border-radius: 14px;
+            padding: .6rem 1rem;
+            font-size: .9rem;
+            cursor: pointer;
+            overflow: hidden;
+            -webkit-backdrop-filter: blur(14px) saturate(1.4);
+            backdrop-filter: blur(14px) saturate(1.4);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08);
+            transition: transform .12s, background .2s, border-color .2s, box-shadow .2s;
+        }
+
+        .tbtn::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: linear-gradient(180deg,
+                    rgba(255, 255, 255, .09),
+                    rgba(255, 255, 255, .02) 45%,
+                    transparent 70%);
+        }
+
+        .tbtn>* {
+            position: relative;
+            z-index: 1;
+        }
+
+        .tbtn:hover {
+            border-color: color-mix(in srgb, var(--primary) 55%, var(--line2));
+            background: rgba(255, 255, 255, .07);
+        }
+
+        .tbtn:active {
+            transform: translateY(1px);
+        }
+
+        .tbtn.sel {
+            border-color: color-mix(in srgb, var(--primary) 70%, transparent);
+            background: linear-gradient(180deg,
+                    color-mix(in srgb, var(--primary) 32%, transparent),
+                    color-mix(in srgb, var(--primary) 18%, transparent));
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22);
+        }
+
+        .tbtn.sel::before {
+            background: linear-gradient(180deg,
+                    rgba(255, 255, 255, .2),
+                    rgba(255, 255, 255, .05) 45%,
+                    transparent 70%);
+        }
+
+        .tbtn .dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .pick {
+            position: relative;
+            width: 34px;
+            height: 34px;
+            border-radius: 12px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            overflow: hidden;
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18);
+            transition: transform .15s, border-color .15s, box-shadow .15s;
+        }
+
+        .pick::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg,
+                    rgba(255, 255, 255, .22),
+                    rgba(255, 255, 255, .04) 45%,
+                    transparent 70%);
+            pointer-events: none;
+        }
+
+        .pick:hover {
+            transform: translateY(-2px);
+        }
+
+        .pick.sel {
+            border-color: var(--text);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .28),
+                0 0 0 2px color-mix(in srgb, var(--primary) 40%, transparent);
+        }
+
+        .pick .tip {
+            position: absolute;
+            bottom: 130%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #0a0910;
+            border: 1px solid var(--line2);
+            color: var(--text);
+            font-size: .7rem;
+            white-space: nowrap;
+            padding: .3rem .5rem;
+            border-radius: 6px;
+            opacity: 0;
+            pointer-events: none;
+            transition: .15s;
+        }
+
+        .pick:hover .tip {
+            opacity: 1;
+        }
+
+        .login-val {
+            font-size: 1.05rem;
+            font-weight: 600;
+        }
+
+        /* ===== modal ===== */
+        .modal {
+            position: fixed;
+            inset: 0;
+            z-index: 300;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal__overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(5, 5, 8, .8);
+            -webkit-backdrop-filter: blur(6px);
+            backdrop-filter: blur(6px);
+        }
+
+        .modal__card {
+            position: relative;
+            width: 100%;
+            max-width: 420px;
+            background: var(--card);
+            border: 1px solid var(--line2);
+            border-radius: 18px;
+            padding: 1.4rem;
+            margin: 1rem;
+            -webkit-backdrop-filter: blur(14px) saturate(1.4);
+            backdrop-filter: blur(14px) saturate(1.4);
+        }
+
+        .modal__title {
+            font-weight: 700;
+            font-size: 1.05rem;
+        }
+
+        .modal__body {
+            font-size: .9rem;
+            margin-top: .7rem;
+            line-height: 1.5;
+        }
+
+        .modal__foot {
+            display: flex;
+            gap: .5rem;
+            margin-top: 1.1rem;
+            flex-wrap: wrap;
+        }
+
+        .modal__close {
+            position: absolute;
+            top: .6rem;
+            right: .7rem;
+            background: none;
+            border: 0;
+            color: var(--muted);
+            font-size: 1.2rem;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .modal__close:hover {
+            color: var(--text);
+        }
+
+        .tg-url {
+            display: block;
+            word-break: break-all;
+            background: rgba(255, 255, 255, .04);
+            border: 1px solid var(--line2);
+            border-radius: 12px;
+            padding: 8px 10px;
+            margin-top: .7rem;
+            font-size: .8rem;
+            text-decoration: none;
+            color: var(--acc1);
+        }
+
+        .inp {
+            width: 100%;
+            margin-top: .7rem;
+            padding: 10px 14px;
+            border-radius: 12px;
+            border: 1px solid var(--line2);
+            background: rgba(255, 255, 255, .04);
+            color: var(--text);
+            font-family: inherit;
+            font-size: .92rem;
+            outline: none;
+            transition: border-color .18s;
+        }
+
+        .inp:focus {
+            border-color: color-mix(in srgb, var(--primary) 55%, transparent);
+        }
+
+        @media (max-width: 700px) {
+            .header {
+                padding: 12px 14px;
+            }
+
+            .logo {
+                font-size: 1.15rem;
+            }
+
+            .burger {
+                font-size: 1.55rem;
+            }
+
+            .user {
+                padding: .55rem .95rem;
+                font-size: .85rem;
+            }
+
+            .page {
+                padding: 1.4rem .9rem 2.4rem;
+            }
+
+            .title {
+                font-size: 1.3rem;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .card {
+                padding: 1.1rem;
+            }
+
+            .btn {
+                padding: .55rem .9rem;
+                font-size: .88rem;
+                border-radius: 14px;
+            }
+
+            .modal__card {
+                max-width: calc(100vw - 2rem);
+            }
+
+            .menu {
+                width: 260px;
+                padding: 0 14px 14px;
+            }
+
+            .menu-head {
+                margin: 0 -14px 8px;
+                padding: 0 10px 0 14px;
+                height: 50px;
+            }
+
+            .menu-item {
+                padding: 10px 11px;
+                font-size: .9rem;
+                border-radius: 12px;
+            }
+
+            .tbtn {
+                border-radius: 12px;
+            }
+
+            .pick {
+                border-radius: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- burger menu -->
+    <div class="menu" id="menu">
+        <div class="menu-head">
+            <h3>Меню</h3>
+            <button class="menu-close" onclick="closeMenu()" aria-label="Закрыть меню">
+                <i class="ti ti-x"></i>
+            </button>
+        </div>
+        <a class="menu-item" href="/dash"><i class="ti ti-books"></i><span>Курсы</span></a>
+        <a class="menu-item" href="/dash#top"><i class="ti ti-trophy"></i><span>Топ учеников</span></a>
+        <a class="menu-item" href="/profile"><i class="ti ti-user-circle"></i><span>Профиль</span></a>
+        <a class="menu-item active" href="/settings"><i class="ti ti-settings"></i><span>Настройки</span></a>
+        <button class="menu-item bottom" onclick="logout()"><i class="ti ti-logout"></i><span>Выйти</span></button>
+    </div>
+    <div class="menu-overlay" id="menu-overlay" onclick="closeMenu()"></div>
+
+    <div class="header">
+        <div class="burger" onclick="toggleMenu()"><i class="ti ti-menu-2"></i></div>
+        <a href="/" class="logo">NotALMS</a>
+        <a href="/profile" class="user" id="user-name"><span>...</span></a>
+    </div>
+
+    <div class="page">
+        <div class="title">Настройки</div>
+        <div id="content">
+            <div class="muted">загрузка...</div>
+        </div>
+    </div>
+
+    <div class="modal" id="acc-modal">
+        <div class="modal__overlay" onclick="closeModal()"></div>
+        <div class="modal__card">
+            <button class="modal__close" onclick="closeModal()">×</button>
+            <div class="modal__title" id="acc-modal-title"></div>
+            <div class="modal__body" id="acc-modal-body"></div>
+            <div class="modal__foot" id="acc-modal-foot"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = document.querySelector('meta[name="api-base"]')?.content || `${location.protocol}//${location.hostname}:8443/v1`;
+        const token = localStorage.getItem('token');
+        if (!token) location.href = '/';
+
+        const COOLDOWN_MS = 3 * 24 * 60 * 60 * 1000;
+        const THEME_SWATCH = { midnight: '#6366f1', emerald: '#10b981', sunset: '#f59e0b', rose: '#f43f5e', ocean: '#0ea5e9' };
+        const THEME_RU = { midnight: 'полночь', emerald: 'изумруд', sunset: 'закат', rose: 'роза', ocean: 'океан' };
+        const COLOR_RU = {
+            '#6366f1': 'индиго', '#f472b6': 'розовый', '#4ade80': 'зеленый', '#facc15': 'желтый',
+            '#38bdf8': 'небо', '#f97316': 'оранжевый', '#a78bfa': 'сирень', '#ef4444': 'красный'
+        };
+        let usernameNextChange = 0;
+
+        function esc(s) {
+            return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        /* ===== burger ===== */
+        function toggleMenu() {
+            document.getElementById('menu').classList.toggle('active');
+            document.getElementById('menu-overlay').classList.toggle('active');
+        }
+        function closeMenu() {
+            document.getElementById('menu').classList.remove('active');
+            document.getElementById('menu-overlay').classList.remove('active');
+        }
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
+
+        function logout() {
+            localStorage.removeItem('token');
+            location.href = '/';
+        }
+
+        function openModal(title, bodyHTML, footHTML) {
+            document.getElementById('acc-modal-title').textContent = title;
+            document.getElementById('acc-modal-body').innerHTML = bodyHTML;
+            document.getElementById('acc-modal-foot').innerHTML = footHTML || '';
+            document.getElementById('acc-modal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('acc-modal').classList.remove('active');
+        }
+
+        function daysLeft() {
+            return Math.max(1, Math.ceil((usernameNextChange - Date.now()) / 86400000));
+        }
+
+        async function load() {
+            let data;
+            try {
+                const res = await fetch(`${API_BASE}/search_user`, { headers: { Authorization: `Bearer ${token}` } });
+                data = await res.json();
+                if (!res.ok || data.error) throw 0;
+            } catch {
+                document.getElementById('content').innerHTML = '<div class="card wide">ошибка связи с сервером</div>';
+                return;
+            }
+            document.body.dataset.theme = data.theme || localStorage.getItem('theme') || 'midnight';
+            document.documentElement.dataset.theme = data.theme || localStorage.getItem('theme') || 'midnight';
+
+            const chip = document.getElementById('user-name');
+            if (chip) {
+                const label = chip.querySelector('span') || chip;
+                label.textContent = data.user_login;
+                if (data.name_color) chip.style.color = data.name_color;
+            }
+
+            usernameNextChange = data.last_username_change
+                ? new Date(data.last_username_change).getTime() + COOLDOWN_MS
+                : 0;
+
+            const bound = !!data.user_telegram_FOR_ANNOUCMENTS;
+            document.getElementById('content').innerHTML = `
+            <div class="grid">
+                <div class="card wide">
+                    <div class="label">Тема сайта</div>
+                    <div class="desc">сохраняется в аккаунте и работает на всех страницах</div>
+                    <div class="themes" id="s-themes"></div>
+                </div>
+                <div class="card">
+                    <div class="label">Цвет имени</div>
+                    <div class="desc">виден в профиле и в топе учеников</div>
+                    <div class="palette" id="s-colors"></div>
+                </div>
+                <div class="card">
+                    <div class="label">Telegram</div>
+                    <div class="desc">вход по ссылке из бота и уведомления</div>
+                    <div class="row">
+                        <span class="login-val"><i class="ti ti-brand-telegram"></i> ${bound ? '<span class="ok">привязан</span>' : '<span class="muted">не привязан</span>'}</span>
+                        <span id="s-tg-actions"></span>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="label">Логин</div>
+                    <div class="desc">можно менять не чаще раза в 3 дня</div>
+                    <div class="row">
+                        <span class="login-val" id="s-login">${esc(data.user_login)}</span>
+                        <button class="btn" onclick="askUsername()"><i class="ti ti-pencil"></i> Сменить</button>
+                    </div>
+                    <div class="desc" id="s-login-hint"></div>
+                </div>
+                <div class="card wide danger">
+                    <div class="label" style="color:#f87171">Опасная зона</div>
+                    <div class="desc">удаление аккаунта необратимо: рейтинг, прогресс и достижения будут потеряны</div>
+                    <div class="row">
+                        <button class="btn warn" onclick="deleteAccount()"><i class="ti ti-trash"></i> Удалить аккаунт</button>
+                    </div>
+                </div>
+            </div>`;
+
+            renderThemes(data.theme);
+            renderPalette(data.name_color);
+            renderTg(bound);
+            renderLoginHint();
+        }
+
+        function renderThemes(selected) {
+            const box = document.getElementById('s-themes');
+            if (!box) return;
+            fetch(`${API_BASE}/themes`).then(r => r.json()).then(list => {
+                if (!Array.isArray(list)) list = Object.keys(THEME_RU);
+                box.innerHTML = '';
+                list.forEach(t => {
+                    const b = document.createElement('button');
+                    b.type = 'button';
+                    b.className = 'tbtn' + (selected === t ? ' sel' : '');
+                    b.innerHTML = `<span class="dot" style="background:${THEME_SWATCH[t] || '#888'}"></span><span>${THEME_RU[t] || t}</span>`;
+                    b.onclick = async () => {
+                        const res = await fetch(`${API_BASE}/me/theme`, {
+                            method: 'POST',
+                            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name: t })
+                        });
+                        if (res.ok) {
+                            localStorage.setItem('theme', t);
+                            document.body.dataset.theme = t;
+                            document.documentElement.dataset.theme = t;
+                            box.querySelectorAll('.tbtn').forEach(x => x.classList.remove('sel'));
+                            b.classList.add('sel');
+                            showToast(`тема «${THEME_RU[t] || t}» сохранена`);
+                        } else {
+                            const d = await res.json().catch(() => ({}));
+                            showToast(d.error || 'не удалось сохранить тему', true);
+                        }
+                    };
+                    box.appendChild(b);
+                });
+            }).catch(() => { });
+        }
+
+        function renderPalette(selected) {
+            const box = document.getElementById('s-colors');
+            if (!box) return;
+            fetch(`${API_BASE}/name-colors`).then(r => r.json()).then(colors => {
+                if (!Array.isArray(colors)) return;
+                box.innerHTML = '';
+                colors.forEach(c => {
+                    const s = document.createElement('button');
+                    s.type = 'button';
+                    s.className = 'pick' + (selected === c ? ' sel' : '');
+                    s.style.background = c;
+                    s.innerHTML = `<span class="tip">${COLOR_RU[c] || c}</span>`;
+                    s.setAttribute('aria-label', `цвет имени ${COLOR_RU[c] || c}`);
+                    s.onclick = async () => {
+                        const res = await fetch(`${API_BASE}/me/name-color`, {
+                            method: 'POST',
+                            headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ color: c })
+                        });
+                        if (res.ok) {
+                            box.querySelectorAll('.pick').forEach(x => x.classList.remove('sel'));
+                            s.classList.add('sel');
+                            showToast(`цвет имени — ${COLOR_RU[c] || c}`);
+                        } else {
+                            showToast('не удалось сохранить цвет', true);
+                        }
+                    };
+                    box.appendChild(s);
+                });
+            }).catch(() => { });
+        }
+
+        function renderTg(bound) {
+            const box = document.getElementById('s-tg-actions');
+            if (!box) return;
+            box.innerHTML = bound
+                ? '<button class="btn warn" onclick="unbindTelegram()"><i class="ti ti-link-off"></i> Отвязать</button>'
+                : '<button class="btn btn-primary" onclick="bindTelegram()"><i class="ti ti-link"></i> Привязать</button>';
+        }
+
+        function renderLoginHint() {
+            const hint = document.getElementById('s-login-hint');
+            if (hint) {
+                hint.textContent = usernameNextChange > Date.now()
+                    ? `следующая смена — через ${daysLeft()} дн.`
+                    : 'сейчас сменить можно';
+            }
+        }
+
+        async function bindTelegram() {
+            openModal('Привязка Telegram', '<i class="ti ti-loader-2" style="display:inline-block;animation:spin 1s linear infinite"></i> генерирую ссылку...');
+            try {
+                const data = await (await fetch(`${API_BASE}/user_cabinet_bot_generateLink`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                })).json();
+                if (data.is_registered) {
+                    openModal('Привязка Telegram', 'аккаунт уже привязан к боту');
+                    renderTg(true);
+                    return;
+                }
+                const url = data.register_link || '';
+                if (!url) {
+                    openModal('Привязка Telegram', 'не удалось получить ссылку, попробуй позже');
+                    return;
+                }
+                openModal('Привязка Telegram',
+                    `открой ссылку в Telegram и нажми «Регистрация в боте»:<a class="tg-url" href="${url}" target="_blank" rel="noopener">${url}</a>`,
+                    `<button class="btn btn-primary" onclick="copyTgLink('${url}')"><i class="ti ti-copy"></i> Копировать</button>
+                     <button class="btn" onclick="closeModal()">Готово</button>`);
+            } catch {
+                openModal('Привязка Telegram', 'ошибка сети — попробуй позже');
+            }
+        }
+
+        function copyTgLink(url) {
+            navigator.clipboard?.writeText(url).then(
+                () => showToast('ссылка скопирована'),
+                () => showToast('не удалось скопировать', true)
+            );
+        }
+
+        function unbindTelegram() {
+            openModal('Отвязать Telegram?',
+                'бот перестанет быть привязан к аккаунту. Привязать заново можно в любой момент по ссылке.',
+                `<button class="btn warn" onclick="doUnbind()"><i class="ti ti-link-off"></i> Да, отвязать</button>
+                 <button class="btn" onclick="closeModal()">Отмена</button>`);
+        }
+
+        async function doUnbind() {
+            try {
+                const res = await fetch(`${API_BASE}/me/telegram/unbind`, {
+                    method: 'POST', headers: { Authorization: `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    closeModal();
+                    showToast('аккаунт отвязан от бота');
+                    renderTg(false);
+                } else {
+                    showToast('не удалось отвязать, попробуй позже', true);
+                }
+            } catch {
+                showToast('ошибка сети', true);
+            }
+        }
+
+        function askUsername() {
+            if (usernameNextChange > Date.now()) {
+                showToast(`смена логина доступна раз в 3 дня. подожди ещё ${daysLeft()} дн.`, true);
+                return;
+            }
+            const current = document.getElementById('s-login')?.textContent || '';
+            openModal('Смена логина',
+                `сейчас: <b>${esc(current)}</b><br>новый логин, 3–32 символа:` +
+                '<input class="inp" id="new-login" maxlength="32" placeholder="новый логин">',
+                `<button class="btn btn-primary" onclick="submitUsername()"><i class="ti ti-check"></i> Сохранить</button>
+                 <button class="btn" onclick="closeModal()">Отмена</button>`);
+            setTimeout(() => document.getElementById('new-login')?.focus(), 50);
+        }
+
+        async function submitUsername() {
+            const value = (document.getElementById('new-login')?.value || '').trim();
+            if (value.length < 3 || value.length > 32) {
+                showToast('логин должен быть от 3 до 32 символов', true);
+                return;
+            }
+            try {
+                const res = await fetch(`${API_BASE}/me/username`, {
+                    method: 'PUT',
+                    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_login: value })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    usernameNextChange = Date.now() + COOLDOWN_MS;
+                    closeModal();
+                    showToast('логин изменён, следующий раз — через 3 дня');
+                    const el = document.getElementById('s-login');
+                    if (el) el.textContent = value;
+                    const chip = document.getElementById('user-name');
+                    if (chip) {
+                        const label = chip.querySelector('span') || chip;
+                        label.textContent = value;
+                    }
+                    renderLoginHint();
+                } else {
+                    showToast(data.error || 'не удалось изменить логин', true);
+                }
+            } catch {
+                showToast('ошибка сети', true);
+            }
+        }
+
+        function deleteAccount() {
+            openModal('Удалить аккаунт?',
+                'это необратимо: рейтинг, прогресс и достижения будут потеряны навсегда.',
+                `<button class="btn warn" onclick="doDeleteAccount()"><i class="ti ti-trash"></i> Да, удалить</button>
+                 <button class="btn" onclick="closeModal()">Отмена</button>`);
+        }
+
+        async function doDeleteAccount() {
+            try {
+                const res = await fetch(`${API_BASE}/me/delete`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+                const data = await res.json();
+                if (res.ok) {
+                    closeModal();
+                    localStorage.removeItem('token');
+                    location.href = '/';
+                } else {
+                    showToast(data.error || 'не удалось удалить', true);
+                }
+            } catch {
+                showToast('ошибка сети', true);
+            }
+        }
+
+        load();
+    </script>
+</body>
+
+</html>
