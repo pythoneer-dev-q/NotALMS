@@ -9,9 +9,15 @@ async def ensure_indexes():
     await users.create_index('user_login', unique=True)
     await users.create_index('user_telegram_FOR_ANNOUCMENTS')
     await users.create_index([('rating', -1)])
+    deleted_logins = get_db(settings.mongo_cluster)[settings.mongo_deleted_logins]
+    await deleted_logins.create_index('login_key', unique=True)
 
     from back.server.database import coursesDB
     await coursesDB.ensure_indexes()
+
+    from back.server.database import newsDB
+    await newsDB.ensure_indexes()
+
     # прогресс: одна решенная задача на юзера
     progress = get_db(settings.mongo_lmscluster)[settings.mongo_lmsprogress]
     await progress.create_index(

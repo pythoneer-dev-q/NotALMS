@@ -1,0 +1,54 @@
+/* Единая геометрия основных действий на всех страницах. */
+:root { --control-height: 42px; --control-gap: 10px; }
+
+button.btn,
+a.btn,
+button.btn-primary,
+a.btn-primary,
+button.btn-danger,
+a.btn-danger,
+button.submit-btn,
+button.pill,
+a.pill {
+    min-height: var(--control-height);
+    padding: 9px 16px;
+    justify-content: center;
+    align-items: center;
+}
+
+.row,
+.action-bar,
+.modal-actions,
+.modal__foot,
+.header-actions {
+    gap: var(--control-gap);
+}
+
+/* Кнопки-инструменты не должны раздувать панели редактирования. */
+.lesson-actions > button,
+.block-head > button,
+.format-tools > button,
+.menu-close,
+.modal__close {
+    min-width: 42px;
+    width: 42px;
+    min-height: 42px;
+    padding: 0;
+}
+
+/* Кнопки в карточках: компактные группы справа, а не растянутые плашки. */
+.row > .btn,
+.row > a.btn,
+.modal-actions > .btn,
+.modal__foot > .btn,
+.action-bar > .btn {
+    width: auto;
+    flex: 0 0 auto;
+}
+
+.modal-actions,
+.modal__foot,
+.action-bar {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}

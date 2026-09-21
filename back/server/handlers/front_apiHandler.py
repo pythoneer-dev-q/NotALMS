@@ -1,18 +1,51 @@
 from fastapi import APIRouter, Depends, Header, HTTPException
+import inspect
 from fastapi.responses import JSONResponse as jsonset
 from back.server.handlers.httpbearer import get_current_user
-from back.server.database import coursesDB, usersDB
+from back.server.database import coursesDB, usersDB, newsDB, platformDB
 from back.server.handlers.fronthandler_conf import models
-from back.server.tasks import biologyUtil
+from back.server.tasks import biologyUtil, mathUtil
 from back.server.server_configs.settings import settings
 
 crouter = APIRouter(prefix='/v1')
+
+# типы заданий, которые проверяет математический мини-инструмент
+MATH_TYPES = {'math', 'mathematics', 'arithmetic', 'математика', 'арифметика'}
+
+
+def _is_math(task_type) -> bool:
+    return (task_type or '').strip().lower() in MATH_TYPES
+
+
+async def _generate_variant(task_def: dict) -> dict:
+    """Вариант задания генерирует нужный мини-инструмент по типу задачи."""
+    task_type = (task_def.get('type') or '').strip().lower()
+    settings_ = task_def.get('settings') or {}
+    if _is_math(task_type):
+        return await mathUtil.generate_task(
+            mode=int(task_def.get('mode') or mathUtil.MODE_ADDITION),
+            difficulty=task_def.get('difficulty') or 'easy',
+            settings=settings_,
+        )
+    return await biologyUtil.generate_task(
+        mode=int(task_def.get('mode') or 1),
+        length=int(settings_.get('taskLen') or 18),
+    )
+
+
+async def _validate_submission(task_type, user_input, solution: dict):
+    if _is_math(task_type):
+        result = mathUtil.validate_submission(user_input=user_input, solution=solution)
+    else:
+        result = biologyUtil.validate_submission(user_input=user_input, solution=solution)
+    return await result if inspect.isawaitable(result) else result
 
 
 def require_admin(x_admin_secret: str | None = Header(None)):
     # админ-действия только с паролем из .env
     if not settings.admin_secret or x_admin_secret != settings.admin_secret:
         raise HTTPException(403, 'admin secret invalid')
+    return {'role': 'admin'}
 
 
 @crouter.get('/courses')
@@ -111,17 +144,27 @@ async def main_answerCheck(data: dict, user=Depends(get_current_user)):
     key = sol.get('parent_task_id') or data['task_id']
     # подсказка не блокирует, но очков за задание больше не даёт
     hinted = key in await coursesDB.hinted_task_ids(user['user_uid'])
-    sub = await biologyUtil.validate_submission(user_input=data['user_input'], solution=sol['internal_solution'])
+    # тип задания берем из варианта, а если его нет (старые записи) — из определения
+    task_type = sol.get('task_type')
+    if task_type is None:
+        task_def = await coursesDB.search_tasks__id(_id=key)
+        task_type = (task_def or {}).get('type')
+    sub = await _validate_submission(task_type, data['user_input'], sol['internal_solution'])
     if sub.get('is_correct'):
-        # задание бесконечное: награда растет с каждым решением до 1000
-        base = 0 if hinted else (sub.get('score') or coursesDB.BASE_TASK_REWARD)
-        reward, solves = await coursesDB.mark_task_solved(user['user_uid'], key, base)
-        sub['rating_awarded'] = reward
-        sub['solve_count'] = solves
-        sub['next_reward'] = coursesDB.reward_for(coursesDB.BASE_TASK_REWARD, solves)
         if hinted:
+            # решено с подсказкой: это НЕ самостоятельное решение —
+            # очков нет, в прогресс «решено» задача не попадает
             sub['hint_used'] = True
+            sub['rating_awarded'] = 0
+            sub['solve_count'] = await coursesDB.task_solves(user['user_uid'], key)
+            sub['next_reward'] = 0
         else:
+            # задание бесконечное: награда растет с каждым решением до 1000
+            base = sub.get('score') or coursesDB.BASE_TASK_REWARD
+            reward, solves = await coursesDB.mark_task_solved(user['user_uid'], key, base)
+            sub['rating_awarded'] = reward
+            sub['solve_count'] = solves
+            sub['next_reward'] = coursesDB.reward_for(coursesDB.BASE_TASK_REWARD, solves)
             await usersDB.add_rating(user['user_uid'], reward)
         # этот вариант отработан — в следующий раз сгенерируем новое задание
         await coursesDB.drop_tests_for(key, user['user_uid'])
@@ -133,31 +176,31 @@ async def main_taskGetter(click_from: str, user=Depends(get_current_user)):
         # задания идут по порядку: сначала закрываем предыдущие в этом уроке
         solved = await coursesDB.solved_task_ids(user['user_uid'])
         hinted = await coursesDB.hinted_task_ids(user['user_uid'])
+        closed = solved | hinted  # подсказка тоже разблокирует следующие задания
         already = str(tmp['_id']) in solved
         hint_used = str(tmp['_id']) in hinted
         if not already:
             for t in await coursesDB.tasks_in_lesson(tmp['lesson_id']):
                 if t['_id'] == tmp['_id']:
                     break  # дошли до текущего — все предыдущие закрыты
-                if str(t['_id']) not in solved:
+                if str(t['_id']) not in closed:
                     return jsonset(content={
                         'error': 'сначала реши предыдущие задания этого урока'
                     }, status_code=403)
         # вариант держим 30 минут: меньше мусора в базе и стабильные очки
         cached = await coursesDB.recent_test(click_from, user['user_uid'], minutes=30)
         if cached is None:
-            cached = await biologyUtil.generate_task(
-                mode=int(tmp['mode']),
-                length=int(tmp['settings']['taskLen'])
-            )
+            cached = await _generate_variant(tmp)
             cached['parent_task_id'] = str(click_from)
             cached['owner_uid'] = user['user_uid']
+            cached['task_type'] = tmp.get('type')
             await coursesDB.create_test(cached)
         solves = await coursesDB.task_solves(user['user_uid'], str(click_from))
         # наружу отдаём без ответа и служебных полей
         return jsonset(content={
             'mode': cached.get('mode'),
             'task_id': cached.get('task_id'),
+            'task_type': cached.get('task_type') or tmp.get('type'),
             'condition': cached.get('condition', {}),
             'tryings': cached.get('tryings', 0),
             'solved': already,
@@ -183,15 +226,21 @@ async def main_taskSolver(task_id: str, user=Depends(get_current_user)):
     key = (inst or {}).get('parent_task_id') or str(task_id)
     if key in await coursesDB.solved_task_ids(user['user_uid']):
         return jsonset(content={'error': 'задача уже решена, подсказка не нужна'}, status_code=409)
-    canonical = (inst or {}).get('internal_solution', {}).get('canonical_5_3')
-    if canonical is None:
+    sol = (inst or {}).get('internal_solution') or {}
+    if not sol:
         task = await coursesDB.search_tasks__id(_id=task_id)
-        canonical = (task or {}).get('internal_solution', {}).get('canonical_5_3')
+        sol = (task or {}).get('internal_solution') or {}
+    canonical = sol.get('canonical_5_3') or sol.get('canonical')
     if canonical is None:
         return jsonset(content={'error': 'подсказки для этой задачи нет'}, status_code=404)
+    # у математики ответ — просто число, у ДНК/РНК оборачиваем в 5'/3'
+    if sol.get('kind') == 'math' or sol.get('type') == 'number':
+        display = str(canonical)
+    else:
+        display = f"5'-{canonical}-3'"
     # фиксируем использование: очков за это задание больше не будет
     await coursesDB.mark_task_hint(user['user_uid'], key)
-    return jsonset(content={'solution': f"5'-{canonical}-3'", 'hint_used': True}, status_code=200)
+    return jsonset(content={'solution': display, 'hint_used': True}, status_code=200)
 
 
 @crouter.get('/me/solved')
@@ -307,8 +356,43 @@ async def main_adminTaskDelete(task_id: str):
     return jsonset(content={'ok': True}, status_code=200)
 
 
+@crouter.get('/news')
+async def main_newsList(limit: int = 50):
+    # публичная лента: страницу новостей видно и без входа
+    return jsonset(content=await newsDB.published_news(limit=limit), status_code=200)
+
+
+@crouter.get('/news/{news_id}')
+async def main_newsItem(news_id: str):
+    doc = await newsDB.get_news(news_id, published_only=True)
+    if doc is None or not doc.get('is_published'):
+        return jsonset(content={'error': 'новость не найдена'}, status_code=404)
+    return jsonset(content=doc, status_code=200)
+
+
+@crouter.get('/support')
+async def main_supportInfo():
+    # контакты поддержки для профиля и настроек
+    return jsonset(content=await platformDB.get_support(), status_code=200)
+
+
 @crouter.get('/lastnews')
 async def rtNews():
+    # лента дашборда: отдаём опубликованные новости из базы,
+    # а если новостей ещё нет — запасной статичный список (чтобы блок не пустовал)
+    rows = await newsDB.published_news(limit=20)
+    if rows:
+        return [
+            {
+                'title': n.get('title', ''),
+                'text': n.get('text', ''),
+                'emoji': n.get('emoji', ''),
+                'url': n.get('image', ''),
+                'id': n.get('_id'),
+                'created_at': n.get('created_at'),
+            }
+            for n in rows
+        ]
     return [
         {
             'title': "Провайдер для локального сервера или почему сайт упал?",

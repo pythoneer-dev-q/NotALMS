@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <title>NotALMS — доступ ограничен</title>
+    <link rel="icon" href="/favicon.ico" sizes="32x32">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css">
+    <link rel="stylesheet" href="/assets/static/app.css">
+    <script src="/assets/static/toast.js"></script>
+    <style>
+        .blocked-page{min-height:100dvh;display:grid;place-items:center;padding:24px}
+        .blocked-card{width:min(520px,100%);background:var(--card);border:1px solid rgba(239,68,68,.35);border-radius:14px;padding:28px;text-align:center}
+        .blocked-icon{width:58px;height:58px;margin:0 auto 16px;display:grid;place-items:center;border-radius:14px;background:rgba(239,68,68,.12);color:#fb7185;font-size:30px}
+        .blocked-card h1{margin:0;font-size:1.45rem}.blocked-card p{margin:12px 0 0;color:var(--muted);line-height:1.55}.blocked-actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:22px}
+    </style>
+</head>
+<body>
+    <main class="blocked-page">
+        <section class="blocked-card">
+            <div class="blocked-icon"><i class="ti ti-lock"></i></div>
+            <h1>Доступ к аккаунту ограничен</h1>
+            <p id="blocked-reason">Если это произошло по ошибке, свяжись с поддержкой.</p>
+            <div class="blocked-actions" id="support-actions"></div>
+        </section>
+    </main>
+    <script>
+        const API_BASE = document.querySelector('meta[name="api-base"]')?.content || `${location.protocol}//${location.hostname}:8443/v1`;
+        async function redirectActiveAccount(){
+            const token = localStorage.getItem('token');
+            if (!token) return;
+            try {
+                const response = await fetch(`${API_BASE}/me`, { headers: { Authorization: `Bearer ${token}` } });
+                if (response.ok) location.replace('/dash');
+            } catch { }
+        }
+        async function loadSupport(){
+            try{
+                const data=await (await fetch((document.querySelector('meta[name="api-base"]')?.content||`${location.protocol}//${location.hostname}:8443/v1`)+'/support')).json();
+                const box=document.getElementById('support-actions');
+                if(data.telegram) box.innerHTML += `<a class="btn btn-primary" href="${String(data.telegram).replace(/"/g,'&quot;')}" target="_blank" rel="noopener"><i class="ti ti-brand-telegram"></i> Написать в поддержку</a>`;
+                if(data.email) box.innerHTML += `<a class="btn" href="mailto:${encodeURIComponent(data.email)}"><i class="ti ti-mail"></i> ${String(data.email).replace(/</g,'&lt;')}</a>`;
+            }catch{ document.getElementById('support-actions').innerHTML='<a class="btn" href="/">На главную</a>'; }
+        }
+        redirectActiveAccount();
+        loadSupport();
+    </script>
+</body>
+</html>

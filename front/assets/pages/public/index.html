@@ -19,7 +19,9 @@
             if (theme) document.documentElement.dataset.theme = theme;
         })();
     </script>
+    <link rel="icon" href="/favicon.ico" sizes="any">
     <script src="/assets/static/toast.js"></script>
+    <script src="/assets/static/loader.js"></script>
     <style>
         :root {
             --acc1: #FF5099;
@@ -115,8 +117,8 @@
 
         /* ===== header ===== */
         .header {
-            position: fixed;
-            inset: 0 0 auto;
+            position: sticky;
+            top: 0;
             z-index: 50;
             background: rgba(5, 5, 8, .85);
             -webkit-backdrop-filter: blur(12px);
@@ -173,7 +175,19 @@
             letter-spacing: .02em;
             cursor: pointer;
             text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            line-height: 1;
+        }
+
+        .logo::before {
+            content: "";
             display: inline-block;
+            width: 34px;
+            height: 34px;
+            flex: 0 0 34px;
+            margin-right: 7px;
+            background: url('/favicon.ico') center / contain no-repeat;
         }
 
         .header__right {
@@ -500,6 +514,7 @@
             align-items: center;
             justify-content: center;
             padding: 1rem;
+            overflow-y: auto;
         }
 
         .modal.active {
@@ -516,8 +531,12 @@
 
         .modal__card {
             position: relative;
+            margin: auto;
             width: 100%;
             max-width: 26rem;
+            max-height: calc(100dvh - 24px);
+            overflow-y: auto;
+            overscroll-behavior: contain;
             padding: 2.2rem;
             border-radius: 18px;
             background: linear-gradient(180deg, color-mix(in srgb, var(--acc1) 7%, var(--surface)), var(--surface) 40%);
@@ -525,6 +544,33 @@
             outline-offset: -1px;
             box-shadow: 0 20px 50px -20px #000c;
             animation: m-in .25s ease-out;
+        }
+
+        .modal,
+        .modal__card {
+            scrollbar-width: thin;
+            scrollbar-color: color-mix(in srgb, var(--acc1) 70%, transparent) transparent;
+        }
+
+        .modal::-webkit-scrollbar,
+        .modal__card::-webkit-scrollbar { width: 8px; }
+
+        .modal::-webkit-scrollbar-track,
+        .modal__card::-webkit-scrollbar-track { background: transparent; }
+
+        .modal::-webkit-scrollbar-thumb,
+        .modal__card::-webkit-scrollbar-thumb {
+            min-height: 40px;
+            border: 2px solid transparent;
+            border-radius: 999px;
+            background: color-mix(in srgb, var(--acc1) 58%, transparent);
+            background-clip: padding-box;
+        }
+
+        .modal::-webkit-scrollbar-thumb:hover,
+        .modal__card::-webkit-scrollbar-thumb:hover {
+            background: color-mix(in srgb, var(--acc1) 86%, transparent);
+            background-clip: padding-box;
         }
 
         @keyframes m-in {
@@ -583,22 +629,93 @@
             color: rgba(255, 255, 255, .3);
         }
 
-        .modal label {
-            display: flex;
-            align-items: center;
-            gap: .5rem;
+        .field-hint {
+            min-height: 1.2rem;
+            margin: -.35rem 0 .7rem;
             color: var(--muted);
-            font-size: .92rem;
-            margin: .4rem 0 .8rem;
-            cursor: pointer;
+            font-size: .8rem;
         }
 
-        .modal label input {
-            width: 16px;
-            height: 16px;
-            accent-color: var(--acc1);
-            margin: 0;
+        .field-hint.ok { color: #4ade80; }
+        .field-hint.bad { color: #fb7185; }
+
+        .password-strength { margin: -.25rem 0 .8rem; }
+        .password-strength__track { height: 5px; overflow: hidden; border-radius: 99px; background: rgba(255,255,255,.08); }
+        .password-strength__bar { width: 0; height: 100%; border-radius: inherit; background: #fb7185; transition: width .2s, background .2s; }
+        .password-strength__bar.medium { background: #facc15; }
+        .password-strength__bar.strong { background: #4ade80; }
+        .password-strength__text { margin-top: .3rem; color: var(--muted); font-size: .8rem; }
+        .turnstile-box { display:flex; justify-content:center; width:100%; margin:4px 0 12px; min-height:65px; }
+        .turnstile-box[hidden] { display:none !important; margin:0; min-height:0; }
+        .consent-list {
+            display: grid;
+            gap: 8px;
+            margin: 4px 0 12px;
         }
+
+        .modal .consent-option {
+            display: grid;
+            grid-template-columns: 20px minmax(0, 1fr);
+            align-items: start;
+            gap: 10px;
+            margin: 0;
+            padding: 11px 12px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            color: var(--muted);
+            font-size: .84rem;
+            line-height: 1.4;
+            cursor: pointer;
+            transition: border-color .2s, background .2s, color .2s;
+        }
+
+        .modal .consent-option:hover { border-color: color-mix(in srgb, var(--acc1) 45%, var(--line)); }
+        .modal .consent-option:has(input:checked) {
+            border-color: color-mix(in srgb, var(--acc1) 70%, var(--line));
+            background: color-mix(in srgb, var(--acc1) 10%, transparent);
+            color: var(--text);
+        }
+
+        .modal .consent-option input {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        .consent-option__mark {
+            display: grid;
+            width: 20px;
+            height: 20px;
+            place-items: center;
+            border: 1px solid color-mix(in srgb, var(--muted) 55%, var(--line));
+            border-radius: 6px;
+            background: rgba(255, 255, 255, .03);
+            color: transparent;
+            font-size: .8rem;
+            font-weight: 900;
+            line-height: 1;
+            transition: background .2s, border-color .2s, color .2s, transform .2s;
+        }
+
+        .consent-option input:checked + .consent-option__mark {
+            border-color: var(--acc1);
+            background: var(--acc1);
+            color: #fff;
+        }
+
+        .consent-option input:focus-visible + .consent-option__mark {
+            outline: 2px solid color-mix(in srgb, var(--acc1) 70%, transparent);
+            outline-offset: 2px;
+        }
+
+        .consent-option input:active + .consent-option__mark { transform: scale(.92); }
+        .consent-option__text { min-width: 0; }
+        .consent-option__text a { color: var(--text); text-decoration-color: color-mix(in srgb, var(--acc1) 70%, transparent); }
 
         .modal .note {
             color: rgba(255, 255, 255, .35);
@@ -810,8 +927,12 @@
                 font-size: .75rem;
             }
 
+            .hero-btns {
+                flex-wrap: wrap;
+            }
+
             .hero-btns .pill {
-                width: 100%;
+                width: auto;
                 justify-content: center;
             }
 
@@ -977,8 +1098,14 @@
             <h2 class="modal__title" id="form-title">Вход</h2>
             <form id="auth-form">
                 <input type="text" id="login-input" placeholder="Логин" required autocomplete="username">
+                <div id="login-availability" class="field-hint" aria-live="polite"></div>
                 <input type="password" placeholder="Пароль" required>
+                <div class="password-strength" id="password-strength" hidden>
+                    <div class="password-strength__track"><div id="password-strength-bar" class="password-strength__bar"></div></div>
+                    <div id="password-strength-text" class="password-strength__text"></div>
+                </div>
                 <div id="extra-fields"></div>
+                <div id="turnstile-box" class="turnstile-box" hidden></div>
                 <button type="submit" class="pill pill--strong pill--block" id="submit-btn">Войти</button>
             </form>
             <p class="modal__toggle" id="toggle-text">Нет аккаунта? <span class="link"
@@ -1002,6 +1129,9 @@
             const extraFields = document.getElementById('extra-fields');
             const passInput = form.querySelector('input[type="password"]');
             let isRegister = false, tgMode = false;
+            let loginCheckTimer = null;
+            let loginCheckSerial = 0;
+            let captchaConfig = null, captchaWidget = null, captchaToken = '', captchaRenderVersion = 0;
 
             const showModal = (register = false) => {
                 isRegister = register;
@@ -1015,15 +1145,136 @@
                 document.getElementById('toggle-link').onclick = () => showModal(!isRegister);
                 form.reset();
                 updateExtraFields();
+                updateRegistrationHints();
+                renderCaptcha();
             };
+
+            function updatePasswordStrength() {
+                const wrap = document.getElementById('password-strength');
+                const bar = document.getElementById('password-strength-bar');
+                const text = document.getElementById('password-strength-text');
+                if (!wrap || !bar || !text) return;
+                wrap.hidden = !(isRegister && !tgMode);
+                if (wrap.hidden) return;
+                const value = passInput.value;
+                const score = [
+                    value.length >= 8,
+                    /[a-zа-яё]/.test(value),
+                    /[A-ZА-ЯЁ]/.test(value),
+                    /[^A-Za-zА-Яа-яЁё0-9]/.test(value)
+                ].filter(Boolean).length;
+                const level = score >= 4 ? 'strong' : score >= 2 ? 'medium' : '';
+                bar.className = 'password-strength__bar ' + level;
+                bar.style.width = `${score * 25}%`;
+                text.textContent = score >= 4 ? 'надёжный пароль' : score >= 2 ? 'средний пароль' : 'слабый пароль';
+            }
+
+            async function checkLoginAvailability() {
+                const hint = document.getElementById('login-availability');
+                const login = loginInput.value.trim();
+                if (!isRegister || tgMode) return true;
+                if (login.length < 3 || login.length > 32) {
+                    hint.textContent = login ? 'логин: от 3 до 32 символов' : '';
+                    hint.className = 'field-hint ' + (login ? 'bad' : '');
+                    return false;
+                }
+                const serial = ++loginCheckSerial;
+                hint.textContent = 'проверяем доступность…';
+                hint.className = 'field-hint';
+                try {
+                    const response = await fetch(`${API_BASE}/check-login/${encodeURIComponent(login)}`);
+                    const result = await response.json();
+                    if (serial !== loginCheckSerial) return false;
+                    hint.textContent = result.message || (result.available ? 'логин доступен' : 'логин уже занят');
+                    hint.className = 'field-hint ' + (result.available ? 'ok' : 'bad');
+                    return !!result.available;
+                } catch {
+                    if (serial === loginCheckSerial) {
+                        hint.textContent = 'не удалось проверить логин';
+                        hint.className = 'field-hint bad';
+                    }
+                    return false;
+                }
+            }
+
+            function updateRegistrationHints() {
+                const hint = document.getElementById('login-availability');
+                if (hint) hint.style.display = isRegister && !tgMode ? '' : 'none';
+                updatePasswordStrength();
+            }
+
+            async function getCaptchaConfig() {
+                if (captchaConfig) return captchaConfig;
+                try { captchaConfig = await (await fetch(`${API_BASE}/captcha/config`)).json(); }
+                catch { captchaConfig = { enabled: false }; }
+                return captchaConfig;
+            }
+
+            function loadCaptchaScript() {
+                if (window.turnstile) return Promise.resolve();
+                return new Promise((resolve, reject) => {
+                    const s = document.createElement('script');
+                    s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+                    s.async = true; s.defer = true; s.onload = resolve; s.onerror = reject;
+                    document.head.appendChild(s);
+                });
+            }
+
+            async function renderCaptcha() {
+                const renderVersion = ++captchaRenderVersion;
+                const box = document.getElementById('turnstile-box');
+                const config = await getCaptchaConfig();
+                if (renderVersion !== captchaRenderVersion) return;
+                const visible = config.enabled && !tgMode && modal.classList.contains('active');
+                box.hidden = !visible;
+                if (!visible) return;
+                try {
+                    await loadCaptchaScript();
+                    if (renderVersion !== captchaRenderVersion) return;
+                    if (captchaWidget !== null) window.turnstile.remove(captchaWidget);
+                    box.innerHTML = ''; captchaToken = '';
+                    captchaWidget = window.turnstile.render(box, {
+                        sitekey: config.sitekey,
+                        action: isRegister ? 'register' : 'login',
+                        theme: 'dark',
+                        callback: token => { captchaToken = token; },
+                        'expired-callback': () => { captchaToken = ''; },
+                        'error-callback': () => { captchaToken = ''; }
+                    });
+                } catch { box.hidden = true; }
+            }
+
+            function resetCaptcha() {
+                captchaToken = '';
+                if (window.turnstile && captchaWidget !== null) window.turnstile.reset(captchaWidget);
+            }
+
+            loginInput.addEventListener('input', () => {
+                if (!isRegister || tgMode) return;
+                clearTimeout(loginCheckTimer);
+                loginCheckTimer = setTimeout(checkLoginAvailability, 350);
+            });
+            passInput.addEventListener('input', updatePasswordStrength);
 
             const updateExtraFields = () => {
                 if (isRegister) {
                     extraFields.innerHTML = `
                         <div class="note">пароль: минимум 8 символов, строчная и заглавная буквы, спецсимвол</div>
                         <input type="text" placeholder="О себе (до 150 символов)" id="about" maxlength="150">
-                        <label><input type="checkbox" id="notify-tg"> Хочу получать уведомления в Telegram</label>
-                        <div class="note">привязка — потом в настройках, по ссылке-приглашению от бота</div>`;
+                        <div class="consent-list">
+                            <label class="consent-option">
+                                <input type="checkbox" id="notify-tg">
+                                <span class="consent-option__mark" aria-hidden="true">&#10003;</span>
+                                <span class="consent-option__text">Хочу получать уведомления в Telegram</span>
+                            </label>
+                            <label class="consent-option">
+                                <input type="checkbox" id="accept-legal" required>
+                                <span class="consent-option__mark" aria-hidden="true">&#10003;</span>
+                                <span class="consent-option__text">Я принимаю <a href="/privacy" target="_blank" rel="noopener">политику конфиденциальности</a> и <a href="/terms" target="_blank" rel="noopener">правила использования</a></span>
+                            </label>
+                        </div>
+                        <div class="note">привязка — потом в настройках, по ссылке-приглашению от бота</div>
+                        `;
                 } else {
                     extraFields.innerHTML = '';
                 }
@@ -1041,6 +1292,8 @@
                 formTitle.textContent = on ? 'Вход по коду из Telegram' : (isRegister ? 'Регистрация' : 'Вход');
                 submitBtn.textContent = on ? 'Войти' : (isRegister ? 'Создать аккаунт' : 'Войти');
                 extraFields.style.display = on ? 'none' : '';
+                updateRegistrationHints();
+                renderCaptcha();
                 if (on) { loginInput.inputMode = 'numeric'; loginInput.maxLength = 6; loginInput.focus(); }
                 else { loginInput.inputMode = 'text'; loginInput.maxLength = 524288; }
             };
@@ -1052,6 +1305,7 @@
             document.getElementById('login-btn').onclick = () => showModal(false);
             document.getElementById('login-btn2').onclick = () => showModal(false);
             document.getElementById('register-btn').onclick = () => showModal(true);
+            window.openCaptchaChallenge = () => { showModal(false); renderCaptcha(); };
             document.querySelector('.modal__close').onclick = () => modal.classList.remove('active');
             document.querySelector('.modal__overlay').onclick = () => modal.classList.remove('active');
             document.addEventListener('keydown', (e) => { if (e.key === 'Escape') modal.classList.remove('active'); });
@@ -1070,6 +1324,9 @@
                     if (r.ok) {
                         const me = await r.json();
                         if (me.theme) { applyTheme(me.theme); localStorage.setItem('theme', me.theme); }
+                    } else if (r.status === 403 && r.headers.get('X-Account-Blocked') === '1') {
+                        location.replace('/blocked');
+                        return;
                     } else { localStorage.removeItem('token'); }
                 } catch { }
                 location.href = '/dash';
@@ -1085,6 +1342,10 @@
                 }
 
                 if (isRegister && !tgMode) {
+                    if (!(await checkLoginAvailability())) {
+                        showToast('выбери доступный логин', true);
+                        return;
+                    }
                     const problems = [];
                     if (password.length < 8) problems.push('минимум 8 символов');
                     if (!/[a-zа-яё]/.test(password)) problems.push('нужна строчная буква');
@@ -1096,15 +1357,25 @@
                     }
                 }
 
+                const captcha = await getCaptchaConfig();
+                if (captcha.enabled && !tgMode && !captchaToken) {
+                    showToast('подтвердите, что вы не робот', true);
+                    renderCaptcha();
+                    return;
+                }
+
                 const body = tgMode ? { code: login } : (isRegister ? {
                     user_login: login,
                     user_password: password,
                     notify_telegram: !!document.getElementById('notify-tg')?.checked,
                     user_telegram_id: null,
-                    about_user: document.getElementById('about')?.value || null
+                    about_user: document.getElementById('about')?.value || null,
+                    accepted_legal: !!document.getElementById('accept-legal')?.checked,
+                    captcha_token: captchaToken || null
                 } : {
                     user_login: login,
-                    user_password: password
+                    user_password: password,
+                    captcha_token: captchaToken || null
                 });
                 const endpoint = tgMode ? `${API_BASE}/login/telegram`
                     : (isRegister ? `${API_BASE}/register` : `${API_BASE}/login`);
@@ -1117,8 +1388,16 @@
                     const data = await resp.json();
                     if (resp.ok && data.JWTSession) {
                         localStorage.setItem('token', data.JWTSession);
+                        if (data.blocked) {
+                            location.href = '/blocked';
+                            return;
+                        }
                         await redirectToDash();
                     } else {
+                        if (data.code === 'captcha_required') {
+                            resetCaptcha();
+                            renderCaptcha();
+                        }
                         if (resp.status === 409 && data.exists) {
                             showModal(false);
                             loginInput.value = login;
@@ -1133,6 +1412,7 @@
             });
 
             (async () => {
+                showLoader();
                 try {
                     const s = await (await fetch(`${API_BASE}/stats/public`)).json();
                     const c = document.getElementById('stat-courses');
@@ -1140,16 +1420,23 @@
                     if (c) c.textContent = s.courses ?? '—';
                     if (u) u.textContent = s.users ?? '—';
                 } catch { }
-                const token = localStorage.getItem('token');
-                if (token) {
-                    try {
-                        const r = await fetch(`${API_BASE}/me`, { headers: { Authorization: `Bearer ${token}` } });
-                        if (r.ok) {
-                            const me = await r.json();
-                            if (me.theme) { applyTheme(me.theme); localStorage.setItem('theme', me.theme); }
-                            location.href = '/dash';
-                        } else { localStorage.removeItem('token'); }
-                    } catch { }
+                try {
+                    const token = localStorage.getItem('token');
+                    if (token) {
+                        try {
+                            const r = await fetch(`${API_BASE}/me`, { headers: { Authorization: `Bearer ${token}` } });
+                            if (r.ok) {
+                                const me = await r.json();
+                                if (me.theme) { applyTheme(me.theme); localStorage.setItem('theme', me.theme); }
+                                location.href = '/dash';
+                            } else if (r.status === 403 && r.headers.get('X-Account-Blocked') === '1') {
+                                location.replace('/blocked');
+                                return;
+                            } else { localStorage.removeItem('token'); }
+                        } catch { }
+                    }
+                } finally {
+                    hideLoader();
                 }
             })();
         });

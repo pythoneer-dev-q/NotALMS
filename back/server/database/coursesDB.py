@@ -236,18 +236,29 @@ def reward_for(base_points: int, solve_index: int) -> int:
 
 
 async def task_solves(user_uid: str, task_id) -> int:
-    # сколько раз юзер уже решал это задание
+    # сколько раз юзер уже решал это задание (только самостоятельные решения)
     row = await progress.find_one(
         {'user_uid': user_uid, 'task_id': task_id, 'hint': {'$ne': True}}, {'solve_count': 1}
     )
     return int((row or {}).get('solve_count', 0))
 
 
-async def mark_task_solved(user_uid: str, task_id, base_points: int = BASE_TASK_REWARD) -> tuple[int, int]:
-    # задания бесконечные: решать можно сколько угодно, награда каждый раз выше
-    base = int(base_points or BASE_TASK_REWARD)
+async def mark_task_solved(user_uid: str, task_id, base_points: int = BASE_TASK_REWARD,
+                           hint: bool = False) -> tuple[int, int]:
+    """Записывает решение задания.
+
+    hint=True — задача решена с открытой подсказкой: НЕ создаёт «решено»,
+    очков не даёт и не увеличивает счётчик решений. Такие задания живут
+    только в коллекции подсказок (hints), поэтому статистика «решено»
+    их не учитывает.
+    """
     existing = await progress.find_one({'user_uid': user_uid, 'task_id': task_id, 'hint': {'$ne': True}})
     solve_count = int((existing or {}).get('solve_count', 0))
+    if hint:
+        # с подсказкой: ничего не начисляем и не трогаем прогресс
+        return 0, solve_count
+
+    base = int(base_points or BASE_TASK_REWARD)
     reward = reward_for(base, solve_count)
     stamp = datetime.now(timezone.utc).replace(microsecond=0).isoformat(timespec='seconds', sep='T')
     if existing:
@@ -315,6 +326,22 @@ async def solved_task_ids(user_uid: str) -> set:
         {'user_uid': user_uid, 'hint': {'$ne': True}}, {'task_id': 1, '_id': 0}
     ).to_list(length=None)
     return {r['task_id'] for r in rows}
+
+
+async def closed_task_ids(user_uid: str) -> set:
+    # для разблокировки следующих заданий: самостоятельное решение ИЛИ подсказка
+    return (await solved_task_ids(user_uid)) | (await hinted_task_ids(user_uid))
+
+
+async def user_stats(user_uid: str) -> dict:
+    """Раздельная статистика: решено без подсказок / решено с подсказкой / всего закрыто."""
+    solved = await solved_task_ids(user_uid)
+    hinted = await hinted_task_ids(user_uid)
+    return {
+        'solved': len(solved),            # самостоятельные решения (дают очки)
+        'hinted': len(hinted - solved),   # решено/открыто с подсказкой — очков нет
+        'closed': len(solved | hinted),   # всё, что закрыто в курсах
+    }
 
 
 async def tasks_in_lesson(lesson_id: str):

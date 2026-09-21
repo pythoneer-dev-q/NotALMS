@@ -16,6 +16,7 @@
         })();
     </script>
     <script src="/assets/static/toast.js"></script>
+    <script src="/assets/static/loader.js"></script>
     <style>
         :root {
             --primary: #6366f1;
@@ -458,6 +459,54 @@
             margin-top: .5rem;
             line-height: 1.55;
             font-size: .95rem;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+
+        .profile-edit-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: .85rem;
+            color: var(--acc1);
+            font-size: .86rem;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .profile-edit-link:hover { color: var(--text); }
+
+        .uid-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: .6rem;
+            flex-wrap: wrap;
+        }
+
+        .uid-val {
+            font-family: ui-monospace, monospace;
+            font-size: .82rem;
+            color: var(--muted);
+            background: rgba(255, 255, 255, .04);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 6px 10px;
+            overflow-wrap: anywhere;
+        }
+
+        .uid-copy {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font: inherit;
+            font-size: .78rem;
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: 8px;
+            border: 1px solid var(--line2);
+            background: rgba(255, 255, 255, .04);
+            color: var(--text);
         }
 
         .muted {
@@ -594,7 +643,8 @@
                 border-radius: 16px;
             }
         }
-    </style>
+</style>
+<style>.logo{display:inline-flex;align-items:center;line-height:1}.logo::before{content:"";width:34px;height:34px;flex:0 0 34px;margin-right:7px;background:url('/favicon.ico') center/contain no-repeat}</style>
 </head>
 
 <body>
@@ -608,6 +658,8 @@
         </div>
         <a class="menu-item" href="/dash"><i class="ti ti-books"></i><span>Курсы</span></a>
         <a class="menu-item" href="/dash#top"><i class="ti ti-trophy"></i><span>Топ учеников</span></a>
+        <a class="menu-item" href="/users"><i class="ti ti-search"></i><span>Поиск</span></a>
+        <a class="menu-item" href="/news"><i class="ti ti-news"></i><span>Новости</span></a>
         <a class="menu-item active" href="/profile"><i class="ti ti-user-circle"></i><span>Профиль</span></a>
         <a class="menu-item" href="/settings"><i class="ti ti-settings"></i><span>Настройки</span></a>
         <button class="menu-item bottom" onclick="logout()"><i class="ti ti-logout"></i><span>Выйти</span></button>
@@ -662,6 +714,15 @@
             return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         }
 
+        function copyUid(uid) {
+            const result = navigator.clipboard?.writeText(uid);
+            if (!result) { showToast('копирование недоступно в этом браузере', true); return; }
+            result.then(
+                () => showToast('id скопирован'),
+                () => showToast('не удалось скопировать', true)
+            );
+        }
+
         function achListHTML(list) {
             if (!Array.isArray(list) || !list.length) return '<div class="muted">пока нет достижений</div>';
             return '<div class="ach-wrap">' + list.map(a => {
@@ -672,6 +733,7 @@
         }
 
         async function load() {
+            showLoader();
             try {
                 const res = await fetch(`${API_BASE}/search_user`, { headers: { Authorization: `Bearer ${token}` } });
                 const data = await res.json();
@@ -701,6 +763,14 @@
                     <div class="card">
                         <div class="label">О себе</div>
                         <div class="bio">${data.biography ? esc(data.biography) : '<span class="muted">не указано</span>'}</div>
+                        <a class="profile-edit-link" href="/settings"><i class="ti ti-pencil"></i> Изменить в настройках</a>
+                    </div>
+                    <div class="card">
+                        <div class="label">Уникальный ID</div>
+                        <div class="uid-box">
+                            <span class="uid-val">${esc(data.user_uid)}</span>
+                            <button class="uid-copy" type="button" onclick="copyUid('${esc(data.user_uid)}')"><i class="ti ti-copy"></i> копировать</button>
+                        </div>
                     </div>
                     <div class="card">
                         <div class="label">Рейтинг</div>
@@ -723,6 +793,8 @@
                 refreshDynamic();
             } catch {
                 document.getElementById('content').innerHTML = '<div class="card wide">ошибка связи с сервером</div>';
+            } finally {
+                hideLoader();
             }
         }
 

@@ -103,3 +103,30 @@ class AdminTaskUpdate(BaseModel):
     difficulty: str | None = None
     settings: dict | None = None
     type_task: str | None = None
+
+
+# ===== новости =====
+class AdminNewsCreate(BaseModel):
+    id: str | None = None          # свой id (необязательно)
+    title: str
+    text: str = ''
+    emoji: str = ''
+    image: str = ''                # ссылка на картинку-обложку
+    tags: list[str] = []
+    order: int = 0
+    is_published: bool = False
+
+
+class AdminNewsUpdate(BaseModel):
+    title: str | None = None
+    text: str | None = None
+    emoji: str | None = None
+    image: str | None = None
+    tags: list[str] | None = None
+    order: int | None = None
+    is_published: bool | None = None
+
+
+class AdminSupportUpdate(BaseModel):
+    email: str = ''
+    telegram: str = ''

@@ -14,7 +14,6 @@ vrouter = Router()
 
 
 async def safe_answer(target: Message, text: str, markup=None):
-    # edit_text падает на неизмененном тексте, ловим и отвечаем заново
     try:
         if markup:
             await target.edit_text(text, reply_markup=markup)
@@ -30,17 +29,40 @@ async def safe_answer(target: Message, text: str, markup=None):
 async def menu_text(user_id: int) -> str:
     user = await api.search_user(user_id)
     name = (user or {}).get('user_login') or 'новичок'
-    bound = '✓' if (user or {}).get('user_telegram_FOR_ANNOUCMENTS') else '—'
     return (
         '<b>💡 Главное меню</b>\n\n'
         f'👤 <b>{name}</b>\n'
-        f"★ рейтинг: {(user or {}).get('rating', 0)} · tg: {bound}\n\n"
+        f"★ рейтинг: {(user or {}).get('rating', 0)}\n\n"
         'выбирай раздел кнопками ниже'
+    )
+
+
+def bind_url() -> str:
+    return settings.public_url.rstrip('/') + '/settings'
+
+
+async def show_bind_required(target: Message):
+    await safe_answer(
+        target,
+        '<b>Сначала привяжи аккаунт</b>\n\n'
+        'Бот открывает меню и выдаёт код входа только после привязки Telegram в настройках сайта.',
+        await kb.main_bindRequired(bind_url())
+    )
+
+
+def login_text(code: str) -> str:
+    return (
+        '<b>Вход на сайт</b>\n\n'
+        f'Код: <code>{code}</code>\n\n'
+        'Нажми кнопку ниже или введи код на странице входа. Код действует 5 минут и используется один раз.'
     )
 
 
 async def show_menu(call: CallbackQuery):
     await call.answer()
+    if not await api.search_user(call.from_user.id):
+        await show_bind_required(call.message)
+        return
     await safe_answer(call.message, await menu_text(call.from_user.id), await kb.main_Keyboard())
 
 
@@ -52,10 +74,12 @@ async def main_backToMenu(call: CallbackQuery):
 
 @vrouter.message(Command('login'))
 async def main_loginCode(message: Message):
-    # вход по ссылке: тап -> сайт сам авторизует, код вводить не надо
     user = await api.search_user(message.from_user.id)
     if not user:
-        await message.answer('сначала привяжи аккаунт: возьми ссылку в профиле на сайте')
+        await message.answer(
+            '<b>Сначала привяжи аккаунт</b>\n\nОткрой настройки сайта и привяжи Telegram.',
+            reply_markup=await kb.main_bindRequired(bind_url())
+        )
         return
     code = await ut.GenerateLoginCode(message.from_user.id)
     if not code:
@@ -63,37 +87,50 @@ async def main_loginCode(message: Message):
         return
     url = f"{settings.public_url.rstrip('/')}/tg/{code}"
     await message.answer(
-        'вход на сайт по ссылке: действует 5 минут и один раз.\n'
-        'никому не пересылай — она заменяет пароль.',
+        login_text(code),
         reply_markup=await kb.main_loginLink(url)
     )
 
 @vrouter.message(CommandStart(deep_link=True))
 async def main_starter(message: Message, command: CommandObject):
+    if await api.search_user(message.from_user.id):
+        await message.answer(await menu_text(message.from_user.id), reply_markup=await kb.main_Keyboard())
+        return
     username = decode_payload(command.args)
     await message.answer(f'Добро пожаловать, <i><b>{username}</b></i>', reply_markup=await kb.main_generateAuthKeyboard(username=username))
     
 @vrouter.callback_query(F.data.startswith('registration'))
 async def userReg(call: CallbackQuery):
-    await call.message.answer('Регистрация..')
+    await call.answer()
     if await api.set_user_TG(user_id=call.from_user.id, username=call.data.split(':')[1]) == 'success':
-        # после регистрации показываем меню с именем и рейтингом
         await safe_answer(
             call.message,
             await menu_text(call.from_user.id),
             await kb.main_Keyboard()
         )
     else:
-        await call.message.edit_text('Регистрация завершилась с ошибками. Попробуйте получить ссылку в профиле.')
+        await safe_answer(
+            call.message,
+            'Не удалось привязать аккаунт. Возможно, Telegram уже связан с другим профилем.',
+            await kb.main_bindRequired(bind_url())
+        )
 
 @vrouter.message(CommandStart())
 async def main_userCabinet(message: Message):
+    if not await api.search_user(message.from_user.id):
+        await message.answer(
+            '<b>Сначала привяжи аккаунт</b>\n\nПосле привязки здесь появится меню, вход и курсы.',
+            reply_markup=await kb.main_bindRequired(bind_url())
+        )
+        return
     await message.answer(await menu_text(message.from_user.id), reply_markup=await kb.main_Keyboard())
 
 @vrouter.callback_query(F.data.startswith('user_'))
 async def main_functions(call: CallbackQuery):
-    # у каждой ветки есть выход назад — цикл навигации замкнут
     await call.answer()
+    if not await api.search_user(call.from_user.id):
+        await show_bind_required(call.message)
+        return
     match call.data[5:]:
         case 'cancel_all':
             await safe_answer(
@@ -149,7 +186,6 @@ async def main_functions(call: CallbackQuery):
             text = 'аккаунт отвязан. привязать заново можно через профиль на сайте' if ok else 'не смог отвязать, попробуй позже'
             await safe_answer(call.message, ('✅ ' if ok else '⚠️ ') + text, await kb.main_back())
         case 'login':
-            # вход по ссылке прямо из меню (раньше хендлер глотался user_*, кнопка не работала)
             user = await api.search_user(call.from_user.id)
             if not user:
                 await safe_answer(call.message, 'сначала привяжи аккаунт через профиль на сайте', await kb.main_back())
@@ -161,7 +197,7 @@ async def main_functions(call: CallbackQuery):
             url = f"{settings.public_url.rstrip('/')}/tg/{code}"
             await safe_answer(
                 call.message,
-                'вход на сайт по ссылке: действует 5 минут и один раз',
+                login_text(code),
                 await kb.main_loginLink(url)
             )
         case _:
@@ -170,7 +206,7 @@ async def main_functions(call: CallbackQuery):
 
 @vrouter.callback_query(F.data.startswith('view_course:'))
 async def main_viewCourse(call: CallbackQuery):
-    # карточка курса по индексу (заголовок в callback_data не влезает — лимит 64 байта)
+    # карточка курса по индексу 
     await call.answer()
     idx = int(call.data.split(':', 1)[1])
     lst = await api.main_get_userCoursesRaw(call.from_user.id)
@@ -217,7 +253,7 @@ async def main_viewNews(call: CallbackQuery):
 
 @vrouter.callback_query(F.data.startswith('setcolor:'))
 async def main_setColor(call: CallbackQuery):
-    # цвет имени меняется прямо тут, на сайте подхватится
+    # цвет имени меняется
     await call.answer('цвет сохранен ✓')
     hex_ = call.data.split(':', 1)[1]
     if hex_ not in kb.COLOR_NAMES:

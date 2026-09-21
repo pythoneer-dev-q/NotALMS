@@ -18,6 +18,8 @@
     })();
   </script>
   <script src="/assets/static/toast.js"></script>
+  <script src="/assets/static/lesson-blocks.js"></script>
+  <script src="/assets/static/loader.js"></script>
   <style>
     :root {
       --primary: #6366f1;
@@ -120,6 +122,7 @@
       display: flex;
       min-height: calc(100vh - 60px);
       min-height: calc(100dvh - 60px);
+      align-items: flex-start;
     }
 
     .lessons-list {
@@ -134,6 +137,16 @@
       flex-direction: column;
       overflow-y: auto;
       order: 1;
+    }
+
+    @media (min-width: 801px) {
+      .lessons-list {
+        position: sticky;
+        top: 60px;
+        height: calc(100vh - 60px);
+        height: calc(100dvh - 60px);
+        align-self: flex-start;
+      }
     }
 
     /* ===== контент: flex-колонка ===== */
@@ -319,9 +332,33 @@
       border-top-color: color-mix(in srgb, var(--primary) 45%, transparent);
     }
 
+    /* ===== контент урока: единый вертикальный ритм между блоками ===== */
+    .lesson-content > * {
+      margin: 0;
+    }
+
+    /* одинаковый отступ между любыми соседними блоками */
+    .lesson-content > * + * {
+      margin-top: 1rem;
+    }
+
     .lesson-text {
-      margin-bottom: 15px;
+      font-size: 1rem;
+      line-height: 1.65;
+      white-space: pre-wrap; /* переносы строк из редактора сохраняются */
+      overflow-wrap: break-word;
+    }
+
+    .lesson-code {
+      background: #0b1220;
+      border: 1px solid var(--line2);
+      border-radius: 12px;
+      padding: 12px 14px;
+      overflow: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .9rem;
       line-height: 1.6;
+      white-space: pre;
     }
 
     .lesson-img {
@@ -329,20 +366,25 @@
       max-width: 100%;
       height: auto;
       border-radius: 12px;
-      margin: 15px 0;
-      border: 1px solid #334155;
+      border: 1px solid var(--line2);
       background: #0b1220;
     }
 
     .lesson-list {
       background: rgba(255, 255, 255, .04);
-      padding: 15px 15px 15px 35px;
+      padding: 14px 16px 14px 34px;
       border-radius: 12px;
       border-left: 3px solid var(--accent);
+      line-height: 1.55;
+      font-size: 1rem;
     }
 
     .lesson-list li {
       margin-bottom: 6px;
+    }
+
+    .lesson-list li:last-child {
+      margin-bottom: 0;
     }
 
     .lesson-warning {
@@ -351,9 +393,9 @@
       padding: 14px 16px;
       border-radius: 12px;
       color: #fde68a;
-      margin: 14px 0;
       font-size: .98rem;
-      line-height: 1.5;
+      line-height: 1.55;
+      white-space: pre-wrap;
       box-shadow: 0 0 18px rgba(250, 204, 21, .04);
     }
 
@@ -376,10 +418,9 @@
       max-width: 900px;
       aspect-ratio: 16 / 9;
       height: auto;
-      margin: 18px 0;
       border-radius: 12px;
       overflow: hidden;
-      border: 1px solid #334155;
+      border: 1px solid var(--line2);
       background: #0b1220;
     }
 
@@ -399,8 +440,7 @@
       aspect-ratio: 16 / 9;
       object-fit: contain;
       border-radius: 12px;
-      border: 1px solid #334155;
-      margin: 18px 0;
+      border: 1px solid var(--line2);
       background: #0b1220;
     }
 
@@ -622,6 +662,33 @@
       color: var(--warning);
       font-weight: 600;
       font-size: .95rem;
+    }
+
+    /* математические задания: то же место, где у ДНК цепи */
+    .math-display {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 22px 18px;
+      border-radius: 12px;
+      border-left: 4px solid var(--primary);
+      background: rgba(0, 0, 0, .28);
+      overflow-x: auto;
+    }
+
+    .math-expr {
+      font-family: var(--dna-font);
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #e2e8f0;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 700px) {
+      .math-expr {
+        font-size: 1.15rem;
+      }
     }
 
     .reward-chip {
@@ -1358,7 +1425,8 @@
         transform: translateY(-10px);
       }
     }
-  </style>
+</style>
+<style>.logo{display:inline-flex;align-items:center;line-height:1}.logo::before{content:"";width:34px;height:34px;flex:0 0 34px;margin-right:7px;background:url('/favicon.ico') center/contain no-repeat}</style>
 </head>
 
 <body>
@@ -1531,70 +1599,14 @@
       main.addEventListener('scroll', onScroll, { passive: true });
     }
 
-    function safeUrl(u) {
-      if (u === null || u === undefined) return '';
-      let s = String(u).trim();
-      if (!s) return '';
-      if (s.indexOf('&amp;') !== -1 || s.indexOf('&quot;') !== -1 || s.indexOf('&#') !== -1) {
-        const ta = document.createElement('textarea');
-        ta.innerHTML = s;
-        s = ta.value;
-      }
-      if (/^\s*javascript:/i.test(s)) return '';
-      return s
-        .replace(/&/g, '&amp;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
-    }
-
-    function renderImage(block) {
-      let src = block.src || block.url || block.value || block.image || '';
-      if (src && typeof src === 'object') {
-        src = src.src || src.url || '';
-      }
-      const alt = block.alt || block.caption || block.title || '';
-      if (!src) {
-        return `<div class="lesson-warning">изображение не указано</div>`;
-      }
-      return `<img class="lesson-img" src="${safeUrl(src)}" alt="${escapeHtml(alt)}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<div class=&quot;lesson-warning&quot;>не удалось загрузить изображение: '+this.alt+'</div>')" />`;
-    }
+    // safeUrl / renderImage / renderVideo / renderLessonContent приходят из
+    // /assets/static/lesson-blocks.js — общий рендер блоков для курса и редактора.
 
     function loadLesson(lesson) {
       const main = document.getElementById('main-area');
       currentLessonId = lesson._id;
-      let contentHtml = '';
-      if (Array.isArray(lesson.content)) {
-        lesson.content.forEach(block => {
-          switch (block.type) {
-            case 'text':
-              contentHtml += `<div class="lesson-text">${escapeHtml(block.value || '')}</div>`;
-              break;
-            case 'image':
-              contentHtml += renderImage(block);
-              break;
-            case 'video':
-              contentHtml += renderVideo(block);
-              break;
-            case 'list':
-              if (Array.isArray(block.items)) {
-                contentHtml += `<ul class="lesson-list">` + block.items.map(i => `<li>${escapeHtml(i)}</li>`).join('') + `</ul>`;
-              }
-              break;
-            case 'code':
-              contentHtml += `<pre style="background:#0b1220;padding:12px;border-radius:12px;overflow:auto"><code>${escapeHtml(block.value || '')}</code></pre>`;
-              break;
-            case 'warning':
-              contentHtml += `<div class="lesson-warning">${escapeHtml(block.value || '')}</div>`;
-              break;
-            default:
-              contentHtml += `<div class="lesson-text">${escapeHtml(JSON.stringify(block))}</div>`;
-          }
-        });
-      } else {
-        contentHtml += `<p class="lesson-text">нет контента</p>`;
-      }
+      // блоки рисует общий рендер — то же самое видно в превью редактора курса
+      const contentHtml = `<div class="lesson-content">${renderLessonContent(lesson.content)}</div>`;
       main.innerHTML = `<div style="max-width:900px;width:100%;margin:0 auto;" id="lesson-root">
       <div class="lesson-header" style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
         <h1 style="margin:0;font-size:1.5rem;">${escapeHtml(lesson.title || '')}</h1>
@@ -1623,8 +1635,10 @@
       currentTaskId = task.task_id;
       attemptCounter = 0;
       const condition = task.condition || {};
+      const isMath = condition.kind === 'math' || (task.task_type || '').toLowerCase() === 'math';
       const topStrand = condition.top || condition.single_chain || '';
       const bottomStrand = condition.bottom || '';
+      const expression = condition.expression || '';
       const instruction = condition.instruction || '';
       const hintUsed = task.hint_used || hintedTasks.has(String(currentTaskDefId));
       const solves = Number(task.solves || 0);
@@ -1639,6 +1653,14 @@
              <b>+${nextReward}</b>
              ${solves > 0 ? `<span class="reward-mult">×&nbsp;${solves + 1}</span>` : ''}
            </span>`;
+
+      // условие задания: у математики — выражение, у ДНК/РНК — цепи
+      const taskConditionHtml = isMath
+        ? `<div class="math-display"><span class="math-expr">${escapeHtml(expression || '—')}</span></div>`
+        : `<div class="dna-display">
+              ${topStrand ? `<div class="strand">${formatStrand(topStrand)}</div>` : ''}
+              ${bottomStrand ? `<div class="strand">${formatStrand(bottomStrand)}</div>` : ''}
+           </div>`;
 
       main.innerHTML = `
       <div class="test-container">
@@ -1659,13 +1681,11 @@
           </div>
           <div class="task-body">
             <p class="task-instruction">${escapeHtml(instruction)}</p>
-            <div class="dna-display">
-              ${topStrand ? `<div class="strand">${formatStrand(topStrand)}</div>` : ''}
-              ${bottomStrand ? `<div class="strand">${formatStrand(bottomStrand)}</div>` : ''}
-            </div>
+            ${taskConditionHtml}
             <div class="input-area">
               <label class="field-label" for="user-input">Ваш ответ</label>
-              <input type="text" id="user-input" class="dna-input" placeholder="5'-...-3'" autocomplete="off">
+              <input type="text" id="user-input" class="dna-input" inputmode="${isMath ? 'decimal' : 'text'}"
+                placeholder="${isMath ? 'например 42' : "5'-...-3'"}" autocomplete="off">
               <div id="feedback" class="feedback-msg"></div>
             </div>
           </div>
@@ -1720,14 +1740,16 @@
       if (alreadyUsed) {
         pop.innerHTML = `
           <p class="hint-popover__title"><i class="ti ti-bulb"></i> Подсказка уже открывалась</p>
-          <p class="hint-popover__text">По этому заданию очки больше не начисляются. Можно решать сколько угодно раз — засчитается как решение без очков.</p>
+          <p class="hint-popover__text">Очки по этому заданию больше не начисляются: решение с подсказкой
+            не считается самостоятельным и в «решено» не идёт. Решать можно сколько угодно раз.</p>
           <div class="hint-popover__actions">
             <button type="button" id="btn-close-pop">Понятно</button>
           </div>`;
       } else {
         pop.innerHTML = `
           <p class="hint-popover__title"><i class="ti ti-bulb"></i> Показать ответ?</p>
-          <p class="hint-popover__text">За это задание очков не начислят. Ответ подставится в поле — его можно просто проверить.</p>
+          <p class="hint-popover__text">За это задание очков не начислят, а решение с подсказкой
+            не будет засчитано как самостоятельное. Ответ подставится в поле — его можно просто проверить.</p>
           <div class="hint-popover__actions">
             <button type="button" id="btn-cancel-pop">Отмена</button>
             <button type="button" class="primary" id="btn-confirm-pop">Показать</button>
@@ -1752,6 +1774,7 @@
       showToast('подсказка открывает ответ — очков за эту задачу не будет', true);
       const input = document.getElementById('user-input');
       if (!input) { showToast('получить подсказку не удалось', true); return; }
+      const originalPlaceholder = input.placeholder;
       input.placeholder = 'загрузка ответа...';
       input.value = '';
       input.disabled = true;
@@ -1790,7 +1813,7 @@
         }
       } else {
         input.disabled = false;
-        input.placeholder = "5'-...-3'";
+        input.placeholder = originalPlaceholder;
         if (fb) {
           fb.className = 'feedback-msg error';
           fb.textContent = `подсказка недоступна: ${escapeHtml(res?.error || 'задача закрыта или id устарел')}`;
@@ -1819,27 +1842,40 @@
         input.classList.add('success');
         feedback.className = 'feedback-msg success';
         if (res.hint_used) {
-          feedback.textContent = 'решено, но без очков — подсказка по этому заданию уже открывалась';
-          input.disabled = true;
-          btn.disabled = true;
-        } else {
-          feedback.textContent = `Верно! +${res.rating_awarded ?? 100} к рейтингу (${res.solve_count || 1}-е решение)`;
-          input.disabled = true;
+          // решено с подсказкой: это НЕ самостоятельное решение —
+          // очков нет, в «решено» не засчитано, задание остаётся открытым
+          feedback.textContent = 'решено с подсказкой — не самостоятельное решение: очков нет, в «решено» не идёт';
+          input.disabled = false;
           btn.disabled = false;
           btn.innerHTML = '<i class="ti ti-repeat"></i> решить ещё раз';
           btn.onclick = () => loadTestInterface(currentTaskDefId);
-        }
-        updateAttempts();
-        if (res.rating_awarded && currentTaskDefId) {
-          solvedTasks.add(String(currentTaskDefId));
+          hintedTasks.add(String(currentTaskDefId));
+          solvedTasks.delete(String(currentTaskDefId));
           const item = document.querySelector(`.nav-item[data-task-id="${currentTaskDefId}"]`);
           if (item) {
+            item.classList.remove('done');
+            item.classList.add('hinted');
+            const old = item.querySelector('.nav-status');
+            if (old) old.remove();
+            item.insertAdjacentHTML('beforeend', statusHtml(false, false, true));
+          }
+        } else {
+          feedback.textContent = `Верно! +${res.rating_awarded ?? 100} к рейтингу (${res.solve_count || 1}-е решение)`;
+          btn.disabled = false;
+          btn.innerHTML = '<i class="ti ti-repeat"></i> решить ещё раз';
+          btn.onclick = () => loadTestInterface(currentTaskDefId);
+          solvedTasks.add(String(currentTaskDefId));
+          hintedTasks.delete(String(currentTaskDefId));
+          const item = document.querySelector(`.nav-item[data-task-id="${currentTaskDefId}"]`);
+          if (item) {
+            item.classList.remove('hinted');
             item.classList.add('done');
             const old = item.querySelector('.nav-status');
             if (old) old.remove();
             item.insertAdjacentHTML('beforeend', statusHtml(false, true, false));
           }
         }
+        updateAttempts();
       } else {
         attemptCounter++;
         updateAttempts();
@@ -1869,61 +1905,7 @@
       if (a) a.textContent = `попыток: ${attemptCounter}`;
     }
 
-    function escapeHtml(s) {
-      if (s === null || s === undefined) return '';
-      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
-    }
-
-    function videoEmbedUrl(url) {
-      try {
-        const u = new URL(url);
-        const host = u.hostname.replace(/^www\./, '');
-        if (host === 'youtu.be')
-          return `https://www.youtube.com/embed/${u.pathname.slice(1)}`;
-        if (host.endsWith('youtube.com')) {
-          if (u.pathname.startsWith('/watch'))
-            return `https://www.youtube.com/embed/${u.searchParams.get('v') || ''}`;
-          if (u.pathname.startsWith('/shorts/'))
-            return `https://www.youtube.com/embed/${u.pathname.split('/')[2]}`;
-          if (u.pathname.startsWith('/embed/'))
-            return url;
-        }
-        if (host.endsWith('vk.com') || host.endsWith('vkvideo.ru')) {
-          const m = u.pathname.match(/\/video(-?\d+)_(\d+)/);
-          if (m) return `https://vk.com/video_ext.php?oid=${m[1]}&id=${m[2]}`;
-        }
-        if (host.endsWith('rutube.ru')) {
-          const m = u.pathname.match(/\/video\/([a-z0-9]+)/i);
-          if (m) return `https://rutube.ru/play/embed/${m[1]}`;
-        }
-        return null;
-      } catch (e) { return null; }
-    }
-
-    function renderVideo(block) {
-      if (block && block.embed) {
-        if (block.embed_type === 'script') {
-          return `<div class="lesson-video-embed" data-embed-script="${escapeHtml(block.embed)}"></div>`;
-        }
-        return `<div class="lesson-video"><iframe src="${safeUrl(block.embed)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen frameborder="0"></iframe></div>`;
-      }
-      const url = block && (block.url || block.src);
-      if (!url) return `<div class="lesson-warning">видео не указано</div>`;
-      const embed = videoEmbedUrl(url);
-      if (embed)
-        return `<div class="lesson-video"><iframe src="${safeUrl(embed)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen frameborder="0"></iframe></div>`;
-      return `<video class="lesson-video-file" controls src="${safeUrl(url)}"></video>`;
-    }
-
-    function mountEmbedScripts(root) {
-      root.querySelectorAll('.lesson-video-embed[data-embed-script]').forEach(box => {
-        if (box.dataset.mounted) return;
-        box.dataset.mounted = '1';
-        const s = document.createElement('script');
-        s.src = box.dataset.embedScript;
-        box.appendChild(s);
-      });
-    }
+    // escapeHtml / videoEmbedUrl / renderVideo / mountEmbedScripts — из lesson-blocks.js
 
     function formatStrand(str) {
       if (!str) return '';

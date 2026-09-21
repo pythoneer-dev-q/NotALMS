@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     mongo_lmstests: str = 'nttests'
     mongo_lmsreads: str = 'ntlesson_reads'  # прочитанные уроки
     mongo_lmshints: str = 'nthints'  # использованные подсказки
+    mongo_lmsnews: str = 'ntnews'  # новости платформы
+    mongo_deleted_logins: str = 'nt_deleted_logins'  # занятые навсегда логины удалённых аккаунтов
+    mongo_lmsplatform: str = 'nt_platform_settings'  # редактируемые настройки платформы
 
     # jwt
     secret_key: str = 'твой_очень_длинный_секрет_1234567890abcde99999999'
@@ -49,6 +52,11 @@ class Settings(BaseSettings):
     mongo_max_pool: int = 100
     cache_ttl: int = 60        # кэш списка курсов, сек; 0 = выключить
     rate_limit: str = '20/minute'
+    captcha_suspicious_rps: int = 15
+
+    # Cloudflare Turnstile. Оба ключа задаются только через .env.
+    turnstile_site_key: str = ''
+    turnstile_secret_key: str = ''
 
     # redis для горячих данных; пусто = только память процесса
     redis_url: str = ''
@@ -59,12 +67,20 @@ class Settings(BaseSettings):
     # публичный адрес фронта — бот строит из него ссылки (вход по коду и т.п.)
     public_url: str = 'http://127.0.0.1:8005'
 
+    # поддержка: блок «нужна помощь?» в профиле и настройках
+    support_email: str = 'admin_lms@notawallet.sbs'
+    support_telegram: str = 'https://desthenq.t.me/'
+
     @property
     def cors_list(self) -> list[str]:
         raw = self.cors_origins.strip()
         if raw in ('*', ''):
             return ['*']
         return [o.strip() for o in raw.split(',') if o.strip()]
+
+    @property
+    def turnstile_enabled(self) -> bool:
+        return bool(self.turnstile_site_key and self.turnstile_secret_key)
 
 
 settings = Settings()

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>NotALMS — Новость</title>
+    <link rel="icon" href="/favicon.ico" sizes="32x32">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/static/app.css">
+    <script>
+        (function () {
+            var theme = localStorage.getItem('theme');
+            if (theme) document.documentElement.dataset.theme = theme;
+        })();
+    </script>
+    <script src="/assets/static/toast.js"></script>
+    <script src="/assets/static/loader.js"></script>
+    <style>
+        .news-head { display: flex; align-items: center; gap: 16px; }
+
+        .news-emoji {
+            width: 62px;
+            height: 62px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, .06);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.4rem;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .news-emoji img { width: 100%; height: 100%; object-fit: cover; border-radius: 16px; }
+
+        .news-title { font-size: 1.5rem; font-weight: 800; line-height: 1.2; margin: 0; color: var(--text); }
+
+        .news-meta {
+            color: var(--muted);
+            font-size: .82rem;
+            margin-top: 6px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .news-cover {
+            display: block;
+            width: 100%;
+            max-height: 380px;
+            object-fit: cover;
+            border-radius: 14px;
+            border: 1px solid var(--line2);
+            margin-top: 1.2rem;
+        }
+
+        /* текст новости: тот же ритм блоков, что в уроках */
+        .news-text { line-height: 1.7; font-size: 1.02rem; overflow-wrap: anywhere; }
+        .news-text > * + * { margin-top: .9rem; }
+        .news-text a { color: var(--acc1); text-decoration: underline; }
+        .news-text img { max-width: 100%; border-radius: 12px; }
+        .news-text ul { padding-left: 1.2rem; }
+        .news-text li { margin-bottom: 4px; }
+
+        .news-empty { text-align: center; color: #64748b; padding: 40px 0; }
+
+        .back-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1.4rem; }
+
+        @media (max-width: 700px) {
+            .news-title { font-size: 1.2rem; }
+            .news-emoji { width: 48px; height: 48px; font-size: 1.8rem; border-radius: 12px; }
+            .news-text { font-size: .95rem; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="menu" id="menu">
+        <div class="menu-head">
+            <h3>Меню</h3>
+            <button class="menu-close" onclick="closeMenu()" aria-label="Закрыть меню"><i class="ti ti-x"></i></button>
+        </div>
+        <a class="menu-item" href="/dash"><i class="ti ti-books"></i><span>Курсы</span></a>
+        <a class="menu-item" href="/dash#top"><i class="ti ti-trophy"></i><span>Топ учеников</span></a>
+        <a class="menu-item" href="/users"><i class="ti ti-search"></i><span>Поиск</span></a>
+        <a class="menu-item active" href="/news"><i class="ti ti-news"></i><span>Новости</span></a>
+        <a class="menu-item" href="/profile"><i class="ti ti-user-circle"></i><span>Профиль</span></a>
+        <a class="menu-item" href="/settings"><i class="ti ti-settings"></i><span>Настройки</span></a>
+        <button class="menu-item bottom" onclick="logout()"><i class="ti ti-logout"></i><span>Выйти</span></button>
+    </div>
+    <div class="menu-overlay" id="menu-overlay" onclick="closeMenu()"></div>
+
+    <div class="header">
+        <div class="burger" onclick="toggleMenu()"><i class="ti ti-menu-2"></i></div>
+        <a href="/" class="logo">NotALMS</a>
+        <a href="/news" class="user"><i class="ti ti-arrow-left"></i> все новости</a>
+    </div>
+
+    <div class="page">
+        <div id="content">
+            <div class="news-empty">загрузка...</div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = document.querySelector('meta[name="api-base"]')?.content || `${location.protocol}//${location.hostname}:8443/v1`;
+        const token = localStorage.getItem('token');
+        const NEWS_ID = location.pathname.split('/').filter(Boolean).pop();
+
+        function toggleMenu() {
+            document.getElementById('menu').classList.toggle('active');
+            document.getElementById('menu-overlay').classList.toggle('active');
+        }
+        function closeMenu() {
+            document.getElementById('menu').classList.remove('active');
+            document.getElementById('menu-overlay').classList.remove('active');
+        }
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
+
+        function logout() {
+            localStorage.removeItem('token');
+            location.href = '/';
+        }
+
+        function esc(s) {
+            return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+        }
+
+        function fmtDate(iso) {
+            if (!iso) return '';
+            const d = new Date(iso);
+            if (isNaN(d)) return '';
+            return d.toLocaleDateString('ru-RU', { day: '2-digit', month: 'long', year: 'numeric' });
+        }
+
+        // текст новости допускает ссылки (как в старой ленте), остальной html вычищаем
+        function safeRichText(html) {
+            const tmp = document.createElement('div');
+            tmp.innerHTML = html || '';
+            const allowed = tmp.querySelectorAll('a, b, strong, i, em, br, ul, ol, li, p');
+            const keep = new Set(allowed);
+            tmp.querySelectorAll('*').forEach(el => {
+                if (!keep.has(el)) {
+                    el.replaceWith(...el.childNodes);
+                }
+            });
+            tmp.querySelectorAll('*').forEach(el => {
+                [...el.attributes].forEach(a => {
+                    if (el.tagName !== 'A' || a.name !== 'href') el.removeAttribute(a.name);
+                });
+            });
+            tmp.querySelectorAll('a').forEach(a => {
+                const href = a.getAttribute('href') || '';
+                if (/^\s*javascript:/i.test(href)) { a.removeAttribute('href'); return; }
+                a.setAttribute('target', '_blank');
+                a.setAttribute('rel', 'noopener nofollow');
+            });
+            return tmp.innerHTML;
+        }
+
+        function render(n) {
+            document.title = 'NotALMS — ' + (n.title || 'Новость');
+            const emoji = n.emoji ? esc(n.emoji)
+                : '<i class="ti ti-news" style="font-size:2rem;color:var(--acc1)"></i>';
+            const tags = Array.isArray(n.tags) && n.tags.length
+                ? n.tags.map(t => `<span>#${esc(t)}</span>`).join('')
+                : '';
+            document.getElementById('content').innerHTML = `
+                <div class="back-row">
+                    <a class="btn" href="/news"><i class="ti ti-arrow-left"></i> ко всем новостям</a>
+                </div>
+                <article class="card wide" style="padding:1.6rem">
+                    <div class="news-head">
+                        <div class="news-emoji">${emoji}</div>
+                        <div>
+                            <h1 class="news-title">${esc(n.title)}</h1>
+                            <div class="news-meta">
+                                <span><i class="ti ti-calendar-event"></i> ${fmtDate(n.created_at)}</span>
+                                ${n.author ? `<span><i class="ti ti-user"></i> ${esc(n.author)}</span>` : ''}
+                                ${tags}
+                            </div>
+                        </div>
+                    </div>
+                    ${n.image ? `<img class="news-cover" src="${esc(n.image)}" alt="" onerror="this.remove()">` : ''}
+                    <div class="news-text" style="margin-top:1.2rem">${safeRichText(n.text)}</div>
+                </article>`;
+        }
+
+        async function init() {
+            showLoader();
+            try {
+                const res = await fetch(`${API_BASE}/news/${encodeURIComponent(NEWS_ID)}`);
+                const data = await res.json();
+                if (!res.ok || data.error) {
+                    document.getElementById('content').innerHTML =
+                        '<div class="news-empty"><i class="ti ti-alert-triangle"></i> ' +
+                        esc(data.error || 'новость не найдена') +
+                        '<br><a href="/news" style="display:inline-block;margin-top:1rem">вернуться к новостям</a></div>';
+                    return;
+                }
+                render(data);
+            } catch {
+                document.getElementById('content').innerHTML =
+                    '<div class="news-empty">не удалось загрузить новость</div>';
+            } finally {
+                hideLoader();
+            }
+            if (!token) return;
+            try {
+                const me = await (await fetch(`${API_BASE}/me`, { headers: { Authorization: `Bearer ${token}` } })).json();
+                if (me && me.theme) {
+                    document.body.dataset.theme = me.theme;
+                    document.documentElement.dataset.theme = me.theme;
+                    localStorage.setItem('theme', me.theme);
+                }
+            } catch { }
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

@@ -16,6 +16,7 @@
         })();
     </script>
     <script src="/assets/static/toast.js"></script>
+    <script src="/assets/static/loader.js"></script>
     <style>
         :root {
             --primary: #6366f1;
@@ -435,6 +436,86 @@
             grid-template-columns: 1fr 1fr;
             gap: 16px;
         }
+        .s-layout {
+            display: grid;
+            grid-template-columns: 230px minmax(0, 1fr);
+            gap: 16px;
+            align-items: start;
+        }
+
+        .s-nav {
+            position: sticky;
+            top: 86px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 10px;
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+        }
+
+        .s-nav button {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            padding: 11px 12px;
+            border: 1px solid transparent;
+            border-radius: 12px;
+            background: transparent;
+            color: var(--muted);
+            font: inherit;
+            font-size: .95rem;
+            text-align: left;
+            cursor: pointer;
+            transition: .18s;
+        }
+
+        .s-nav button i {
+            font-size: 1.15rem;
+            color: var(--primary);
+            flex-shrink: 0;
+        }
+
+        .s-nav button:hover {
+            background: rgba(255, 255, 255, .05);
+            color: var(--text);
+        }
+
+        .s-nav button.active {
+            border-color: color-mix(in srgb, var(--primary) 60%, transparent);
+            color: #fff;
+            background: linear-gradient(180deg,
+                    color-mix(in srgb, var(--primary) 32%, transparent),
+                    color-mix(in srgb, var(--primary) 18%, transparent));
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2);
+        }
+
+        .s-nav button.active i { color: #fff; }
+        .s-nav button.s-nav-danger.active { border-color: rgba(239, 68, 68, .5); }
+        .s-nav button.s-nav-danger.active i { color: #f87171; }
+
+        .s-section { display: none; }
+        .s-section.active { display: block; }
+
+        @media (max-width: 860px) {
+            .s-layout { grid-template-columns: 1fr; }
+            .s-nav {
+                position: static;
+                flex-direction: row;
+                overflow-x: auto;
+                padding: 8px;
+            }
+            .s-nav button { width: auto; white-space: nowrap; }
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
 
         .card {
             background: var(--card);
@@ -480,6 +561,73 @@
             gap: 12px;
             margin-top: .8rem;
             flex-wrap: wrap;
+        }
+
+        .check-control {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: .9rem;
+            color: var(--text);
+            font-size: .92rem;
+            line-height: 1.35;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .check-control input {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .check-control__box {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            flex: 0 0 32px;
+            border: 1px solid var(--line2);
+            border-radius: 11px;
+            background: rgba(255, 255, 255, .04);
+            color: #fff;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08);
+            transition: transform .14s, background .2s, border-color .2s, box-shadow .2s;
+        }
+
+        .check-control__box i {
+            font-size: 1.05rem;
+            opacity: 0;
+            transform: scale(.65);
+            transition: opacity .16s, transform .16s;
+        }
+
+        .check-control:hover .check-control__box {
+            border-color: color-mix(in srgb, var(--primary) 60%, var(--line2));
+            background: rgba(255, 255, 255, .08);
+        }
+
+        .check-control input:checked + .check-control__box {
+            border-color: color-mix(in srgb, var(--primary) 75%, transparent);
+            background: linear-gradient(180deg,
+                    color-mix(in srgb, var(--primary) 42%, transparent),
+                    color-mix(in srgb, var(--primary) 20%, transparent));
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22),
+                0 0 0 3px color-mix(in srgb, var(--primary) 16%, transparent);
+        }
+
+        .check-control input:checked + .check-control__box i {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .check-control input:focus-visible + .check-control__box {
+            outline: 2px solid var(--acc1);
+            outline-offset: 3px;
         }
 
         /* ===== переключатели темы / цвета (liquid glass) ===== */
@@ -788,7 +936,8 @@
                 border-radius: 10px;
             }
         }
-    </style>
+</style>
+<style>.logo{display:inline-flex;align-items:center;line-height:1}.logo::before{content:"";width:34px;height:34px;flex:0 0 34px;margin-right:7px;background:url('/favicon.ico') center/contain no-repeat}.password-check{margin-top:10px}.password-check>div{height:6px;overflow:hidden;border-radius:99px;background:rgba(255,255,255,.1)}.password-check span{display:block;width:0;height:100%;border-radius:inherit;background:#fb7185;transition:width .2s,background .2s}.password-check span[data-level="medium"]{background:#facc15}.password-check span[data-level="strong"]{background:#4ade80}.password-check small{display:block;margin-top:6px;color:var(--muted);line-height:1.4}</style>
 </head>
 
 <body>
@@ -802,6 +951,8 @@
         </div>
         <a class="menu-item" href="/dash"><i class="ti ti-books"></i><span>Курсы</span></a>
         <a class="menu-item" href="/dash#top"><i class="ti ti-trophy"></i><span>Топ учеников</span></a>
+        <a class="menu-item" href="/users"><i class="ti ti-search"></i><span>Поиск</span></a>
+        <a class="menu-item" href="/news"><i class="ti ti-news"></i><span>Новости</span></a>
         <a class="menu-item" href="/profile"><i class="ti ti-user-circle"></i><span>Профиль</span></a>
         <a class="menu-item active" href="/settings"><i class="ti ti-settings"></i><span>Настройки</span></a>
         <button class="menu-item bottom" onclick="logout()"><i class="ti ti-logout"></i><span>Выйти</span></button>
@@ -876,11 +1027,27 @@
             document.getElementById('acc-modal').classList.remove('active');
         }
 
+        function initSettingsNav() {
+            const nav = document.getElementById('s-nav');
+            if (!nav) return;
+            nav.querySelectorAll('button').forEach(btn => {
+                btn.onclick = () => {
+                    nav.querySelectorAll('button').forEach(x => x.classList.toggle('active', x === btn));
+                    document.querySelectorAll('.s-section').forEach(s => s.classList.toggle('active', s.id === 'sec-' + btn.dataset.sec));
+                    history.replaceState(null, '', '#' + btn.dataset.sec);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                };
+            });
+            const initial = location.hash.slice(1);
+            if (initial) nav.querySelector(`button[data-sec="${initial}"]`)?.click();
+        }
+
         function daysLeft() {
             return Math.max(1, Math.ceil((usernameNextChange - Date.now()) / 86400000));
         }
 
         async function load() {
+            showLoader();
             let data;
             try {
                 const res = await fetch(`${API_BASE}/search_user`, { headers: { Authorization: `Bearer ${token}` } });
@@ -888,8 +1055,10 @@
                 if (!res.ok || data.error) throw 0;
             } catch {
                 document.getElementById('content').innerHTML = '<div class="card wide">ошибка связи с сервером</div>';
+                hideLoader();
                 return;
             }
+            hideLoader();
             document.body.dataset.theme = data.theme || localStorage.getItem('theme') || 'midnight';
             document.documentElement.dataset.theme = data.theme || localStorage.getItem('theme') || 'midnight';
 
@@ -900,13 +1069,24 @@
                 if (data.name_color) chip.style.color = data.name_color;
             }
 
-            usernameNextChange = data.last_username_change
-                ? new Date(data.last_username_change).getTime() + COOLDOWN_MS
-                : 0;
+            const changedAt = data.username_changed_at || data.last_username_change;
+            usernameNextChange = data.username_next_change
+                ? new Date(data.username_next_change).getTime()
+                : (changedAt ? new Date(changedAt).getTime() + COOLDOWN_MS : 0);
 
             const bound = !!data.user_telegram_FOR_ANNOUCMENTS;
             document.getElementById('content').innerHTML = `
-            <div class="grid">
+            <div class="s-layout">
+                <nav class="s-nav" id="s-nav">
+                    <button type="button" data-sec="appearance" class="active"><i class="ti ti-palette"></i> Оформление</button>
+                    <button type="button" data-sec="privacy"><i class="ti ti-shield-lock"></i> Приватность</button>
+                    <button type="button" data-sec="profile"><i class="ti ti-user-circle"></i> Профиль</button>
+                    <button type="button" data-sec="support"><i class="ti ti-lifebuoy"></i> Поддержка</button>
+                    <button type="button" data-sec="danger" class="s-nav-danger"><i class="ti ti-alert-triangle"></i> Опасная зона</button>
+                </nav>
+                <div class="s-body">
+                    <section class="s-section active" id="sec-appearance">
+                    <div class="grid">
                 <div class="card wide">
                     <div class="label">Тема сайта</div>
                     <div class="desc">сохраняется в аккаунте и работает на всех страницах</div>
@@ -917,12 +1097,44 @@
                     <div class="desc">виден в профиле и в топе учеников</div>
                     <div class="palette" id="s-colors"></div>
                 </div>
+                    </section>
+                    <section class="s-section" id="sec-privacy">
+                    <div class="grid">
+                <div class="card">
+                    <div class="label">Рейтинг</div>
+                    <div class="desc">можно скрыть себя из публичного топа учеников</div>
+                    <label class="check-control">
+                        <input id="s-hide-leaderboard" type="checkbox">
+                        <span class="check-control__box" aria-hidden="true"><i class="ti ti-check"></i></span>
+                        <span>Не показывать меня в рейтинге</span>
+                    </label>
+                </div>
                 <div class="card">
                     <div class="label">Telegram</div>
                     <div class="desc">вход по ссылке из бота и уведомления</div>
                     <div class="row">
                         <span class="login-val"><i class="ti ti-brand-telegram"></i> ${bound ? '<span class="ok">привязан</span>' : '<span class="muted">не привязан</span>'}</span>
                         <span id="s-tg-actions"></span>
+                    </div>
+                </div>
+                    </section>
+                    <section class="s-section" id="sec-support">
+                    <div class="grid">
+                <div class="card wide">
+                    <div class="label">Поддержка</div>
+                    <div class="desc">если что-то работает неправильно, напиши нам: приложи скриншот и опиши, что произошло.</div>
+                    <div class="row" id="support-actions"></div>
+                </div>
+                    </section>
+                    <section class="s-section" id="sec-profile">
+                    <div class="grid">
+                <div class="card wide">
+                    <div class="label">О себе</div>
+                    <div class="desc">этот текст виден в твоём профиле. максимум 1000 символов</div>
+                    <textarea class="inp" id="s-biography" maxlength="1000" rows="4" placeholder="расскажи немного о себе"></textarea>
+                    <div class="row">
+                        <span class="desc" id="s-biography-hint"></span>
+                        <button class="btn btn-primary" type="button" onclick="saveBiography()"><i class="ti ti-device-floppy"></i> Сохранить</button>
                     </div>
                 </div>
                 <div class="card">
@@ -934,6 +1146,14 @@
                     </div>
                     <div class="desc" id="s-login-hint"></div>
                 </div>
+                <div class="card">
+                    <div class="label">Пароль</div>
+                    <div class="desc">используй не меньше 8 символов, строчную и заглавную букву, а также спецсимвол</div>
+                    <div class="row"><button class="btn" onclick="askPassword()"><i class="ti ti-key"></i> Сменить пароль</button></div>
+                </div>
+                    </section>
+                    <section class="s-section" id="sec-danger">
+                    <div class="grid">
                 <div class="card wide danger">
                     <div class="label" style="color:#f87171">Опасная зона</div>
                     <div class="desc">удаление аккаунта необратимо: рейтинг, прогресс и достижения будут потеряны</div>
@@ -941,13 +1161,71 @@
                         <button class="btn warn" onclick="deleteAccount()"><i class="ti ti-trash"></i> Удалить аккаунт</button>
                     </div>
                 </div>
+                    </section>
+                </div>
             </div>`;
 
             renderThemes(data.theme);
+            initSettingsNav();
             renderPalette(data.name_color);
             renderTg(bound);
+            loadSupportInfo();
             renderLoginHint();
+            const biography = document.getElementById('s-biography');
+            if (biography) biography.value = data.biography || '';
+            const hidden = document.getElementById('s-hide-leaderboard');
+            if (hidden) hidden.checked = !!data.hide_leaderboard;
         }
+
+        async function loadSupportInfo() {
+            const box = document.getElementById('support-actions');
+            if (!box) return;
+            try {
+                const data = await (await fetch(`${API_BASE}/support`)).json();
+                const actions = [];
+                if (data.telegram) actions.push(`<a class="btn" href="${esc(data.telegram)}" target="_blank" rel="noopener"><i class="ti ti-brand-telegram"></i> Написать в поддержку</a>`);
+                if (data.email) actions.push(`<a class="btn" href="mailto:${encodeURIComponent(data.email)}"><i class="ti ti-mail"></i> ${esc(data.email)}</a>`);
+                box.innerHTML = actions.join('');
+            } catch {
+                box.innerHTML = '<span class="desc">контакты поддержки временно недоступны</span>';
+            }
+        }
+
+        async function saveBiography() {
+            const field = document.getElementById('s-biography');
+            const hint = document.getElementById('s-biography-hint');
+            if (!field) return;
+            try {
+                const res = await fetch(`${API_BASE}/me/biography`, {
+                    method: 'PUT',
+                    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ biography: field.value.trim() })
+                });
+                const result = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(result.error || 'не удалось сохранить');
+                if (hint) hint.textContent = 'сохранено';
+                showToast('раздел «о себе» сохранён');
+            } catch (e) {
+                showToast(e.message || 'ошибка сети', true);
+            }
+        }
+
+        document.addEventListener('change', async (event) => {
+            if (event.target.id !== 's-hide-leaderboard') return;
+            const checkbox = event.target;
+            try {
+                const res = await fetch(`${API_BASE}/me/leaderboard-visibility`, {
+                    method: 'POST',
+                    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ hidden: checkbox.checked })
+                });
+                if (!res.ok) throw new Error();
+                showToast(checkbox.checked ? 'ты скрыт из публичного рейтинга' : 'ты снова виден в рейтинге');
+            } catch {
+                checkbox.checked = !checkbox.checked;
+                showToast('не удалось изменить видимость в рейтинге', true);
+            }
+        });
 
         function renderThemes(selected) {
             const box = document.getElementById('s-themes');
@@ -1133,6 +1411,46 @@
             } catch {
                 showToast('ошибка сети', true);
             }
+        }
+
+        function askPassword() {
+            openModal('Смена пароля',
+                '<label>Текущий пароль<input class="inp" id="current-password" type="password" autocomplete="current-password"></label>' +
+                '<label>Новый пароль<input class="inp" id="new-password" type="password" autocomplete="new-password"></label>' +
+                '<div class="password-check"><div><span id="password-check-bar"></span></div><small id="password-check-text">Минимум 8 символов, строчная и заглавная буквы, спецсимвол.</small></div>',
+                '<button class="btn btn-primary" onclick="submitPassword()"><i class="ti ti-check"></i> Сохранить</button><button class="btn" onclick="closeModal()">Отмена</button>');
+            setTimeout(() => {
+                document.getElementById('current-password')?.focus();
+                document.getElementById('new-password')?.addEventListener('input', updatePasswordCheck);
+                updatePasswordCheck();
+            }, 50);
+        }
+
+        function updatePasswordCheck() {
+            const value = document.getElementById('new-password')?.value || '';
+            const checks = [value.length >= 8, /[a-zа-яё]/.test(value), /[A-ZА-ЯЁ]/.test(value), /[^A-Za-zА-Яа-яЁё0-9]/.test(value)];
+            const score = checks.filter(Boolean).length;
+            const bar = document.getElementById('password-check-bar');
+            const text = document.getElementById('password-check-text');
+            if (!bar || !text) return;
+            bar.style.width = `${score * 25}%`;
+            bar.dataset.level = score >= 4 ? 'strong' : score >= 2 ? 'medium' : 'weak';
+            text.textContent = score >= 4 ? 'Надёжный пароль.' : score >= 2 ? 'Пароль нужно усилить.' : 'Минимум 8 символов, строчная и заглавная буквы, спецсимвол.';
+        }
+
+        async function submitPassword() {
+            const current_password = document.getElementById('current-password')?.value || '';
+            const new_password = document.getElementById('new-password')?.value || '';
+            if (new_password.length < 8 || !/[a-zа-яё]/.test(new_password) || !/[A-ZА-ЯЁ]/.test(new_password) || !/[^A-Za-zА-Яа-яЁё0-9]/.test(new_password)) {
+                showToast('новый пароль не соответствует требованиям', true);
+                return;
+            }
+            try {
+                const res = await fetch(`${API_BASE}/me/password`, { method: 'PUT', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ current_password, new_password }) });
+                const data = await res.json();
+                if (!res.ok) { showToast(data.error || 'не удалось сменить пароль', true); return; }
+                closeModal(); showToast('пароль изменён');
+            } catch { showToast('ошибка сети', true); }
         }
 
         function deleteAccount() {

@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>NotALMS — Профиль пользователя</title>
+    <link rel="icon" href="/favicon.ico" sizes="32x32">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/static/app.css">
+    <script>
+        (function () {
+            var theme = localStorage.getItem('theme');
+            if (theme) document.documentElement.dataset.theme = theme;
+        })();
+    </script>
+    <script src="/assets/static/toast.js"></script>
+    <script src="/assets/static/loader.js"></script>
+    <style>
+        .uid-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: .6rem;
+            flex-wrap: wrap;
+        }
+
+        .uid-val {
+            font-family: ui-monospace, monospace;
+            font-size: .82rem;
+            color: var(--muted);
+            background: rgba(255, 255, 255, .04);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 6px 10px;
+            max-width: 100%;
+            overflow-wrap: anywhere;
+        }
+
+        .uid-copy {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: inherit;
+            font-size: .78rem;
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: 8px;
+            border: 1px solid var(--line2);
+            background: rgba(255, 255, 255, .04);
+            color: var(--text);
+            transition: .18s;
+        }
+
+        .uid-copy:hover { border-color: color-mix(in srgb, var(--primary) 60%, transparent); }
+
+        .ach-wrap { display: flex; flex-wrap: wrap; gap: 10px; margin-top: .8rem; }
+
+        .ach {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: .7rem .9rem;
+            border-radius: 10px;
+            background: color-mix(in srgb, var(--primary) 12%, transparent);
+            border: 1px solid var(--line);
+        }
+
+        .ach .ti { color: var(--primary); font-size: 1.2rem; }
+        .ach__title { font-weight: 600; font-size: .88rem; }
+        .ach__desc { font-size: .72rem; color: var(--muted); }
+
+        .bio { margin-top: .5rem; line-height: 1.55; font-size: .95rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+        .rating-value { display: inline-flex; align-items: center; gap: 6px; }
+        .rating-value .ti { color: var(--accent); }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: .72rem;
+            padding: 3px 8px;
+            border-radius: 6px;
+            background: rgba(52, 211, 153, .12);
+            border: 1px solid rgba(52, 211, 153, .4);
+            color: #6ee7b7;
+            white-space: nowrap;
+        }
+
+        .back-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 1.4rem; }
+        .back-row .btn { flex: 0 1 auto; }
+
+        @media (max-width: 700px) {
+            .back-row .btn { flex: 1 1 100%; justify-content: center; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="menu" id="menu">
+        <div class="menu-head">
+            <h3>Меню</h3>
+            <button class="menu-close" onclick="closeMenu()" aria-label="Закрыть меню"><i class="ti ti-x"></i></button>
+        </div>
+        <a class="menu-item" href="/dash"><i class="ti ti-books"></i><span>Курсы</span></a>
+        <a class="menu-item" href="/dash#top"><i class="ti ti-trophy"></i><span>Топ учеников</span></a>
+        <a class="menu-item" href="/users"><i class="ti ti-search"></i><span>Поиск</span></a>
+        <a class="menu-item" href="/news"><i class="ti ti-news"></i><span>Новости</span></a>
+        <a class="menu-item" href="/profile"><i class="ti ti-user-circle"></i><span>Мой профиль</span></a>
+        <a class="menu-item" href="/settings"><i class="ti ti-settings"></i><span>Настройки</span></a>
+        <button class="menu-item bottom" onclick="logout()"><i class="ti ti-logout"></i><span>Выйти</span></button>
+    </div>
+    <div class="menu-overlay" id="menu-overlay" onclick="closeMenu()"></div>
+
+    <div class="header">
+        <div class="burger" onclick="toggleMenu()"><i class="ti ti-menu-2"></i></div>
+        <a href="/" class="logo">NotALMS</a>
+    </div>
+
+    <div class="page">
+        <div class="title">Профиль</div>
+        <div class="back-row">
+            <a class="btn" href="javascript:history.back()"><i class="ti ti-arrow-left"></i> назад</a>
+        </div>
+        <div id="content">
+            <div class="card wide muted">загрузка...</div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = document.querySelector('meta[name="api-base"]')?.content || `${location.protocol}//${location.hostname}:8443/v1`;
+        const token = localStorage.getItem('token');
+        if (!token) location.href = '/';
+        const USER_UID = decodeURIComponent(location.pathname.split('/').filter(Boolean).pop() || '');
+
+        function toggleMenu() {
+            document.getElementById('menu').classList.toggle('active');
+            document.getElementById('menu-overlay').classList.toggle('active');
+        }
+        function closeMenu() {
+            document.getElementById('menu').classList.remove('active');
+            document.getElementById('menu-overlay').classList.remove('active');
+        }
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
+
+        function logout() {
+            localStorage.removeItem('token');
+            location.href = '/';
+        }
+
+        function esc(s) {
+            return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+        }
+
+        function copyUid() {
+            const result = navigator.clipboard?.writeText(USER_UID);
+            if (!result) { showToast('копирование недоступно в этом браузере', true); return; }
+            result.then(
+                () => showToast('id скопирован'),
+                () => showToast('не удалось скопировать', true)
+            );
+        }
+
+        function achListHTML(list) {
+            if (!Array.isArray(list) || !list.length) return '<div class="muted">пока нет достижений</div>';
+            return '<div class="ach-wrap">' + list.map(a => {
+                const title = Object.keys(a)[0] || 'достижение';
+                return `<div class="ach"><i class="ti ti-award"></i><div><div class="ach__title">${esc(title)}</div><div class="ach__desc">${esc(a[title] || '')}</div></div></div>`;
+            }).join('') + '</div>';
+        }
+
+        async function init() {
+            showLoader();
+            try {
+                const res = await fetch(`${API_BASE}/users/${encodeURIComponent(USER_UID)}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                const u = await res.json();
+                if (!res.ok || u.error) {
+                    document.getElementById('content').innerHTML =
+                        `<div class="card wide"><div class="bad"><i class="ti ti-alert-triangle"></i> ${esc(u.error || 'пользователь не найден')}</div></div>`;
+                    return;
+                }
+                const color = u.name_color ? ` style="color:${u.name_color}"` : '';
+                const verified = u.verified
+                    ? '<span class="badge" title="Профиль проверен"><i class="ti ti-rosette-discount-check"></i> профиль проверен</span>'
+                    : '';
+                const hidden = u.hide_leaderboard
+                    ? '<div class="desc"><i class="ti ti-eye-off"></i> участник скрыл себя из публичного рейтинга</div>'
+                    : '';
+                const rank = u.rank ? `#${u.rank} в топе` : 'вне рейтинга';
+
+                document.getElementById('content').innerHTML = `
+                <div class="grid">
+                    <div class="card">
+                        <div class="label">Логин</div>
+                        <div class="info"${color}><i class="ti ti-user"></i> ${esc(u.user_login)}</div>
+                        ${verified}
+                        <div class="label" style="margin-top:1rem">Статус</div>
+                        <div class="info ${u.status ? 'ok' : 'bad'}">${u.status ? '● активен' : '● заблокирован'}</div>
+                    </div>
+                    <div class="card">
+                        <div class="label">Уникальный ID</div>
+                        <div class="uid-box">
+                            <span class="uid-val">${esc(u.user_uid)}</span>
+                            <button class="uid-copy" onclick="copyUid()"><i class="ti ti-copy"></i> копировать</button>
+                        </div>
+                        <div class="desc">по этому id участника можно найти его в топе учеников</div>
+                    </div>
+                    <div class="card">
+                        <div class="label">Рейтинг</div>
+                        <div class="info"><span class="rating-value"><i class="ti ti-star"></i> ${u.rating ?? 0}</span></div>
+                        <div class="label" style="margin-top:1rem">Место в топе</div>
+                        <div class="info"><i class="ti ti-trophy"></i> ${esc(rank)}</div>
+                        ${hidden}
+                    </div>
+                    <div class="card">
+                        <div class="label">Прогресс</div>
+                        <div class="info"><i class="ti ti-circle-check"></i> ${u.solved ?? 0} решено задач</div>
+                        <div class="label" style="margin-top:1rem">С подсказкой</div>
+                        <div class="info"><i class="ti ti-bulb"></i> ${u.hinted ?? 0} — не самостоятельные</div>
+                    </div>
+                    <div class="card">
+                        <div class="label">О себе</div>
+                        <div class="bio">${u.biography ? esc(u.biography) : '<span class="muted">не указано</span>'}</div>
+                    </div>
+                    <div class="card wide">
+                        <div class="label">Достижения</div>
+                        ${achListHTML(u.achivements)}
+                    </div>
+                </div>`;
+            } catch {
+                document.getElementById('content').innerHTML =
+                    '<div class="card wide"><div class="bad">ошибка связи с сервером</div></div>';
+            } finally {
+                hideLoader();
+            }
+            try {
+                const me = await (await fetch(`${API_BASE}/me`, { headers: { Authorization: `Bearer ${token}` } })).json();
+                if (me && me.theme) {
+                    document.body.dataset.theme = me.theme;
+                    document.documentElement.dataset.theme = me.theme;
+                    localStorage.setItem('theme', me.theme);
+                }
+            } catch { }
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

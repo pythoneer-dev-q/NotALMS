@@ -13,6 +13,7 @@
         if (theme) document.documentElement.dataset.theme = theme;
     })();</script>
 <script src="/assets/static/toast.js"></script>
+<script src="/assets/static/lesson-blocks.js"></script>
 <style>
 :root{
   --primary:#6366f1;--bg:#0f172a;--panel:rgba(20,40,70,.95);--text:#e2e8f0;
@@ -79,6 +80,7 @@ select{background-position:right .6rem center;background-repeat:no-repeat;backgr
 .block-body{display:flex;flex-direction:column;gap:8px}
 .block-body textarea{width:100%;min-height:70px;resize:vertical}
 .block-body input[type="text"]{width:100%}
+.format-tools{display:flex;gap:6px;align-items:center}.format-tools .btn-ghost{min-width:34px;padding:5px 8px}
 
 .action-bar{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
 .btn-primary{background:var(--primary);color:#fff;padding:10px 20px;border:0;border-radius:10px;font-size:1rem;font-weight:500;cursor:pointer;transition:.18s}
@@ -110,6 +112,23 @@ body.modal-open{overflow:hidden}
 .pill{display:inline-flex;align-items:center;gap:6px;font-size:.75rem;padding:4px 8px;border-radius:6px;background:rgba(99,102,241,.12);border:1px solid var(--bord);color:var(--primary);margin-right:6px;margin-bottom:4px}
 .pill.del{cursor:pointer;color:var(--muted)}
 
+/* ===== превью урока: стили 1:1 со страницей курса (course.html) ===== */
+#preview-root{background:rgba(0,0,0,.12);border:1px solid var(--line);border-radius:10px;padding:16px;max-height:420px;overflow:auto}
+#preview-root .lesson-content>*{margin:0}
+#preview-root .lesson-content>*+*{margin-top:1rem}
+#preview-root .lesson-text{font-size:1rem;line-height:1.65;white-space:pre-wrap;overflow-wrap:break-word;color:var(--text)}
+#preview-root .lesson-code{background:#0b1220;border:1px solid var(--line2);border-radius:12px;padding:12px 14px;overflow:auto;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.9rem;line-height:1.6;white-space:pre;margin:0;color:#e2e8f0}
+#preview-root .lesson-img{display:block;max-width:100%;height:auto;border-radius:12px;border:1px solid var(--line2);background:#0b1220}
+#preview-root .lesson-list{background:rgba(255,255,255,.04);padding:14px 16px 14px 34px;border-radius:12px;border-left:3px solid var(--accent);line-height:1.55;font-size:1rem;color:var(--text);margin:0}
+#preview-root .lesson-list li{margin-bottom:6px}
+#preview-root .lesson-list li:last-child{margin-bottom:0}
+#preview-root .lesson-warning{background:rgba(250,204,21,.08);border-left:5px solid var(--warning);padding:14px 16px;border-radius:12px;color:#fde68a;font-size:.98rem;line-height:1.55;white-space:pre-wrap;margin:0}
+#preview-root .lesson-warning::before{content:"⚠ Внимание";display:block;font-weight:700;color:var(--warning);margin-bottom:8px;font-size:.82rem;text-transform:uppercase;letter-spacing:1px}
+#preview-root .lesson-video,#preview-root .lesson-video-embed{position:relative;width:100%;max-width:900px;aspect-ratio:16/9;height:auto;border-radius:12px;overflow:hidden;border:1px solid var(--line2);background:#0b1220}
+#preview-root .lesson-video iframe,#preview-root .lesson-video-embed iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+#preview-root .lesson-video-file{display:block;width:100%;max-width:900px;aspect-ratio:16/9;object-fit:contain;border-radius:12px;border:1px solid var(--line2);background:#0b1220}
+#preview-root .lesson-empty{color:var(--muted);font-size:.9rem}
+
 @media(max-width:768px){
   .form-row{flex-direction:column;gap:8px}
   .header{padding:0 12px}
@@ -120,7 +139,14 @@ body.modal-open{overflow:hidden}
   .tab{padding:10px 6px}
   .card{padding:14px}
 }
+@media(max-width:480px){
+  #preview-root .lesson-text{font-size:.95rem}
+  #preview-root .lesson-list{padding:12px 12px 12px 28px}
+  #preview-root .lesson-list li{font-size:.9rem}
+  #preview-root .lesson-warning{padding:12px;font-size:.9rem}
+}
 </style>
+<style>.logo{display:inline-flex;align-items:center;line-height:1}.logo::before{content:"";width:34px;height:34px;flex:0 0 34px;margin-right:7px;background:url('/favicon.ico') center/contain no-repeat}</style>
 </head>
 <body>
 <div class="toast" id="toast"><div class="toast-card" id="toast-card"></div></div>
@@ -128,7 +154,7 @@ body.modal-open{overflow:hidden}
 <header class="header">
   <div class="logo">NotALMS — редактор</div>
   <div class="header-mid" id="auth-bar">
-    <input id="admin-pass" class="input-sm" placeholder="admin secret" type="password" autocomplete="off" />
+    <input id="admin-pass" class="input-sm" placeholder="код доступа" type="password" autocomplete="off" />
     <button id="btn-login" class="btn-sm"><i class="ti ti-login-2"></i> войти</button>
   </div>
   <div class="header-mid" id="auth-ok" style="display:none">
@@ -217,10 +243,15 @@ body.modal-open{overflow:hidden}
       </div>
       <div class="block-head" style="margin-bottom:8px"><span class="tag">контент-блоки</span></div>
       <div id="lesson-blocks"><div class="toggle-detail">нет блоков</div></div>
+      <div class="block-head" style="margin:16px 0 8px"><span class="tag">предпросмотр урока</span>
+        <span class="toggle-detail" style="margin-left:auto">то же оформление, что на странице курса</span>
+      </div>
+      <div id="preview-root"><div class="lesson-empty">блоков пока нет — добавьте их выше, превью обновится сразу</div></div>
       <div class="action-bar">
         <button id="btn-add-block" class="btn-ghost"><i class="ti ti-plus"></i> добавить блок</button>
         <select id="new-block-type" class="input-sm">
           <option value="text">text</option>
+          <option value="formula">formula (LaTeX)</option>
           <option value="image">image</option>
           <option value="video">video</option>
           <option value="list">list</option>
@@ -511,6 +542,7 @@ function editLesson(id){
   document.getElementById('l-order').value=l.order!==undefined&&l.order!==null?l.order:'';
   document.getElementById('lesson-edit-title').textContent='Урок: '+(l.title||l._id);
   renderBlocks();
+  updatePreview();
   document.getElementById('lesson-edit-card').style.display='block';
   document.getElementById('lesson-res').textContent='';
   loadTasksForLesson(l._id);
@@ -537,9 +569,16 @@ function addBlock(type,data){
     </div>
     <div class="block-body"></div>`;
   const body=div.querySelector('.block-body');
-  if(type==='text'||type==='warning'||type==='code'){
+  if(type==='text'||type==='formula'||type==='warning'||type==='code'){
     const ta=document.createElement('textarea'); ta.className='input'; ta.placeholder=type; ta.value=data?.value||'';
+    if(type==='formula') ta.placeholder='Например: \\frac{a+b}{2} = c';
     body.appendChild(ta);
+    if(type==='text'){
+      const tools=document.createElement('div'); tools.className='format-tools';
+      const add=(label,title,before,after)=>{const b=document.createElement('button');b.type='button';b.className='btn-ghost';b.textContent=label;b.title=title;b.onclick=()=>{const a=ta.selectionStart,e=ta.selectionEnd,v=ta.value.slice(a,e)||'текст';ta.setRangeText(before+v+after,a,e,'select');ta.focus();};tools.appendChild(b);};
+      add('B','жирный текст','**','**'); add('I','курсив','*','*'); add('<>','код','`','`');
+      body.appendChild(tools);
+    }
   } else if(type==='image'){
     const u=document.createElement('input'); u.className='input'; u.placeholder='url'; u.value=data?.src||'';
     const a=document.createElement('input'); a.className='input'; a.placeholder='alt'; a.value=data?.alt||'';
@@ -574,6 +613,29 @@ function renderBlocks(){
   lessonBlocks.forEach(b=>addBlock(b.type||'text', b));
 }
 
+// превью урока: рисуется тем же рендером, что и страница курса, и обновляется при любом изменении блоков
+function updatePreview(){
+  const box=document.getElementById('preview-root');
+  if(!box) return;
+  const blocks=readBlocks();
+  if(!blocks.length){
+    box.innerHTML='<div class="lesson-empty">блоков пока нет — добавьте их выше, превью обновится сразу</div>';
+    return;
+  }
+  box.innerHTML='<div class="lesson-content">'+renderLessonContent(blocks)+'</div>';
+  mountEmbedScripts(box);
+}
+
+(function(){
+  const box=document.getElementById('lesson-blocks');
+  if(!box) return;
+  let t=null;
+  const schedule=()=>{ clearTimeout(t); t=setTimeout(updatePreview,120); };
+  box.addEventListener('input',schedule);
+  box.addEventListener('click',schedule);
+  new MutationObserver(schedule).observe(box,{childList:true,subtree:true,attributes:true});
+})();
+
 function readBlocks(){
   const out=[];
   document.querySelectorAll('#lesson-blocks .block').forEach(n=>{
@@ -583,7 +645,7 @@ function readBlocks(){
     if(orderS!=='') block.order=parseInt(orderS,10);
     // поля данных ищем только в .block-body: в .block-head лежит поле порядка
     const body=n.querySelector('.block-body')||n;
-    if(type==='text'||type==='warning'||type==='code'){
+    if(type==='text'||type==='formula'||type==='warning'||type==='code'){
       block.value=body.querySelector('textarea')?.value||'';
     } else if(type==='image'){
       const ins=body.querySelectorAll('input');

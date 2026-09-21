@@ -21,15 +21,21 @@ async def hash_password(password: str) -> str:
 async def verify_password(plain: str, hashed: str) -> bool:
     return pwd_context.verify(_normalize_password(plain), hashed)
 
-async def create_access_token(data: dict) -> str:
+async def create_access_token(data: dict, expires: bool = True) -> str:
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
+    if expires:
+        expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
-async def decode_token(token: str) -> dict | None:
+async def decode_token(token: str, verify_exp: bool = True) -> dict | None:
     try:
-        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return jwt.decode(
+            token,
+            SECRET_KEY,
+            algorithms=[ALGORITHM],
+            options={'verify_exp': verify_exp},
+        )
     except JWTError:
         return None
 

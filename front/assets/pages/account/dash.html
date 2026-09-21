@@ -455,72 +455,6 @@
             margin-bottom: 1.4rem;
         }
 
-        /* ===== news ===== */
-        .announcements {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            margin: 20px 0 0;
-        }
-
-        .news-card {
-            flex: 1;
-            background: var(--card);
-            border-radius: 16px;
-            padding: 16px 20px;
-            border: 1px solid var(--line);
-            display: flex;
-            gap: 15px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .news-card::before {
-            content: "";
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 3px;
-            background: var(--primary);
-        }
-
-        .news-emoji {
-            width: 56px;
-            height: 56px;
-            border-radius: 14px;
-            background: rgba(255, 255, 255, .06);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.2rem;
-            flex-shrink: 0;
-        }
-
-        .news-title {
-            color: var(--primary);
-            font-weight: 600;
-            font-size: 1.05rem;
-        }
-
-        .news-desc {
-            opacity: .9;
-            margin-top: 4px;
-            font-size: .92rem;
-        }
-
-        .arrow {
-            font-size: 2.2rem;
-            cursor: pointer;
-            opacity: .6;
-            user-select: none;
-            transition: .2s;
-        }
-
-        .arrow:hover {
-            opacity: 1;
-        }
-
         /* ===== stats ===== */
         .stats-row {
             display: grid;
@@ -685,6 +619,29 @@
             border-color: var(--line2);
         }
 
+        .lb-row.is-link { cursor: pointer; }
+
+        .verified-badge { color: #38bdf8; margin-left: 5px; vertical-align: -2px; }
+
+        .lb-search {
+            display: flex;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .lb-search input {
+            flex: 1;
+            min-width: 0;
+            padding: 10px 12px;
+            border: 1px solid var(--line2);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, .04);
+            color: var(--text);
+            font: inherit;
+        }
+
+        .lb-search button { flex: 0 0 auto; }
+
         .lb-row.me {
             border-color: color-mix(in srgb, var(--primary) 40%, transparent);
             background: color-mix(in srgb, var(--primary) 6%, var(--card));
@@ -711,6 +668,14 @@
             color: #64748b;
             text-align: center;
             padding: 20px 0;
+        }
+
+        .lb-my-position {
+            min-height: 1.3rem;
+            margin-top: 10px;
+            color: var(--primary);
+            font-size: .9rem;
+            font-weight: 600;
         }
 
         /* ===== mobile ===== */
@@ -757,21 +722,12 @@
                 border-radius: 12px;
             }
 
-            .announcements {
-                margin: 12px 0 0;
-                gap: 8px;
+            .lb-search {
+                flex-direction: column;
             }
 
-            .news-card {
-                padding: 10px 12px;
-                border-radius: 12px;
-            }
-
-            .news-emoji {
-                width: 40px;
-                height: 40px;
-                font-size: 1.6rem;
-                border-radius: 10px;
+            .lb-search button {
+                width: 100%;
             }
 
             .news-title {
@@ -850,7 +806,8 @@
                 border-radius: 16px;
             }
         }
-    </style>
+</style>
+<style>.logo{display:inline-flex;align-items:center;line-height:1}.logo::before{content:"";width:34px;height:34px;flex:0 0 34px;margin-right:7px;background:url('/favicon.ico') center/contain no-repeat}</style>
 </head>
 
 <body>
@@ -880,6 +837,8 @@
         <button class="menu-item" id="nav-top" onclick="showSection('top')">
             <i class="ti ti-trophy"></i><span>Топ учеников</span>
         </button>
+        <a class="menu-item" href="/users"><i class="ti ti-search"></i><span>Поиск</span></a>
+        <a class="menu-item" href="/news"><i class="ti ti-news"></i><span>Новости</span></a>
         <a class="menu-item" href="/profile"><i class="ti ti-user-circle"></i><span>Профиль</span></a>
         <a class="menu-item" href="/settings"><i class="ti ti-settings"></i><span>Настройки</span></a>
         <button class="menu-item bottom" onclick="logout()"><i class="ti ti-logout"></i><span>Выйти</span></button>
@@ -896,20 +855,6 @@
     <!-- page -->
     <main class="page">
         <div class="title">Дашборд</div>
-
-        <div class="announcements" id="announcements" style="display:none">
-            <div class="arrow" id="newsPrev"><i class="ti ti-chevron-left"></i></div>
-            <div class="news-card">
-                <div class="news-emoji" id="newsEmoji">
-                    <i class="ti ti-speakerphone" style="font-size:1.6rem;color:var(--acc1)"></i>
-                </div>
-                <div>
-                    <div class="news-title" id="newsTitle"></div>
-                    <div class="news-desc" id="newsText"></div>
-                </div>
-            </div>
-            <div class="arrow" id="newsNext"><i class="ti ti-chevron-right"></i></div>
-        </div>
 
         <div class="stats-row" id="stats-row">
             <div class="stat">
@@ -941,6 +886,11 @@
             <div class="section-head">
                 <h2><i class="ti ti-trophy" style="color:var(--acc1)"></i> Топ учеников</h2>
             </div>
+            <form class="lb-search" id="lb-search-form">
+                <input id="lb-search-input" type="search" minlength="2" placeholder="найти пользователя по логину или id">
+                <button class="btn" type="submit"><i class="ti ti-search"></i> Найти</button>
+            </form>
+            <div id="lb-my-position" class="lb-my-position" aria-live="polite"></div>
             <div id="leaderboard" class="leaderboard">
                 <div class="lb-empty">загрузка...</div>
             </div>
@@ -954,8 +904,6 @@
 
         const loader = document.getElementById('global-loader');
         const coursesBox = document.getElementById('courses');
-
-        let news = [], index = 0, timer = null;
 
         /* ===== menu ===== */
         function toggleMenu() {
@@ -993,55 +941,10 @@
             return r.json();
         }
 
-        /* ===== news ===== */
-        function escapeEmoji(s) {
-            const d = document.createElement('div');
-            d.textContent = String(s || '');
-            return d.innerHTML;
+        function escapeHtml(s) {
+            return String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
         }
-
-        function renderNews() {
-            const n = news[index];
-            const emojiEl = document.getElementById('newsEmoji');
-            emojiEl.innerHTML = n.emoji
-                ? escapeEmoji(n.emoji)
-                : '<i class="ti ti-speakerphone" style="font-size:1.6rem;color:var(--acc1)"></i>';
-
-            document.getElementById('newsTitle').innerHTML = n.title || '';
-            document.getElementById('newsText').innerHTML = n.text || '';
-
-            if (window.twemoji) twemoji.parse(document.querySelector('.news-card'), { folder: 'svg', ext: '.svg' });
-        }
-
-        function startAuto() {
-            clearInterval(timer);
-            timer = setInterval(() => {
-                index = (index + 1) % news.length;
-                renderNews();
-            }, 30000);
-        }
-
-        async function loadNews() {
-            try {
-                const data = await apiGet('/lastnews');
-                if (!Array.isArray(data) || !data.length) return;
-                news = data;
-                document.getElementById('announcements').style.display = 'flex';
-                renderNews();
-                startAuto();
-            } catch { }
-        }
-
-        document.getElementById('newsPrev').onclick = () => {
-            index = (index - 1 + news.length) % news.length;
-            renderNews();
-            startAuto();
-        };
-        document.getElementById('newsNext').onclick = () => {
-            index = (index + 1) % news.length;
-            renderNews();
-            startAuto();
-        };
 
         /* ===== courses ===== */
         async function loadCourses() {
@@ -1098,31 +1001,62 @@
         }
 
         /* ===== leaderboard ===== */
-        async function loadLeaderboard() {
+        function renderLeaderboard(list, me) {
             const box = document.getElementById('leaderboard');
+            if (!list || !list.length) {
+                box.innerHTML = '<div class="lb-empty">пользователи не найдены</div>';
+                return;
+            }
+            box.innerHTML = '';
+            list.forEach((u, i) => {
+                const row = document.createElement('div');
+                row.className = 'lb-row is-link' + (u.user_uid === me.user_uid ? ' me' : '');
+                row.setAttribute('role', 'link');
+                row.tabIndex = 0;
+                row.onclick = () => { location.href = `/user/${encodeURIComponent(u.user_uid)}`; };
+                row.onkeydown = (event) => { if (event.key === 'Enter' || event.key === ' ') row.click(); };
+                const color = u.name_color ? ` style="color:${escapeHtml(u.name_color)}"` : '';
+                row.innerHTML = `
+                    <div class="lb-pos">${u.position ?? '—'}</div>
+                    <div class="lb-name"${color}>${escapeHtml(u.user_login)}${u.verified ? '<i class="ti ti-circle-check verified-badge" title="Профиль подтверждён"></i>' : ''}</div>
+                    <div class="lb-score"><i class="ti ti-star"></i> ${u.rating ?? 0}</div>
+                `;
+                box.appendChild(row);
+            });
+        }
+
+        async function loadLeaderboard(query = '') {
+            const box = document.getElementById('leaderboard');
+            const position = document.getElementById('lb-my-position');
             try {
                 const me = await apiGet('/me');
-                const list = await apiGet('/rating/leaderboard');
-                if (!list || !list.length) {
-                    box.innerHTML = '<div class="lb-empty">пока никто не решил ни одной задачи — стань первым</div>';
-                    return;
+                const result = await apiGet(query
+                    ? '/leaderboard?limit=20&q=' + encodeURIComponent(query)
+                    : '/leaderboard?limit=10');
+                const list = result.items || [];
+                if (position) {
+                    position.textContent = query
+                        ? ''
+                        : (me.hide_leaderboard
+                            ? 'твой профиль скрыт из публичного рейтинга'
+                            : (result.my_position ? `твоё место в рейтинге: #${result.my_position}` : 'ты пока не набрал очков для рейтинга'));
                 }
-                box.innerHTML = '';
-                list.forEach((u, i) => {
-                    const row = document.createElement('div');
-                    row.className = 'lb-row' + (u.user_uid === me.user_uid ? ' me' : '');
-                    const color = u.name_color ? ` style="color:${u.name_color}"` : '';
-                    row.innerHTML = `
-                        <div class="lb-pos">${i + 1}</div>
-                        <div class="lb-name"${color}>${u.user_login}</div>
-                        <div class="lb-score"><i class="ti ti-star"></i> ${u.rating ?? 0}</div>
-                    `;
-                    box.appendChild(row);
-                });
+                renderLeaderboard(list, me);
             } catch {
+                if (position) position.textContent = '';
                 box.innerHTML = '<div class="lb-empty">не удалось загрузить топ</div>';
             }
         }
+
+        document.getElementById('lb-search-form').addEventListener('submit', (event) => {
+            event.preventDefault();
+            const query = document.getElementById('lb-search-input').value.trim();
+            if (query && query.length < 2) {
+                showToast('введи минимум 2 символа', true);
+                return;
+            }
+            loadLeaderboard(query);
+        });
 
         /* ===== init ===== */
         (async () => {
@@ -1143,7 +1077,6 @@
                 loader.classList.add('hidden');
                 setTimeout(() => loader.remove(), 300);
 
-                await loadNews();
                 await loadCourses();
                 loadStats();
                 loadLeaderboard();

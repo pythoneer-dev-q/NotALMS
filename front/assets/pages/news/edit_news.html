@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>NotALMS — Редактор новостей</title>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css">
+<script>
+    (function() {
+        var theme = localStorage.getItem('theme');
+        if (theme) document.documentElement.dataset.theme = theme;
+    })();</script>
+<script src="/assets/static/toast.js"></script>
+<script src="/assets/static/loader.js"></script>
+<style>
+:root{
+  --primary:#6366f1;--bg:#0f172a;--panel:rgba(20,40,70,.95);--text:#e2e8f0;
+  --accent:#4ade80;--error:#ef4444;--warning:#facc15;--muted:#94a3b8;
+  --bord:color-mix(in srgb,var(--primary) 30%,transparent);
+  --line:rgba(255,255,255,.06);--line2:rgba(255,255,255,.12);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Onest',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+.header{min-height:60px;display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--primary);position:sticky;top:0;z-index:100;flex-wrap:wrap}
+.logo{font-weight:800;font-size:1.1rem;color:var(--primary)}
+.logo a{color:inherit}
+.header-spacer{margin-left:auto;display:flex;align-items:center;gap:8px}
+.btn-sm{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border:0;border-radius:8px;background:var(--primary);color:#fff;font-size:.85rem;font-weight:500;cursor:pointer;transition:.18s;white-space:nowrap}
+.btn-sm:hover:not(:disabled){filter:brightness(1.1)}
+.btn-sm:disabled{opacity:.5;cursor:not-allowed}
+.btn-ghost{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:9px 14px;font-size:.85rem;cursor:pointer;transition:.2s;white-space:nowrap;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.btn-ghost:hover{border-color:var(--line2);color:var(--text)}
+.btn-danger{background:var(--error)}
+
+.container{padding:20px;max-width:1100px;margin:0 auto}
+.card{background:rgba(15,23,42,.6);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+.card-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.card-head h3{margin:0;font-size:1.05rem;color:var(--primary)}
+.toggle-detail{color:var(--muted);font-size:.8rem}
+.form-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.field{flex:1;min-width:170px}
+.field.full{width:100%}
+.field label{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:5px;display:block}
+.input,textarea,select{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line2);background:rgba(15,23,42,.9);color:var(--text);font-family:'Onest',sans-serif;font-size:.95rem;outline:none;transition:.2s}
+textarea{min-height:120px;resize:vertical}
+.input:focus,textarea:focus,select:focus{border-color:var(--primary)}
+.action-bar{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid var(--line);align-items:center}
+.btn-primary{background:var(--primary);color:#fff;padding:10px 20px;border:0;border-radius:10px;font-size:1rem;font-weight:500;cursor:pointer;transition:.18s}
+.btn-primary:hover:not(:disabled){filter:brightness(1.1)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.btn-ghost-wide{background:transparent;border:1px solid var(--bord);color:var(--text);border-radius:10px;padding:10px 16px;font-size:.9rem;cursor:pointer;transition:.18s;display:inline-flex;align-items:center;gap:6px}
+.btn-ghost-wide:hover{border-color:var(--line2)}
+
+.news-row{display:flex;justify-content:space-between;align-items:center;gap:10px;background:rgba(255,255,255,.02);padding:12px;border-radius:10px;margin-bottom:8px;flex-wrap:wrap}
+.news-row .info{min-width:200px;flex:1}
+.news-row h4{margin:0 0 4px;font-size:.95rem}
+.tag{font-size:.7rem;padding:3px 8px;border-radius:6px;background:rgba(99,102,241,.12);border:1px solid var(--bord);color:var(--primary);text-transform:uppercase;letter-spacing:.04em}
+.tag.pub{background:rgba(74,222,128,.12);border-color:rgba(74,222,128,.35);color:#4ade80}
+.tag.draft{background:rgba(250,204,21,.1);border-color:rgba(250,204,21,.3);color:#facc15}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+
+.modal-back{position:fixed;inset:0;z-index:9000;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(4,6,14,.7);backdrop-filter:blur(3px)}
+.modal-back.visible{display:flex}
+.modal-card{width:100%;max-width:420px;background:var(--panel);border:1px solid var(--primary);border-radius:10px;padding:18px}
+.modal-card h4{margin:0 0 8px;font-size:1.05rem;color:var(--primary)}
+.modal-card p{margin:0 0 16px;color:#c3cadd;font-size:.92rem;line-height:1.5}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px}
+body.modal-open{overflow:hidden}
+
+@media(max-width:768px){
+  .form-row{flex-direction:column;gap:8px}
+  .field{min-width:0}
+  .container{padding:14px}
+  .news-row{flex-direction:column;align-items:stretch}
+  .actions{width:100%}
+  .actions>*{flex:1;justify-content:center}
+  .input,textarea,select{font-size:1rem}
+  .modal-card{max-width:calc(100vw - 32px)}
+  .modal-actions{flex-direction:column-reverse}
+  .modal-actions>*{width:100%}
+}
+</style>
+<style>.logo{display:inline-flex;align-items:center;line-height:1}.logo::before{content:"";width:34px;height:34px;flex:0 0 34px;margin-right:7px;background:url('/favicon.ico') center/contain no-repeat}</style>
+</head>
+<body>
+<header class="header">
+  <div class="logo">NotALMS — редактор новостей</div>
+  <div class="header-spacer">
+    <a class="btn-ghost" href="/news"><i class="ti ti-news"></i> все новости</a>
+    <button id="btn-logout" class="btn-ghost"><i class="ti ti-logout"></i></button>
+  </div>
+</header>
+
+<div class="container">
+  <div class="card" id="auth-card">
+    <div class="card-head"><h3>Доступ к управлению</h3></div>
+    <div class="form-row">
+      <div class="field"><label>код доступа</label><input id="admin-pass" class="input" type="password" autocomplete="off" placeholder="код доступа"></div>
+      <div class="field" style="align-items:flex-end;display:flex"><button id="btn-login" class="btn-primary"><i class="ti ti-login-2"></i> войти</button></div>
+    </div>
+    <div class="toggle-detail" id="auth-msg">доступ нужен для создания и публикации новостей</div>
+  </div>
+
+  <div id="editor" style="display:none">
+    <div class="card">
+      <div class="card-head"><h3>Новости</h3>
+        <button id="btn-new" class="btn-sm"><i class="ti ti-plus"></i> новая новость</button>
+        <span class="toggle-detail" style="margin-left:auto">черновики видны только здесь</span>
+      </div>
+      <div id="news-list"><div class="toggle-detail">загрузка...</div></div>
+    </div>
+
+    <div class="card" id="news-edit-card" style="display:none">
+      <div class="card-head"><h3 id="news-edit-title">Новая новость</h3>
+        <button id="btn-close-edit" class="btn-ghost"><i class="ti ti-x"></i></button>
+      </div>
+      <div class="form-row">
+        <div class="field full"><label>заголовок</label><input id="n-title" class="input" placeholder="заголовок новости"></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>эмодзи (необязательно)</label><input id="n-emoji" class="input" placeholder="📰"></div>
+        <div class="field"><label>картинка (url)</label><input id="n-image" class="input" placeholder="https://..."></div>
+        <div class="field"><label>порядок</label><input id="n-order" class="input" placeholder="0"></div>
+      </div>
+      <div class="form-row">
+        <div class="field full"><label>теги (через запятую)</label><input id="n-tags" class="input" placeholder="обновление,платформа"></div>
+      </div>
+      <div class="form-row">
+        <div class="field full"><label>текст новости (можно ссылки &lt;a href&gt;)</label><textarea id="n-text" placeholder="текст новости..."></textarea></div>
+      </div>
+      <div class="form-row">
+        <div class="field full">
+          <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-size:.9rem;color:var(--text)">
+            <input id="n-pub" type="checkbox" style="width:16px;height:16px"> опубликовать (видна на странице новостей)
+          </label>
+        </div>
+      </div>
+      <div class="action-bar">
+        <button id="btn-save" class="btn-primary">сохранить</button>
+        <button id="btn-delete" class="btn-ghost-wide" style="color:var(--error);border-color:var(--error);display:none"><i class="ti ti-trash"></i> удалить новость</button>
+        <div id="news-res" class="toggle-detail"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="confirm-back">
+  <div class="modal-card" role="dialog" aria-modal="true">
+    <h4>подтверждение</h4>
+    <p id="confirm-text"></p>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="confirm-no">отмена</button>
+      <button class="btn-primary btn-danger" id="confirm-yes">да</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_BASE = document.querySelector('meta[name="api-base"]')?.content || `${location.protocol}//${location.hostname}:8443/v1`;
+const adminKeyName = 'notalms_admin_secret';
+const URL_PARTS = location.pathname.split('/').filter(Boolean); // ['news', '<id>', 'edit']
+const NEWS_ID = (URL_PARTS.length === 3 && URL_PARTS[0] === 'news' && URL_PARTS[2] === 'edit') ? URL_PARTS[1] : null;
+
+function setSecret(s){ sessionStorage.setItem(adminKeyName, s); }
+function getSecret(){ return sessionStorage.getItem(adminKeyName); }
+function clearSecret(){ sessionStorage.removeItem(adminKeyName); }
+function escapeHtml(s){ if(s===null||s===undefined) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
+function parseCsv(s){ return String(s||'').split(',').map(x=>x.trim()).filter(Boolean); }
+function setMsg(id,text){ const el=document.getElementById(id); if(el) el.textContent=text; }
+
+async function apiFetch(path, method, body){
+  const secret = getSecret();
+  if(!secret) throw new Error('no-secret');
+  const opts = { method, headers: { 'Content-Type':'application/json', 'x-admin-secret': secret } };
+  if(body !== undefined) opts.body = JSON.stringify(body);
+  try{
+    const res = await fetch(API_BASE + path, opts);
+    const data = await res.json().catch(()=>({error:'invalid json'}));
+    if(!res.ok) return {error: data?.detail || data?.error || ('http '+res.status)};
+    return data;
+  }catch(e){ return {error: e.message || 'network error'}; }
+}
+const apiGet = p => apiFetch(p, 'GET');
+const apiPost = (p,b) => apiFetch(p, 'POST', b);
+const apiPut = (p,b) => apiFetch(p, 'PUT', b);
+const apiDelete = p => apiFetch(p, 'DELETE', undefined);
+
+function askConfirm(text, onYes){
+  const back=document.getElementById('confirm-back');
+  document.getElementById('confirm-text').textContent=text;
+  back.classList.add('visible'); document.body.classList.add('modal-open');
+  const close=()=>{ back.classList.remove('visible'); document.body.classList.remove('modal-open'); };
+  document.getElementById('confirm-yes').onclick=()=>{ close(); onYes && onYes(); };
+  document.getElementById('confirm-no').onclick=close;
+  back.onclick=(e)=>{ if(e.target===back) close(); };
+}
+
+let newsCache = [];
+let currentNews = null;
+
+function fmtDate(iso){
+  if(!iso) return '—';
+  const d = new Date(iso);
+  return isNaN(d) ? '—' : d.toLocaleDateString('ru-RU', {day:'2-digit',month:'2-digit',year:'numeric'});
+}
+
+function renderNewsList(){
+  const box=document.getElementById('news-list');
+  if(!newsCache.length){ box.innerHTML='<div class="toggle-detail">новостей ещё нет — создайте первую</div>'; return; }
+  box.innerHTML=newsCache.map(n=>`
+    <div class="news-row" data-id="${escapeHtml(n._id)}">
+      <div class="info">
+        <h4>${n.emoji ? escapeHtml(n.emoji)+' ' : ''}${escapeHtml(n.title||'без заголовка')}</h4>
+        <div class="toggle-detail">id: ${escapeHtml(n._id)} · создана: ${fmtDate(n.created_at)}${n.image?' · с картинкой':''}</div>
+      </div>
+      <span class="tag ${n.is_published?'pub':'draft'}">${n.is_published?'опубликована':'черновик'}</span>
+      <div class="actions">
+        <button class="btn-ghost" onclick="openNews('${escapeHtml(n._id)}')" title="редактировать"><i class="ti ti-pencil"></i></button>
+        ${n.is_published ? `<a class="btn-ghost" href="/news/${encodeURIComponent(n._id)}" target="_blank" title="открыть на сайте"><i class="ti ti-external-link"></i></a>` : ''}
+        <button class="btn-ghost" style="color:var(--error);border-color:var(--error)" onclick="askDeleteNews('${escapeHtml(n._id)}')" title="удалить"><i class="ti ti-trash"></i></button>
+      </div>
+    </div>`).join('');
+}
+
+async function loadNews(){
+  showLoader();
+  try {
+    const r = await apiGet('/admin/news');
+    if(r && r.error){ document.getElementById('news-list').innerHTML='<div class="toggle-detail">не удалось загрузить: '+escapeHtml(r.error)+'</div>'; return; }
+    newsCache = r || [];
+    renderNewsList();
+  } finally {
+    hideLoader();
+  }
+}
+
+function clearForm(){
+  ['n-title','n-emoji','n-image','n-tags','n-text','n-order'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('n-pub').checked=false;
+  currentNews=null;
+  document.getElementById('news-edit-title').textContent='Новая новость';
+  document.getElementById('btn-delete').style.display='none';
+  document.getElementById('news-res').textContent='';
+}
+
+function openNews(id){
+  const n = newsCache.find(x=>x._id===id);
+  if(!n) return;
+  currentNews = n;
+  document.getElementById('n-title').value=n.title||'';
+  document.getElementById('n-emoji').value=n.emoji||'';
+  document.getElementById('n-image').value=n.image||'';
+  document.getElementById('n-tags').value=Array.isArray(n.tags)?n.tags.join(', '):'';
+  document.getElementById('n-text').value=n.text||'';
+  document.getElementById('n-order').value=(n.order===undefined||n.order===null)?'':n.order;
+  document.getElementById('n-pub').checked=!!n.is_published;
+  document.getElementById('news-edit-title').textContent='Новость: '+(n.title||n._id);
+  document.getElementById('btn-delete').style.display='inline-flex';
+  document.getElementById('news-res').textContent='';
+  document.getElementById('news-edit-card').scrollIntoView({behavior:'smooth', block:'start'});
+}
+</script>
+
+<script>
+document.getElementById('btn-new').onclick=()=>{
+  clearForm();
+  document.getElementById('news-edit-card').style.display='block';
+  document.getElementById('n-title').focus();
+};
+
+document.getElementById('btn-close-edit').onclick=()=>{
+  document.getElementById('news-edit-card').style.display='none';
+  currentNews=null;
+};
+
+document.getElementById('btn-save').onclick=async()=>{
+  const title=document.getElementById('n-title').value.trim();
+  if(!title){ setMsg('news-res','нужен заголовок'); showToast('нужен заголовок', true); return; }
+  const orderRaw=document.getElementById('n-order').value.trim();
+  const body={
+    title,
+    text: document.getElementById('n-text').value,
+    emoji: document.getElementById('n-emoji').value.trim(),
+    image: document.getElementById('n-image').value.trim(),
+    tags: parseCsv(document.getElementById('n-tags').value),
+    order: orderRaw!=='' ? parseInt(orderRaw,10) : 0,
+    is_published: document.getElementById('n-pub').checked
+  };
+  setMsg('news-res','сохранение...');
+  let r;
+  if(currentNews){
+    r = await apiPut('/admin/news/'+encodeURIComponent(currentNews._id), body);
+  } else {
+    r = await apiPost('/admin/news', body);
+  }
+  if(r && !r.error){
+    showToast(currentNews ? 'новость сохранена' : 'новость создана');
+    setMsg('news-res','сохранено');
+    await loadNews();
+    const saved = r._id ? r : newsCache.find(x=>x.title===title);
+    if(saved) openNews(saved._id);
+  } else {
+    showToast('ошибка: '+(r?.error||'unknown'), true);
+    setMsg('news-res','err: '+(r?.error||'unknown'));
+  }
+};
+
+function askDeleteNews(id){
+  const n = newsCache.find(x=>x._id===id);
+  askConfirm(`удалить новость «${(n&&n.title)||id}»? отменить нельзя`, async()=>{
+    const r = await apiDelete('/admin/news/'+encodeURIComponent(id));
+    if(r && !r.error){
+      if(currentNews && currentNews._id===id){ clearForm(); document.getElementById('news-edit-card').style.display='none'; }
+      showToast('новость удалена');
+      await loadNews();
+    } else { showToast('ошибка удаления: '+(r?.error||'unknown'), true); }
+  });
+}
+
+async function checkSecret(pass){
+  try{
+    const res = await fetch(API_BASE+'/admin/check',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({secret:pass})});
+    const data = await res.json().catch(()=>({}));
+    return res.ok && data.ok;
+  }catch(e){ return false; }
+}
+
+function showEditor(){
+  document.getElementById('auth-card').style.display='none';
+  document.getElementById('editor').style.display='block';
+}
+
+document.getElementById('btn-login').onclick=async()=>{
+  const pass=document.getElementById('admin-pass').value.trim();
+  if(!pass){ setMsg('auth-msg','введите пароль'); return; }
+  setMsg('auth-msg','проверка...');
+  if(await checkSecret(pass)){
+    setSecret(pass);
+    setMsg('auth-msg','доступ подтверждён');
+    showEditor();
+    await loadNews();
+    if(NEWS_ID){
+      const n=newsCache.find(x=>x._id===NEWS_ID);
+      if(n){ openNews(n._id); } else { clearForm(); document.getElementById('news-edit-card').style.display='block'; }
+    }
+  } else {
+    clearSecret();
+    setMsg('auth-msg','неверный пароль (или ADMIN_SECRET не задан на сервере)');
+  }
+};
+
+document.getElementById('btn-logout').onclick=()=>{
+  clearSecret();
+  document.getElementById('editor').style.display='none';
+  document.getElementById('auth-card').style.display='block';
+  setMsg('auth-msg','вышли из редактора');
+};
+
+(async()=>{
+  if(!getSecret()) return;
+  if(await checkSecret(getSecret())){
+    showEditor();
+    await loadNews();
+    if(NEWS_ID){
+      const n=newsCache.find(x=>x._id===NEWS_ID);
+      if(n){ openNews(n._id); } else { clearForm(); document.getElementById('news-edit-card').style.display='block'; }
+    }
+  } else { clearSecret(); }
+})();
+</script>
+</body>
+
+</html>

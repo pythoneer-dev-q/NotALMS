@@ -78,7 +78,7 @@ else
     info "создаю venv в $VENV_DIR..."
     python3 -m venv "$VENV_DIR"
     "$VENV_DIR/bin/pip" install --upgrade pip setuptools wheel
-    "$VENV_DIR/bin/pip" install fastapi uvicorn motor python-dotenv "passlib[bcrypt]" "python-jose[cryptography]" slowapi redis aiogram pydantic-settings
+    "$VENV_DIR/bin/pip" install fastapi uvicorn motor python-dotenv "passlib[bcrypt]" "python-jose[cryptography]" slowapi redis aiogram pydantic-settings httpx
     ok "venv и зависимости установлены"
   fi
 fi
@@ -271,6 +271,12 @@ BACK_PORT=$BACK_PORT
 FRONT_PORT_HOST=$FRONT_PORT"
   fi
 
+  TURNSTILE_SITE_KEY="$(ask '  Turnstile site key (enter = отключить CAPTCHA)' "${NTLMS_TURNSTILE_SITE_KEY:-}")"
+  TURNSTILE_SECRET_KEY=""
+  if [ -n "$TURNSTILE_SITE_KEY" ]; then
+    TURNSTILE_SECRET_KEY="$(ask '  Turnstile secret key' "${NTLMS_TURNSTILE_SECRET_KEY:-}")"
+  fi
+
   cat > "$ROOT/.env" <<EOF
 HOST=127.0.0.1
 FRONT_HOST=127.0.0.1
@@ -302,10 +308,24 @@ WORKERS=$WORKERS
 MONGO_MAX_POOL=100
 CACHE_TTL=60
 RATE_LIMIT=20/minute
+CAPTCHA_SUSPICIOUS_RPS=15
+TURNSTILE_SITE_KEY=$TURNSTILE_SITE_KEY
+TURNSTILE_SECRET_KEY=$TURNSTILE_SECRET_KEY
 REDIS_URL=$REDIS_URL
 EOF
   ok ".env сохранен"
 fi
+
+# Обновление старой .env: новые функции получают безопасные фоллбеки,
+# существующие значения никогда не затираются.
+ensure_env_var() {
+  local key="$1" value="$2"
+  grep -q "^${key}=" "$ROOT/.env" 2>/dev/null || echo "${key}=${value}" >> "$ROOT/.env"
+}
+ensure_env_var "CAPTCHA_SUSPICIOUS_RPS" "15"
+ensure_env_var "TURNSTILE_SITE_KEY" ""
+ensure_env_var "TURNSTILE_SECRET_KEY" ""
+ok "проверены фоллбеки CAPTCHA в .env"
 
 # ============ шаг 7: запуск и systemd ============
 say "шаг 7/8 — запуск сервисов"

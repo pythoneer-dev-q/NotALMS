@@ -53,6 +53,7 @@ button:hover{transform:scale(.97);filter:brightness(1.15)}
     button{padding:.75rem 1.2rem;font-size:.95rem;border-radius:10px}
   }
 </style>
+<style>.logo{display:inline-flex;align-items:center;line-height:1}.logo::before{content:"";width:34px;height:34px;flex:0 0 34px;margin-right:7px;background:url('/favicon.ico') center/contain no-repeat}</style>
 </head>
 <body>
 <div class="box">
@@ -77,6 +78,10 @@ button:hover{transform:scale(.97);filter:brightness(1.15)}
         const data = await res.json();
         if (res.ok && data.JWTSession) {
             localStorage.setItem('token', data.JWTSession);
+            if (data.blocked) {
+                location.replace('/blocked');
+                return;
+            }
             document.querySelector('.spin').style.display = 'none';
             document.getElementById('msg').innerHTML = '<i class="ti ti-check" style="color:var(--acc1);margin-right:.5rem"></i>вход выполнен, открываю дашборд...';
             setTimeout(() => location.href = '/dash', 600);
