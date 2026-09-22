@@ -8,7 +8,16 @@ client = AsyncIOMotorClient(
     maxPoolSize=settings.mongo_max_pool,
     retryWrites=True,
 )
+_closed = False
 
 
 def get_db(name: str):
     return client[name]
+
+
+def close_client() -> None:
+    global _closed
+    if _closed:
+        return
+    _closed = True
+    client.close()

@@ -102,6 +102,48 @@ select{background-position:right .6rem center;background-repeat:no-repeat;backgr
 .modal-actions{display:flex;justify-content:flex-end;gap:8px}
 .btn-danger{background:var(--error)}
 body.modal-open{overflow:hidden}
+.quiz-builder{border:1px solid var(--line2);border-radius:16px;padding:16px;width:100%;background:color-mix(in srgb,var(--surface2) 75%,transparent)}
+.quiz-builder>.card-head{margin-bottom:4px}
+.quiz-variant{border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:12px;background:var(--surface)}
+.quiz-variant.invalid{border-color:var(--error);box-shadow:0 0 0 2px color-mix(in srgb,var(--error) 15%,transparent)}
+.quiz-variant-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.quiz-variant-title{font-weight:700;font-size:.92rem}
+.quiz-answer{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;margin-top:8px}
+.correct-toggle{height:42px;display:inline-flex;align-items:center;gap:7px;padding:0 12px;border:1px solid var(--line2);border-radius:11px;color:var(--muted);cursor:pointer;white-space:nowrap;user-select:none;transition:.18s}
+.correct-toggle:hover{border-color:var(--primary);color:var(--text)}
+.correct-toggle:has(input:checked){background:color-mix(in srgb,var(--primary) 18%,transparent);border-color:var(--primary);color:var(--text)}
+.correct-toggle input{position:absolute;opacity:0;pointer-events:none}
+.correct-toggle i{font-size:1.1rem}
+.answer-line{display:grid;grid-template-columns:32px minmax(0,1fr) 40px;gap:8px;align-items:center}
+.answer-index{width:32px;height:32px;border-radius:10px;background:var(--surface2);display:grid;place-items:center;color:var(--muted);font-size:.78rem;font-weight:700}
+.task-kind{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.task-kind button{min-height:58px;border:1px solid var(--line2);border-radius:12px;background:transparent;color:var(--muted);padding:9px 11px;text-align:left;cursor:pointer;transition:.18s}
+.task-kind button strong,.task-kind button span{display:block}
+.task-kind button strong{color:var(--text);font-size:.9rem;margin-bottom:2px}
+.task-kind button span{font-size:.74rem;line-height:1.35}
+.task-kind button.active{border-color:var(--primary);background:color-mix(in srgb,var(--primary) 14%,transparent)}
+.teacher-side,.teacher-menu,.teacher-overlay{display:none}
+body.teacher-mode{--bg:#0b1020;--panel:#111a2e;--surface:#111a2e;--surface2:#162139;--text:#edf2ff;--muted:#9daac4;--line:#293653;--line2:#354463;--primary:#6366f1;background:var(--bg)}
+html[data-theme="light"] body.teacher-mode{--bg:#f5f7fb;--panel:#fff;--surface:#fff;--surface2:#f8faff;--text:#182033;--muted:#65708a;--line:#dce2ee;--line2:#cbd4e3}
+body.teacher-mode .header{display:none}
+body.teacher-mode .teacher-side{position:fixed;inset:0 auto 0 0;width:240px;padding:18px 14px;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;z-index:850}
+.teacher-brand{display:flex;align-items:center;gap:10px;padding:5px 8px 22px;color:var(--text);font-weight:800;text-decoration:none}
+.teacher-brand img{width:38px;height:38px}
+.teacher-nav{display:grid;gap:6px}
+.teacher-nav button{border:0;background:transparent;color:var(--muted);text-align:left;padding:11px 12px;border-radius:12px;display:flex;gap:10px;align-items:center;cursor:pointer;font:inherit}
+.teacher-nav button.active,.teacher-nav button:hover{background:var(--surface2);color:var(--text)}
+.teacher-side-bottom{margin-top:auto;display:grid;gap:6px}
+.teacher-side-bottom a,.teacher-side-bottom button{width:100%;text-decoration:none;justify-content:flex-start;display:flex;align-items:center;gap:8px}
+body.teacher-mode .container{max-width:none;margin-left:240px;padding:26px 30px 50px}
+body.teacher-mode .summary{border:0;background:transparent;padding:0;margin-bottom:24px;display:flex!important;align-items:flex-start;justify-content:space-between;gap:16px}
+body.teacher-mode .summary>div:first-child{font-size:1.45rem;color:var(--text)}
+body.teacher-mode .summary #course-id-badge{display:block;color:var(--muted);font-size:.88rem;font-weight:400;margin-top:4px}
+body.teacher-mode .tabs{display:none!important}
+body.teacher-mode .card{background:var(--panel);border:1px solid var(--line);outline:0;border-radius:16px;padding:18px}
+body.teacher-mode .input,body.teacher-mode textarea,body.teacher-mode select{background:var(--surface2);border-color:var(--line);border-radius:12px}
+body.teacher-mode .btn-primary,body.teacher-mode .btn-sm{border-radius:12px;padding:10px 15px;font-weight:650}
+body.teacher-mode .btn-ghost,body.teacher-mode .btn-ghost-wide{border-color:var(--line);border-radius:12px;color:var(--text)}
+body.teacher-mode #t-type{display:none}
 
 .loading-screen{position:fixed;inset:0;background:rgba(5,5,15,.85);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999;opacity:0;pointer-events:none;transition:.12s}
 .loading-screen.visible{opacity:1;pointer-events:auto}
@@ -134,10 +176,28 @@ body.modal-open{overflow:hidden}
   .header{padding:0 12px}
   .logo{font-size:1.3rem}
 }
+@media(max-width:900px){
+  body.teacher-mode .teacher-side{transform:translateX(-100%);transition:transform .2s ease}
+  body.teacher-mode .teacher-side.open{transform:translateX(0)}
+  body.teacher-mode .teacher-menu{display:inline-flex;position:fixed;left:16px;top:14px;z-index:820;width:44px;height:44px;padding:0;align-items:center;justify-content:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;color:var(--text)}
+  body.teacher-mode .teacher-overlay.open{display:block;position:fixed;inset:0;background:#050916a8;z-index:840}
+  body.teacher-mode .container{margin-left:0;padding:76px 16px 40px}
+}
 @media(max-width:600px){
   .tabs{font-size:.8rem}
   .tab{padding:10px 6px}
   .card{padding:14px}
+  .task-kind{grid-template-columns:1fr}
+  .quiz-builder{padding:12px}
+  .quiz-answer{grid-template-columns:1fr}
+  .correct-toggle{width:100%;justify-content:center}
+  body.teacher-mode .summary{display:block!important}
+  body.teacher-mode .summary #open-course-page{margin-top:10px}
+  body.teacher-mode .card-head{align-items:flex-start;flex-direction:column}
+  body.teacher-mode .card-head>.action-bar{width:100%;margin-top:4px;padding-top:10px}
+  body.teacher-mode .card-head>.action-bar .btn-primary{width:100%}
+  .quiz-variant-head{align-items:flex-start}
+  .quiz-variant-head .btn-ghost{padding:8px 10px}
 }
 @media(max-width:480px){
   #preview-root .lesson-text{font-size:.95rem}
@@ -150,6 +210,21 @@ body.modal-open{overflow:hidden}
 </head>
 <body>
 <div class="toast" id="toast"><div class="toast-card" id="toast-card"></div></div>
+
+<button class="teacher-menu" id="teacher-menu" type="button" aria-label="Открыть меню"><i class="ti ti-menu-2"></i></button>
+<div class="teacher-overlay" id="teacher-overlay"></div>
+<aside class="teacher-side" id="teacher-side">
+  <a class="teacher-brand" href="/teacher"><img src="/favicon.ico" alt=""><span>NotALMS</span></a>
+  <nav class="teacher-nav" aria-label="Разделы редактора">
+    <button type="button" class="active" data-editor-tab="course"><i class="ti ti-settings"></i> Курс</button>
+    <button type="button" data-editor-tab="lessons"><i class="ti ti-notebook"></i> Уроки</button>
+    <button type="button" data-editor-tab="tasks"><i class="ti ti-checkbox"></i> Задания и тесты</button>
+  </nav>
+  <div class="teacher-side-bottom">
+    <button class="btn-ghost-wide" id="teacher-theme" type="button"><i class="ti ti-sun"></i> Сменить тему</button>
+    <a class="btn-ghost-wide" href="/teacher"><i class="ti ti-arrow-left"></i> В кабинет</a>
+  </div>
+</aside>
 
 <header class="header">
   <div class="logo">NotALMS — редактор</div>
@@ -210,7 +285,7 @@ body.modal-open{overflow:hidden}
         </div>
       </div>
       <div class="form-row">
-        <div class="field full"><label>granted_to (через запятую)</label><input id="c-granted" class="input" placeholder="all,group1,..."></div>
+        <div class="field full"><label>granted_to (через запятую)</label><input id="c-granted" class="input" placeholder="all,group1,..."><div id="teacher-course-groups" style="display:none;margin-top:8px"></div></div>
         <div class="field full"><label>tags (через запятую)</label><input id="c-tags" class="input" placeholder="bio,dna,..."></div>
         <div class="field full"><label>lessons (id уроков через запятую)</label><input id="c-lessons" class="input" placeholder="lesson_id1,lesson_id2,..."></div>
       </div>
@@ -295,7 +370,7 @@ body.modal-open{overflow:hidden}
     <div class="card">
       <div class="card-head"><h3>Задания курса</h3>
         <div class="action-bar">
-          <span class="toggle-detail">отображаются по урокам</span>
+          <select id="tasks-lesson-filter" class="input-sm" aria-label="Урок для списка заданий"></select>
           <button id="btn-new-task" class="btn-primary"><i class="ti ti-plus"></i> добавить задание</button>
         </div>
       </div>
@@ -306,21 +381,42 @@ body.modal-open{overflow:hidden}
         <button id="btn-close-task-edit" class="btn-ghost"><i class="ti ti-x"></i></button>
       </div>
       <div class="form-row">
-        <div class="field"><label>id</label><input id="t-id" class="input" readonly></div>
+        <div class="field"><label>ID задания</label><input id="t-id" class="input" readonly placeholder="например: fractions_quiz"></div>
         <div class="field"><label>Урок</label><select id="t-lesson"></select></div>
-        <div class="field"><label>mode</label><input id="t-mode" class="input" placeholder="например 1 / dna"></div>
+        <div class="field"><label>Режим генератора</label><input id="t-mode" class="input" placeholder="для теста заполняется автоматически"></div>
       </div>
       <div class="form-row">
         <div class="field full"><label>Название для ученика</label><input id="t-title" class="input" placeholder="например: Сложение однозначных чисел"></div>
       </div>
       <div class="form-row">
-        <div class="field"><label>type_task</label><input id="t-type" class="input" placeholder="task_type"></div>
-        <div class="field"><label>difficulty</label>
-          <select id="t-diff"><option value="easy">easy</option><option value="hard">hard</option></select>
+        <div class="field full"><label>Тип задания</label>
+          <div class="task-kind" id="task-kind">
+            <button type="button" data-task-type="quiz"><strong><i class="ti ti-list-check"></i> Тест с вариантами</strong><span>Один или несколько правильных ответов</span></button>
+            <button type="button" data-task-type="math"><strong><i class="ti ti-math"></i> Математика</strong><span>Сложение, вычитание, умножение или деление</span></button>
+            <button type="button" data-task-type="biology"><strong><i class="ti ti-dna-2"></i> Биология</strong><span>Задание из биологического генератора</span></button>
+          </div>
+          <select id="t-type" class="input" style="margin-top:8px" aria-label="Технический тип задания">
+            <option value="">Выберите тип</option>
+            <option value="quiz">Тест с вариантами</option>
+            <option value="math">Математическая задача</option>
+            <option value="biology">Биологическая задача</option>
+          </select>
+        </div>
+        <div class="field"><label>Сложность</label>
+          <select id="t-diff"><option value="easy">Обычная</option><option value="hard">Сложная</option></select>
         </div>
       </div>
       <div class="form-row">
         <div class="field full"><label>settings (json)</label><textarea id="t-settings" placeholder='{"taskLen": 8}'></textarea></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Подсказка</label><select id="t-hint-mode"><option value="solution">Показать решение</option><option value="text">Свой текст</option><option value="none">Отключена</option></select></div>
+        <div class="field"><label>Текст подсказки</label><textarea id="t-hint-text" placeholder="Направление решения, без обязательного ответа"></textarea></div>
+      </div>
+      <div class="quiz-builder" id="quiz-builder" style="display:none">
+        <div class="card-head"><h3><i class="ti ti-list-check"></i> Конструктор теста</h3><button type="button" class="btn-ghost" id="btn-add-quiz-variant"><i class="ti ti-plus"></i> Добавить вариант</button></div>
+        <div class="toggle-detail">Ученику случайно выдаётся один из вариантов. В каждом варианте добавьте вопрос, минимум два ответа и отметьте правильные кнопкой с галочкой.</div>
+        <div id="quiz-variants"></div>
       </div>
       <div class="action-bar">
         <button id="btn-save-task" class="btn-primary">сохранить задачу</button>
@@ -346,7 +442,9 @@ body.modal-open{overflow:hidden}
 const API_BASE = document.querySelector('meta[name="api-base"]')?.content || `${location.protocol}//${location.hostname}:8443/v1`;
 const adminKeyName = 'notalms_admin_secret';
 const URL_PARTS = location.pathname.split('/').filter(Boolean); // ['course','<id>','edit']
-const courseID = (URL_PARTS.length === 3 && URL_PARTS[0] === 'course' && URL_PARTS[2] === 'edit') ? URL_PARTS[1] : null;
+const TEACHER_MODE = URL_PARTS.length === 4 && URL_PARTS[0] === 'teacher' && URL_PARTS[1] === 'course' && URL_PARTS[3] === 'edit';
+const courseID = TEACHER_MODE ? URL_PARTS[2] : ((URL_PARTS.length === 3 && URL_PARTS[0] === 'course' && URL_PARTS[2] === 'edit') ? URL_PARTS[1] : null);
+document.body.classList.toggle('teacher-mode', TEACHER_MODE);
 
 const loader = {
   el: document.getElementById('loading'),
@@ -365,12 +463,26 @@ function parseCsv(s){ return String(s||'').split(',').map(x=>x.trim()).filter(Bo
 
 async function apiFetch(path, method, body){
   const secret = getSecret();
-  if(!secret) throw new Error('no-secret');
-  const opts = { method, headers: { 'Content-Type':'application/json', 'x-admin-secret': secret } };
+  const token = localStorage.getItem('token');
+  if(!TEACHER_MODE && !secret) throw new Error('no-secret');
+  if(TEACHER_MODE && !token) { location.href='/'; throw new Error('no-token'); }
+  let mapped=path;
+  if(TEACHER_MODE){
+    mapped=mapped.replace(/^\/admin\/course\/([^/]+)\/lessons$/, '/teacher/courses/$1/lessons')
+      .replace(/^\/admin\/course\//, '/teacher/courses/')
+      .replace(/^\/admin\/lesson\/([^/]+)\/tasks$/, '/teacher/lessons/$1/tasks')
+      .replace(/^\/admin\/lesson\//, '/teacher/lessons/')
+      .replace(/^\/admin\/task\//, '/teacher/tasks/')
+      .replace(/^\/admin\/task$/, '/teacher/tasks')
+      .replace(/^\/createLesson$/, '/teacher/lessons');
+  }
+  const opts = { method, headers: { 'Content-Type':'application/json' } };
+  if(TEACHER_MODE) opts.headers.Authorization='Bearer '+token;
+  else opts.headers['x-admin-secret']=secret;
   if(body !== undefined) opts.body = JSON.stringify(body);
   loader.enter();
   try{
-    const res = await fetch(API_BASE + path, opts);
+    const res = await fetch(API_BASE + mapped, opts);
     const data = await res.json().catch(()=>({error:'invalid json'}));
     if(!res.ok) return {error: data?.detail || data?.error || ('http '+res.status)};
     return data;
@@ -404,7 +516,25 @@ function showTab(name){
     document.querySelector(`.tab[data-tab="${t}"]`).classList.toggle('active',t===name);
     document.getElementById('panel-'+t).classList.toggle('active',t===name);
   });
+  document.querySelectorAll('[data-editor-tab]').forEach(button=>button.classList.toggle('active',button.dataset.editorTab===name));
+  document.getElementById('teacher-side').classList.remove('open');
+  document.getElementById('teacher-overlay').classList.remove('open');
 }
+
+document.querySelectorAll('[data-editor-tab]').forEach(button=>button.onclick=()=>showTab(button.dataset.editorTab));
+document.getElementById('teacher-menu').onclick=()=>{
+  document.getElementById('teacher-side').classList.add('open');
+  document.getElementById('teacher-overlay').classList.add('open');
+};
+document.getElementById('teacher-overlay').onclick=()=>{
+  document.getElementById('teacher-side').classList.remove('open');
+  document.getElementById('teacher-overlay').classList.remove('open');
+};
+document.getElementById('teacher-theme').onclick=()=>{
+  const next=document.documentElement.dataset.theme==='light'?'dark':'light';
+  document.documentElement.dataset.theme=next;
+  localStorage.setItem('theme',next);
+};
 
 function setMsg(id,text){ const el=document.getElementById(id); if(el) el.textContent=text; }</script>
 <script>
@@ -423,7 +553,10 @@ document.getElementById('btn-login').onclick=async()=>{
     toast('неверный пароль',true);
   }
 };
-document.getElementById('btn-logout').onclick=()=>{ clearSecret(); location.reload(); };
+document.getElementById('btn-logout').onclick=()=>{
+  if(TEACHER_MODE){ location.href='/teacher'; return; }
+  clearSecret(); location.reload();
+};
 
 document.getElementById('hint-course').onclick=()=>{
   if(!courseID){ toast('нет id курса в url',true); return; }
@@ -433,6 +566,14 @@ document.getElementById('hint-course').onclick=()=>{
 let course={};
 let lessonsCache=[];
 let tasksCache=[];
+let teacherGroups=[];
+
+function renderTeacherCourseGroups(selected=[]){
+  if(!TEACHER_MODE) return;
+  const box=document.getElementById('teacher-course-groups');
+  box.style.display='grid'; box.style.gap='7px';
+  box.innerHTML=teacherGroups.length?teacherGroups.map(group=>`<label class="lesson-row" style="margin:0;cursor:pointer"><input type="checkbox" value="${escapeHtml(group._id)}" ${selected.includes(group._id)?'checked':''}> ${escapeHtml(group.name)}</label>`).join(''):'<div class="toggle-detail">Сначала создайте учебную группу в кабинете учителя.</div>';
+}
 
 async function initEditor(){
   if(!courseID){
@@ -468,7 +609,9 @@ function fillCourseForm(c){
   set('c-desc', c.description);
   set('c-cover', c.cover);
   set('c-order', c.order!==undefined&&c.order!==null?c.order:'');
-  set('c-granted', Array.isArray(c.granted_to)?c.granted_to.join(', '):'');
+  const grants=TEACHER_MODE?c.role_ids:c.granted_to;
+  set('c-granted', Array.isArray(grants)?grants.join(', '):'');
+  renderTeacherCourseGroups(Array.isArray(grants)?grants:[]);
   set('c-tags', Array.isArray(c.tags)?c.tags.join(', '):'');
   set('c-lessons', Array.isArray(c.lessons)?c.lessons.join(', '):'');
   const d=document.getElementById('c-diff'); if(d){ d.value=c.difficulty||''; }
@@ -485,7 +628,8 @@ document.getElementById('btn-save-course').onclick=async()=>{
     order: orderRaw!=='' ? parseInt(orderRaw,10) : undefined,
     tags: parseCsv(document.getElementById('c-tags').value),
     lessons: parseCsv(document.getElementById('c-lessons').value),
-    granted_to: parseCsv(document.getElementById('c-granted').value),
+    granted_to: TEACHER_MODE ? undefined : parseCsv(document.getElementById('c-granted').value),
+    role_ids: TEACHER_MODE ? Array.from(document.querySelectorAll('#teacher-course-groups input:checked')).map(input=>input.value) : undefined,
     is_published: document.getElementById('c-pub').checked
   };
   Object.keys(body).forEach(k=>{ if(body[k]===undefined) delete body[k]; });
@@ -509,10 +653,30 @@ async function loadLessons(){
   if(r&&r.error){ document.getElementById('lessons-list').innerHTML='<div class="toggle-detail">не удалось загрузить</div>'; return; }
   lessonsCache = r || [];
   renderLessons();
+  fillTaskLessonFilter();
   if(!window.currentLesson && lessonsCache.length){
-    loadTasksForLesson(lessonsCache[0]._id);
+    loadTasksForLesson(document.getElementById('tasks-lesson-filter').value||lessonsCache[0]._id);
   }
 }
+
+function fillTaskLessonFilter(selected){
+  const select=document.getElementById('tasks-lesson-filter');
+  const previous=selected||select.value;
+  const sorted=[...lessonsCache].sort((a,b)=>(a.order||0)-(b.order||0));
+  select.innerHTML=sorted.length
+    ? sorted.map(lesson=>`<option value="${escapeHtml(lesson._id)}">${escapeHtml(lesson.title||lesson._id)}</option>`).join('')
+    : '<option value="">Сначала добавьте урок</option>';
+  if(sorted.some(lesson=>lesson._id===previous)) select.value=previous;
+  select.disabled=!sorted.length;
+}
+
+document.getElementById('tasks-lesson-filter').onchange=event=>{
+  const lessonId=event.target.value;
+  window.currentLesson=lessonsCache.find(lesson=>lesson._id===lessonId)||null;
+  document.getElementById('task-edit-card').style.display='none';
+  window.currentTask=null;
+  loadTasksForLesson(lessonId);
+};
 
 function renderLessons(){
   const box=document.getElementById('lessons-list');
@@ -551,6 +715,7 @@ function editLesson(id){
   updatePreview();
   document.getElementById('lesson-edit-card').style.display='block';
   document.getElementById('lesson-res').textContent='';
+  fillTaskLessonFilter(l._id);
   loadTasksForLesson(l._id);
 }
 
@@ -747,6 +912,7 @@ window.currentTask=null;
 
 async function loadTasksForLesson(lesson_id){
   if(!lesson_id) return;
+  fillTaskLessonFilter(lesson_id);
   document.getElementById('tasks-list').innerHTML='<div class="toggle-detail">загрузка...</div>';
   const r=await apiGet('/admin/lesson/'+encodeURIComponent(lesson_id)+'/tasks');
   if(!r||r.error){
@@ -799,10 +965,14 @@ function openNewTask(){
   id.readOnly=false;
   id.value='';
   document.getElementById('t-title').value='';
-  document.getElementById('t-mode').value='';
-  document.getElementById('t-type').value='';
+  document.getElementById('t-mode').value='quiz';
+  setTaskType('quiz');
   document.getElementById('t-diff').value='easy';
   document.getElementById('t-settings').value='{}';
+  document.getElementById('t-hint-mode').value='solution';
+  document.getElementById('t-hint-text').value='';
+  renderQuizVariants([]);
+  syncQuizBuilder();
   document.getElementById('task-edit-title').textContent='Новое задание';
   document.getElementById('btn-save-task').innerHTML='<i class="ti ti-plus"></i> добавить задание';
   document.getElementById('btn-delete-task').style.display='none';
@@ -814,6 +984,10 @@ function openNewTask(){
 function editTask(id){
   const t=tasksCache.find(x=>x._id===id);
   if(!t) return;
+  let taskSettings=t.settings||{};
+  if(typeof taskSettings==='string'){
+    try{taskSettings=JSON.parse(taskSettings)}catch(_){taskSettings={}}
+  }
   window.currentTask={...t};
   const idInput=document.getElementById('t-id');
   idInput.readOnly=true;
@@ -821,9 +995,13 @@ function editTask(id){
   document.getElementById('t-title').value=t.title||'';
   fillTaskLessonOptions(t.lesson_id||courseLessonId()||'');
   document.getElementById('t-mode').value=t.mode||'';
-  document.getElementById('t-type').value=t.type||t.type_task||'';
+  setTaskType(t.type||t.type_task||'');
   document.getElementById('t-diff').value=t.difficulty||'easy';
-  document.getElementById('t-settings').value=typeof t.settings==='string'?t.settings:JSON.stringify(t.settings||{});
+  document.getElementById('t-settings').value=JSON.stringify(taskSettings);
+  document.getElementById('t-hint-mode').value=t.hint_mode||'solution';
+  document.getElementById('t-hint-text').value=t.hint_text||'';
+  renderQuizVariants(taskSettings.variants||[]);
+  syncQuizBuilder();
   document.getElementById('task-edit-title').textContent='Задача: '+(t._id);
   document.getElementById('btn-save-task').innerHTML='<i class="ti ti-device-floppy"></i> сохранить задачу';
   document.getElementById('btn-delete-task').style.display='';
@@ -832,7 +1010,7 @@ function editTask(id){
 }
 
 function courseLessonId(){
-  return tasksCache[0]?.lesson_id || (window.currentLesson?window.currentLesson._id:null);
+  return document.getElementById('tasks-lesson-filter').value || tasksCache[0]?.lesson_id || (window.currentLesson?window.currentLesson._id:null);
 }
 
 document.getElementById('btn-close-task-edit').onclick=()=>{
@@ -840,17 +1018,105 @@ document.getElementById('btn-close-task-edit').onclick=()=>{
 };
 document.getElementById('btn-new-task').onclick=openNewTask;
 
+function syncQuizBuilder(){
+  const selectedType=document.getElementById('t-type').value.trim().toLowerCase();
+  const quiz=selectedType==='quiz';
+  document.getElementById('quiz-builder').style.display=quiz?'block':'none';
+  document.getElementById('t-settings').closest('.form-row').style.display=quiz?'none':'';
+  document.querySelectorAll('[data-task-type]').forEach(button=>{
+    const active=button.dataset.taskType===selectedType;
+    button.classList.toggle('active',active);
+    button.setAttribute('aria-pressed',String(active));
+  });
+}
+function setTaskType(value){
+  const select=document.getElementById('t-type');
+  if(value && !Array.from(select.options).some(option=>option.value===value)){
+    select.add(new Option(value,value));
+  }
+  select.value=value;
+  syncQuizBuilder();
+}
+document.getElementById('t-type').addEventListener('change',syncQuizBuilder);
+document.querySelectorAll('[data-task-type]').forEach(button=>button.onclick=()=>{
+  const type=button.dataset.taskType;
+  setTaskType(type);
+  const mode=document.getElementById('t-mode');
+  if(type==='quiz') mode.value='quiz';
+  else if(!mode.value || mode.value==='quiz') mode.value='1';
+});
+
+function addQuizAnswer(box,answer={}){
+  const row=document.createElement('div'); row.className='quiz-answer';
+  row.innerHTML=`<div class="answer-line"><span class="answer-index"></span><input class="input qa-text" placeholder="Текст ответа" value="${escapeHtml(answer.text||'')}"><button type="button" class="btn-ghost qa-remove" title="Удалить ответ" aria-label="Удалить ответ"><i class="ti ti-x"></i></button></div><label class="correct-toggle"><input type="checkbox" class="qa-correct" ${answer.correct?'checked':''}><i class="ti ti-check"></i><span>Правильный</span></label>`;
+  row.querySelector('.qa-remove').onclick=()=>{row.remove();reindexQuizBuilder()};
+  box.appendChild(row);
+  reindexQuizBuilder();
+}
+function addQuizVariant(variant={}){
+  const box=document.createElement('div'); box.className='quiz-variant';
+  box.innerHTML=`<div class="quiz-variant-head"><span class="quiz-variant-title"></span><button type="button" class="btn-ghost qv-remove" title="Удалить вариант"><i class="ti ti-trash"></i></button></div><div class="field"><label>Вопрос</label><textarea class="qv-question" placeholder="Введите вопрос">${escapeHtml(variant.question||'')}</textarea></div><div class="qv-answers"></div><div class="action-bar"><button type="button" class="btn-ghost qv-add"><i class="ti ti-plus"></i> Добавить ответ</button></div>`;
+  const answers=box.querySelector('.qv-answers');
+  (variant.answers||[{},{}]).forEach(answer=>addQuizAnswer(answers,answer));
+  box.querySelector('.qv-add').onclick=()=>addQuizAnswer(answers,{});
+  box.querySelector('.qv-remove').onclick=()=>{
+    if(document.querySelectorAll('.quiz-variant').length===1){toast('В тесте должен остаться хотя бы один вариант',true);return}
+    box.remove();reindexQuizBuilder();
+  };
+  document.getElementById('quiz-variants').appendChild(box);
+  reindexQuizBuilder();
+}
+function reindexQuizBuilder(){
+  document.querySelectorAll('.quiz-variant').forEach((variant,variantIndex)=>{
+    variant.querySelector('.quiz-variant-title').textContent=`Вариант ${variantIndex+1}`;
+    variant.querySelectorAll('.answer-index').forEach((index,answerIndex)=>index.textContent=answerIndex+1);
+  });
+}
+function renderQuizVariants(variants){
+  document.getElementById('quiz-variants').innerHTML='';
+  (variants.length?variants:[{}]).forEach(addQuizVariant);
+}
+function readQuizVariants(){
+  const elements=Array.from(document.querySelectorAll('.quiz-variant'));
+  const variants=elements.map((variant,index)=>({
+    question:variant.querySelector('.qv-question').value.trim(),
+    answers:Array.from(variant.querySelectorAll('.quiz-answer')).map((row,answerIndex)=>({id:`v${index}a${answerIndex}`,text:row.querySelector('.qa-text').value.trim(),correct:row.querySelector('.qa-correct').checked})),
+  }));
+  let firstInvalid=null;
+  elements.forEach((element,index)=>{
+    const item=variants[index];
+    const invalid=!item.question||item.answers.length<2||item.answers.some(answer=>!answer.text)||!item.answers.some(answer=>answer.correct);
+    element.classList.toggle('invalid',invalid);
+    if(invalid&&!firstInvalid) firstInvalid=element;
+  });
+  return {variants,firstInvalid};
+}
+document.getElementById('btn-add-quiz-variant').onclick=()=>addQuizVariant({});
+
 document.getElementById('btn-save-task').onclick=async()=>{
   let settings={};
-  try{ settings=JSON.parse(document.getElementById('t-settings').value||'{}'); }catch(e){ toast('settings: невалидный json',true); return; }
+  const quiz=document.getElementById('t-type').value.trim().toLowerCase()==='quiz';
+  if(quiz){
+    const quizData=readQuizVariants();
+    if(quizData.firstInvalid){
+      toast('Заполните вопрос и минимум два ответа, затем отметьте правильный',true);
+      quizData.firstInvalid.scrollIntoView({behavior:'smooth',block:'center'});
+      return;
+    }
+    settings={variants:quizData.variants};
+  } else {
+    try{ settings=JSON.parse(document.getElementById('t-settings').value||'{}'); }catch(e){ toast('settings: невалидный json',true); return; }
+  }
   const taskId=document.getElementById('t-id').value.trim();
   const body={
     title: document.getElementById('t-title').value.trim(),
     lesson_id: document.getElementById('t-lesson').value,
-    mode: document.getElementById('t-mode').value.trim()||undefined,
+    mode: document.getElementById('t-mode').value.trim()||(quiz?'quiz':undefined),
     type_task: document.getElementById('t-type').value.trim()||undefined,
     difficulty: document.getElementById('t-diff').value||undefined,
-    settings
+    settings,
+    hint_mode: document.getElementById('t-hint-mode').value,
+    hint_text: document.getElementById('t-hint-text').value.trim()
   };
   Object.keys(body).forEach(k=>{ if(body[k]===undefined) delete body[k]; });
   if(!taskId||!body.lesson_id||!body.mode||!body.type_task){ toast('заполните id, урок, mode и тип',true); return; }
@@ -899,6 +1165,20 @@ function askDeleteTask(id,title){
 }</script>
 <script>
 (async()=>{
+  if(TEACHER_MODE){
+    document.getElementById('auth-bar').style.display='none';
+    document.getElementById('auth-ok').style.display='block';
+    document.getElementById('btn-logout').innerHTML='<i class="ti ti-arrow-left"></i> кабинет';
+    const grantLabel=document.getElementById('c-granted').previousElementSibling;
+    grantLabel.textContent='Учебные группы';
+    document.getElementById('c-granted').placeholder='ID групп из кабинета учителя';
+    const me=await apiFetch('/me','GET');
+    if(!me || me.error || me.account_type!=='teacher'){ location.href='/dash'; return; }
+    teacherGroups=await apiFetch('/teacher/groups','GET') || [];
+    document.getElementById('c-granted').style.display='none';
+    initEditor();
+    return;
+  }
   if(getSecret()){
     const saved = sessionStorage.getItem('notalms_admin_course');
     if(!courseID && saved){ location.href='/course/'+encodeURIComponent(saved)+'/edit'; return; }

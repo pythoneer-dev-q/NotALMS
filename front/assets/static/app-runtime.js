@@ -20,6 +20,16 @@
         }
     }
 
+    function hasAuthorization(init) {
+        var headers = init && init.headers;
+        if (!headers) return false;
+        if (typeof headers.get === 'function') return Boolean(headers.get('Authorization'));
+        if (Array.isArray(headers)) {
+            return headers.some(function (pair) { return String(pair[0]).toLowerCase() === 'authorization'; });
+        }
+        return Boolean(headers.Authorization || headers.authorization);
+    }
+
     window.fetch = function (input, init) {
         init = init ? Object.assign({}, init) : {};
         var controller = new AbortController();
@@ -34,6 +44,10 @@
 
         return nativeFetch(input, init).then(function (response) {
             if (isPlatformRequest(input) && response.status >= 500) serviceError();
+            if (isPlatformRequest(input) && response.status === 401 && hasAuthorization(init)) {
+                localStorage.removeItem('token');
+                if (location.pathname !== '/' && location.pathname !== '/login') location.replace('/');
+            }
             return response;
         }).catch(function (error) {
             if (isPlatformRequest(input) && (error instanceof TypeError || error?.name === 'AbortError')) {

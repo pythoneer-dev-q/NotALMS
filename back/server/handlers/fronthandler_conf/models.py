@@ -20,6 +20,7 @@ class RegVisibleCourse(BaseModel):
     tags: list[str]
     lessons: list[str]
     granted_to: list[str]
+    role_ids: list[str] = []
 """{
   "_id": "dna_structure",
   "course_id": "dna_basic",
@@ -71,6 +72,8 @@ class RegVisibleTask(BaseModel):
   mode: str
   difficulty: str
   settings: dict
+  hint_mode: str = 'solution'
+  hint_text: str = ''
 
 class UserRequest(BaseModel):
   click_from: str
@@ -87,6 +90,7 @@ class AdminCourseUpdate(BaseModel):
     granted_to: list[str] | None = None
     lessons: list[str] | None = None
     cover: str | None = None
+    role_ids: list[str] | None = None
 
 
 # правка урока: контент-блоки, заголовок, порядок, тип
@@ -105,6 +109,8 @@ class AdminTaskUpdate(BaseModel):
     difficulty: str | None = None
     settings: dict | None = None
     type_task: str | None = None
+    hint_mode: str | None = None
+    hint_text: str | None = None
 
 
 # ===== новости =====

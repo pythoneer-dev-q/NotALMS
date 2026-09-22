@@ -1324,12 +1324,23 @@
                     if (r.ok) {
                         const me = await r.json();
                         if (me.theme) { applyTheme(me.theme); localStorage.setItem('theme', me.theme); }
+                        const pending=localStorage.getItem('pending_invite');
+                        if(pending){
+                            const claim=await fetch(`${API_BASE}/invites/${encodeURIComponent(pending)}/claim`,{method:'POST',headers:{Authorization:`Bearer ${token}`}});
+                            if(claim.ok) localStorage.removeItem('pending_invite');
+                        }
+                        location.href = me.account_type === 'teacher' ? '/teacher' : '/dash';
+                        return;
                     } else if (r.status === 403 && r.headers.get('X-Account-Blocked') === '1') {
                         location.replace('/blocked');
                         return;
-                    } else { localStorage.removeItem('token'); }
+                    } else {
+                        localStorage.removeItem('token');
+                        location.href = '/';
+                        return;
+                    }
                 } catch { }
-                location.href = '/dash';
+                if (localStorage.getItem('token')) location.href = '/dash';
             }
 
             form.addEventListener('submit', async (e) => {
@@ -1428,7 +1439,7 @@
                             if (r.ok) {
                                 const me = await r.json();
                                 if (me.theme) { applyTheme(me.theme); localStorage.setItem('theme', me.theme); }
-                                location.href = '/dash';
+                                location.href = me.account_type === 'teacher' ? '/teacher' : '/dash';
                             } else if (r.status === 403 && r.headers.get('X-Account-Blocked') === '1') {
                                 location.replace('/blocked');
                                 return;

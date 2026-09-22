@@ -30,12 +30,29 @@ async def create_access_token(data: dict, expires: bool = True) -> str:
 
 async def decode_token(token: str, verify_exp: bool = True) -> dict | None:
     try:
-        return jwt.decode(
+        payload = jwt.decode(
             token,
             SECRET_KEY,
             algorithms=[ALGORITHM],
             options={'verify_exp': verify_exp},
         )
+        # JWT is an identity envelope, not arbitrary client-controlled state.
+        # Old or foreign tokens with extra claims must be rejected explicitly.
+        allowed = {'user_uid', 'role', 'exp', 'blocked'}
+        if set(payload) - allowed:
+            return None
+        if not isinstance(payload.get('user_uid'), str) or not payload['user_uid']:
+            return None
+        if payload.get('role') not in {'user', 'teacher'}:
+            return None
+        if payload.get('blocked') not in {None, True}:
+            return None
+        if payload.get('blocked') is True:
+            if 'exp' in payload:
+                return None
+        elif 'exp' not in payload:
+            return None
+        return payload
     except JWTError:
         return None
 

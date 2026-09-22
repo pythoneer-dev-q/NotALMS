@@ -6,6 +6,11 @@ services:
   mongo:
     image: mongo:7
     restart: unless-stopped
+    logging: &limited-logs
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     volumes:
       - mongo-data:/data/db
     healthcheck:
@@ -17,6 +22,7 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+    logging: *limited-logs
     command: >-
       redis-server
       --appendonly yes
@@ -38,6 +44,7 @@ services:
       context: .
       dockerfile: back/Dockerfile
     restart: unless-stopped
+    logging: *limited-logs
     env_file: .env
     environment:
       HOST: 0.0.0.0
@@ -61,6 +68,7 @@ services:
       context: .
       dockerfile: front/Dockerfile
     restart: unless-stopped
+    logging: *limited-logs
     env_file: .env
     environment:
       FRONT_HOST: 0.0.0.0
@@ -79,6 +87,7 @@ services:
       context: .
       dockerfile: back/Dockerfile
     restart: unless-stopped
+    logging: *limited-logs
     env_file: .env
     environment:
       MONGO_URI: mongodb://mongo:27017/

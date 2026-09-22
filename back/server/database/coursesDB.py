@@ -29,9 +29,13 @@ async def ensure_indexes():
     # Старые варианты заданий были временными, но не имели TTL и копились бесконечно.
     await tests.delete_many({'expires_at': {'$exists': False}})
     await courses.create_index('granted_to')
+    await courses.create_index('owner_uid')
+    await courses.create_index('role_ids')
     await courses.create_index('order')
     await lessons.create_index('course_id')
     await tasks.create_index('lesson_id')
+    await progress.create_index([('user_uid', 1), ('task_id', 1)], unique=True)
+    await progress.create_index('task_id')
     await tests.create_index('task_id')
     await tests.create_index([('parent_task_id', 1), ('owner_uid', 1)])
     await tests.create_index('expires_at', expireAfterSeconds=0)
@@ -49,7 +53,9 @@ async def create_courseVisible(
         description: str = 'Описание пока не задано...',
         cover: Optional[str] = '../../../front/assets/imgs/default.png',
         difficulty: Literal['easy', 'hard'] = 'easy',
-        is_published: bool = True
+        is_published: bool = True,
+        owner_uid: str | None = None,
+        role_ids: list[str] | None = None,
 ) -> dict | None:
     """ _id - ид курса
         title - заголовок для сайта
@@ -73,6 +79,8 @@ async def create_courseVisible(
         "order": order,
         "lessons": lessons,
         "granted_to": granted_to,
+        "owner_uid": owner_uid,
+        "role_ids": role_ids or [],
         "created_at": timestamp
     }
     await courses.insert_one(short_info)
@@ -124,7 +132,9 @@ async def create_Test(
     settings: dict,
     title: str = '',
     task_type: str = 'undefined',
-    difficulty: Literal['easy', 'hard'] = 'easy'
+    difficulty: Literal['easy', 'hard'] = 'easy',
+    hint_mode: str = 'solution',
+    hint_text: str = '',
 ):
     """
         _id - ид задания,
@@ -149,6 +159,8 @@ async def create_Test(
         "mode": mode,
         "difficulty": difficulty,
         "settings": settings,
+        "hint_mode": hint_mode,
+        "hint_text": hint_text,
         "created_at": timestamp
     }
     await tasks.insert_one(task)
@@ -215,6 +227,121 @@ async def search_course(role: str, course_id: str):
         'granted_to': {'$in': ['all', role]}, '_id': course_id})
 
 
+async def courses_for_user(user: dict) -> list[dict]:
+    """Return only courses the authenticated account may open."""
+    from back.server.database import accessDB
+
+    if user.get('account_type') == 'teacher':
+        flt = {'owner_uid': user['user_uid']}
+    else:
+        role_ids = await accessDB.user_role_ids(user['user_uid'])
+        flt = {
+            'is_published': True,
+            '$or': [
+                {'granted_to': {'$in': ['all', 'user']}},
+                {'role_ids': {'$in': role_ids}},
+            ],
+        }
+    docs = await courses.find(flt, {
+        '_id': 1, 'title': 1, 'description': 1, 'difficulty': 1,
+        'tags': 1, 'cover': 1, 'is_published': 1, 'owner_uid': 1,
+        'role_ids': 1, 'order': 1,
+    }).sort('order', 1).to_list(None)
+    return [{**doc, '_id': str(doc['_id'])} for doc in docs]
+
+
+async def course_for_user(user: dict, course_id: str) -> dict | None:
+    if user.get('account_type') == 'teacher':
+        flt = {'_id': course_id, 'owner_uid': user['user_uid']}
+    else:
+        from back.server.database import accessDB
+        role_ids = await accessDB.user_role_ids(user['user_uid'])
+        flt = {
+            '_id': course_id,
+            'is_published': True,
+            '$or': [
+                {'granted_to': {'$in': ['all', 'user']}},
+                {'role_ids': {'$in': role_ids}},
+            ],
+        }
+    return await courses.find_one(flt)
+
+
+async def course_for_lesson(user: dict, lesson_id: str) -> dict | None:
+    lesson = await lessons.find_one({'_id': lesson_id}, {'course_id': 1})
+    return await course_for_user(user, lesson['course_id']) if lesson else None
+
+
+async def course_for_task(user: dict, task_id: str) -> dict | None:
+    task = await tasks.find_one({'_id': task_id}, {'lesson_id': 1})
+    return await course_for_lesson(user, task['lesson_id']) if task else None
+
+
+async def teacher_courses(owner_uid: str) -> list[dict]:
+    docs = await courses.find({'owner_uid': owner_uid}).sort('order', 1).to_list(None)
+    return [{**doc, '_id': str(doc['_id'])} for doc in docs]
+
+
+async def course_scope_ids(role_id: str, owner_uid: str) -> list[str]:
+    rows = await courses.find(
+        {'owner_uid': owner_uid, 'role_ids': role_id}, {'_id': 1}
+    ).to_list(None)
+    return [str(row['_id']) for row in rows]
+
+
+async def task_ids_for_courses(course_ids: list[str]) -> list[str]:
+    if not course_ids:
+        return []
+    lesson_ids = [row['_id'] for row in await lessons.find(
+        {'course_id': {'$in': course_ids}}, {'_id': 1}
+    ).to_list(None)]
+    if not lesson_ids:
+        return []
+    return [str(row['_id']) for row in await tasks.find(
+        {'lesson_id': {'$in': lesson_ids}}, {'_id': 1}
+    ).to_list(None)]
+
+
+async def clear_user_course_progress(user_uid: str, course_ids: list[str]):
+    task_ids = await task_ids_for_courses(course_ids)
+    lesson_ids = [row['_id'] for row in await lessons.find(
+        {'course_id': {'$in': course_ids}}, {'_id': 1}
+    ).to_list(None)] if course_ids else []
+    if task_ids:
+        point_rows = await progress.find(
+            {'user_uid': user_uid, 'task_id': {'$in': task_ids}}
+        ).to_list(None)
+        await progress.delete_many({'user_uid': user_uid, 'task_id': {'$in': task_ids}})
+        await hints.delete_many({'user_uid': user_uid, 'task_id': {'$in': task_ids}})
+        await tests.delete_many({'owner_uid': user_uid, 'parent_task_id': {'$in': task_ids}})
+        removed_points = sum(total_points_for_row(row) for row in point_rows)
+        if removed_points:
+            from back.server.database import usersDB
+            await usersDB.add_rating(user_uid, -removed_points)
+    if lesson_ids:
+        await reads.delete_many({'user_uid': user_uid, 'lesson_id': {'$in': lesson_ids}})
+
+
+async def delete_owned_courses(owner_uid: str):
+    ids = [str(row['_id']) for row in await courses.find({'owner_uid': owner_uid}, {'_id': 1}).to_list(None)]
+    for course_id in ids:
+        await delete_course(course_id)
+
+
+async def delete_progress_for_tasks(task_ids: list[str]):
+    if not task_ids:
+        return
+    rows = await progress.find({'task_id': {'$in': task_ids}}).to_list(None)
+    totals = {}
+    for row in rows:
+        totals[row['user_uid']] = totals.get(row['user_uid'], 0) + total_points_for_row(row)
+    await progress.delete_many({'task_id': {'$in': task_ids}})
+    if totals:
+        from back.server.database import usersDB
+        for user_uid, points in totals.items():
+            await usersDB.add_rating(user_uid, -points)
+
+
 async def search_course_admin(course_id: str):
     # админская выборка: полный документ курса вне зависимости от granted_to
     doc = await courses.find_one({'_id': course_id})
@@ -225,6 +352,11 @@ async def search_lessons(course_id: str):
     return await lessons.find({'course_id': course_id}).sort('order', 1).to_list(length=None)
 async def search_tasks(lesson_id: str):
     return await tasks.find({'lesson_id': lesson_id}).to_list(length=None)
+async def search_tasks_public(lesson_id: str):
+    return await tasks.find(
+        {'lesson_id': lesson_id},
+        {'settings': 0, 'hint_text': 0, 'internal_solution': 0},
+    ).to_list(length=None)
 async def search_tasks__id(_id: str):
     return await tasks.find_one({'_id': _id})
 async def search_test__id(task_id: int):
@@ -255,6 +387,14 @@ def reward_for(base_points: int, solve_index: int) -> int:
     return min(base_points * (2 ** solve_index), MAX_TASK_REWARD)
 
 
+def total_points_for_row(row: dict) -> int:
+    if row.get('total_points') is not None:
+        return int(row.get('total_points') or 0)
+    solves = int(row.get('solve_count') or 0)
+    base = int(row.get('base_points') or BASE_TASK_REWARD)
+    return sum(reward_for(base, index) for index in range(solves)) or int(row.get('points') or 0)
+
+
 async def task_solves(user_uid: str, task_id) -> int:
     # сколько раз юзер уже решал это задание (только самостоятельные решения)
     row = await progress.find_one(
@@ -282,15 +422,17 @@ async def mark_task_solved(user_uid: str, task_id, base_points: int = BASE_TASK_
     reward = reward_for(base, solve_count)
     stamp = datetime.now(timezone.utc).replace(microsecond=0).isoformat(timespec='seconds', sep='T')
     if existing:
+        total_points = total_points_for_row(existing) + reward
         await progress.update_one(
             {'_id': existing['_id']},
-            {'$set': {'points': reward, 'base_points': base, 'solve_count': solve_count + 1, 'created_at': stamp}}
+            {'$set': {'points': reward, 'total_points': total_points, 'base_points': base, 'solve_count': solve_count + 1, 'created_at': stamp}}
         )
     else:
         await progress.insert_one({
             'user_uid': user_uid,
             'task_id': task_id,
             'points': reward,
+            'total_points': reward,
             'base_points': base,
             'solve_count': 1,
             'created_at': stamp
@@ -424,6 +566,10 @@ async def delete_course(course_id: str):
     if task_ids:
         await tasks.delete_many({'_id': {'$in': task_ids}})
         await tests.delete_many({'parent_task_id': {'$in': [str(t) for t in task_ids]}})
+        await delete_progress_for_tasks([str(t) for t in task_ids])
+        await hints.delete_many({'task_id': {'$in': [str(t) for t in task_ids]}})
+    if lesson_ids:
+        await reads.delete_many({'lesson_id': {'$in': lesson_ids}})
     res = await courses.find_one_and_delete({'_id': course_id})
     await invalidate_course_cache()
     return res
@@ -456,6 +602,9 @@ async def delete_lesson(lesson_id: str):
     if task_ids:
         await tasks.delete_many({'_id': {'$in': task_ids}})
         await tests.delete_many({'parent_task_id': {'$in': [str(t) for t in task_ids]}})
+        await delete_progress_for_tasks([str(t) for t in task_ids])
+        await hints.delete_many({'task_id': {'$in': [str(t) for t in task_ids]}})
+    await reads.delete_many({'lesson_id': lesson_id})
     res = await lessons.find_one_and_delete({'_id': lesson_id})
     if res is None:
         return None
@@ -479,6 +628,8 @@ async def update_task(task_id: str, fields: dict):
 async def delete_task(task_id: str):
     # каскад: задача -> сгенеренные варианты (tests)
     await tests.delete_many({'parent_task_id': str(task_id)})
+    await delete_progress_for_tasks([str(task_id)])
+    await hints.delete_many({'task_id': str(task_id)})
     res = await tasks.find_one_and_delete({'_id': task_id})
     if res is None:
         return None

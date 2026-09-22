@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, Header, HTTPException
 import inspect
+import secrets
 from fastapi.responses import JSONResponse as jsonset
 from back.server.handlers.httpbearer import get_current_user
 from back.server.database import coursesDB, usersDB, newsDB, platformDB
@@ -21,6 +22,33 @@ async def _generate_variant(task_def: dict) -> dict:
     """Вариант задания генерирует нужный мини-инструмент по типу задачи."""
     task_type = (task_def.get('type') or '').strip().lower()
     settings_ = task_def.get('settings') or {}
+    if task_type == 'quiz':
+        variants = settings_.get('variants') or []
+        if not variants:
+            raise ValueError('quiz has no variants')
+        variant = secrets.choice(variants)
+        answers = list(variant.get('answers') or [])
+        secrets.SystemRandom().shuffle(answers)
+        public_answers = [
+            {'id': str(answer.get('id', index)),
+             'text': str(answer.get('text', ''))}
+            for index, answer in enumerate(answers)
+        ]
+        correct = [
+            str(answer.get('id', index)) for index, answer in enumerate(answers)
+            if answer.get('correct') is True
+        ]
+        return {
+            'mode': 'quiz',
+            'task_id': secrets.randbelow(900000000) + 100000000,
+            'condition': {
+                'question': str(variant.get('question', '')),
+                'answers': public_answers,
+                'multiple': bool(variant.get('multiple') or len(correct) > 1),
+            },
+            'internal_solution': {'kind': 'quiz', 'correct': correct},
+            'tryings': 0,
+        }
     if _is_math(task_type):
         return await mathUtil.generate_task(
             mode=int(task_def.get('mode') or mathUtil.MODE_ADDITION),
@@ -34,10 +62,18 @@ async def _generate_variant(task_def: dict) -> dict:
 
 
 async def _validate_submission(task_type, user_input, solution: dict):
-    if _is_math(task_type):
-        result = mathUtil.validate_submission(user_input=user_input, solution=solution)
+    if (task_type or '').strip().lower() == 'quiz':
+        selected = user_input if isinstance(user_input, list) else [user_input]
+        selected = {str(value) for value in selected if value is not None}
+        correct = {str(value) for value in solution.get('correct', [])}
+        result = {'is_correct': selected == correct,
+                  'score': coursesDB.BASE_TASK_REWARD}
+    elif _is_math(task_type):
+        result = mathUtil.validate_submission(
+            user_input=user_input, solution=solution)
     else:
-        result = biologyUtil.validate_submission(user_input=user_input, solution=solution)
+        result = biologyUtil.validate_submission(
+            user_input=user_input, solution=solution)
     return await result if inspect.isawaitable(result) else result
 
 
@@ -50,32 +86,40 @@ def require_admin(x_admin_secret: str | None = Header(None)):
 
 @crouter.get('/courses')
 async def zagl(user=Depends(get_current_user)):
-    return await coursesDB.search_courses(
-        role=user['role']
-    )
+    return await coursesDB.courses_for_user(user)
+
 
 @crouter.get('/getcourse/{courseId}')
 async def main_returnCourse(courseId: str, user=Depends(get_current_user)):
-    courseData = await coursesDB.search_course(
-        role=user['role'],
-        course_id=courseId
-    )
+    courseData = await coursesDB.course_for_user(user, courseId)
+    if courseData is None:
+        raise HTTPException(404, 'course not found')
     return jsonset(
         content=courseData, status_code=200
     )
+
+
 @crouter.get('/search_lessons/{course_id}')
 async def main_lessonSearcher(course_id: str, user=Depends(get_current_user)):
+    if not await coursesDB.course_for_user(user, course_id):
+        raise HTTPException(404, 'course not found')
     lessonsData = await coursesDB.search_lessons(
         course_id=course_id
     )
     return jsonset(
         content=lessonsData, status_code=200)
+
+
 @crouter.get('/gettasks/{Task_LessonId}')
-async def main_TaskLessonSearch(Task_LessonId:str, user=Depends(get_current_user)):
-    testData = await coursesDB.search_tasks(lesson_id=Task_LessonId)
+async def main_TaskLessonSearch(Task_LessonId: str, user=Depends(get_current_user)):
+    if not await coursesDB.course_for_lesson(user, Task_LessonId):
+        raise HTTPException(404, 'lesson not found')
+    testData = await coursesDB.search_tasks_public(lesson_id=Task_LessonId)
     return jsonset(
         content=testData, status_code=200
     )
+
+
 @crouter.post(
     '/createCourse',
     dependencies=[Depends(require_admin)]
@@ -93,8 +137,10 @@ async def main_courseCreater(
         cover=data.cover,
         description=data.description,
         difficulty=data.difficulty,
-        is_published=data.is_published
+        is_published=data.is_published,
+        role_ids=data.role_ids,
     )
+
 
 @crouter.post(
     '/createLesson',
@@ -120,6 +166,8 @@ async def main_LessonCreater(
         settings - настройки для задания {mode}
         created_at - временная метка
     """
+
+
 @crouter.post('/createTask', dependencies=[Depends(require_admin)])
 @crouter.post('/admin/task', dependencies=[Depends(require_admin)])
 async def main_taskCreate(
@@ -142,11 +190,12 @@ async def main_taskCreate(
             settings=data.settings,
             task_type=task_type,
             difficulty=data.difficulty,
+            hint_mode=data.hint_mode,
+            hint_text=data.hint_text,
         )
     except ValueError as exc:
         return jsonset(content={'error': str(exc)}, status_code=409)
     return jsonset(content=task, status_code=201)
-
 
 
 @crouter.post('/check_answer')
@@ -156,6 +205,8 @@ async def main_answerCheck(data: dict, user=Depends(get_current_user)):
         return jsonset(content={'error': 'задача не найдена'}, status_code=404)
     # считаем по определению задачи, а не по сгенерированному варианту
     key = sol.get('parent_task_id') or data['task_id']
+    if not await coursesDB.course_for_task(user, str(key)):
+        raise HTTPException(404, 'task not found')
     # подсказка не блокирует, но очков за задание больше не даёт
     hinted = key in await coursesDB.hinted_task_ids(user['user_uid'])
     # тип задания берем из варианта, а если его нет (старые записи) — из определения
@@ -178,15 +229,19 @@ async def main_answerCheck(data: dict, user=Depends(get_current_user)):
             reward, solves = await coursesDB.mark_task_solved(user['user_uid'], key, base)
             sub['rating_awarded'] = reward
             sub['solve_count'] = solves
-            sub['next_reward'] = coursesDB.reward_for(coursesDB.BASE_TASK_REWARD, solves)
+            sub['next_reward'] = coursesDB.reward_for(
+                coursesDB.BASE_TASK_REWARD, solves)
             await usersDB.add_rating(user['user_uid'], reward)
         # этот вариант отработан — в следующий раз сгенерируем новое задание
         await coursesDB.drop_tests_for(key, user['user_uid'])
     return jsonset(content=sub, status_code=200)
 
+
 @crouter.get('/getTest/{click_from}')
 async def main_taskGetter(click_from: str, user=Depends(get_current_user)):
     if (tmp := await coursesDB.search_tasks__id(_id=click_from)):
+        if not await coursesDB.course_for_task(user, click_from):
+            raise HTTPException(404, 'task not found')
         # задания идут по порядку: сначала закрываем предыдущие в этом уроке
         solved = await coursesDB.solved_task_ids(user['user_uid'])
         hinted = await coursesDB.hinted_task_ids(user['user_uid'])
@@ -220,7 +275,9 @@ async def main_taskGetter(click_from: str, user=Depends(get_current_user)):
             'solved': already,
             'solves': solves,
             'next_reward': coursesDB.reward_for(coursesDB.BASE_TASK_REWARD, solves),
-            'hint_used': hint_used
+            'hint_used': hint_used,
+            'hint_available': (tmp.get('hint_mode') or 'solution') != 'none',
+            'hint_mode': tmp.get('hint_mode') or 'solution',
         }, status_code=200)
     return jsonset(
         content={
@@ -238,12 +295,30 @@ async def main_taskSolver(task_id: str, user=Depends(get_current_user)):
         return jsonset(content={'error': 'неверный id задачи'}, status_code=400)
     inst = await coursesDB.search_test__id(tid)
     key = (inst or {}).get('parent_task_id') or str(task_id)
+    task = await coursesDB.search_tasks__id(_id=str(key))
+    if not task or not await coursesDB.course_for_task(user, str(key)):
+        return jsonset(content={'error': 'задача не найдена'}, status_code=404)
+    hint_mode = task.get('hint_mode') or 'solution'
+    if hint_mode == 'none':
+        return jsonset(content={'error': 'подсказки для этой задачи отключены'}, status_code=404)
     if key in await coursesDB.solved_task_ids(user['user_uid']):
         return jsonset(content={'error': 'задача уже решена, подсказка не нужна'}, status_code=409)
+    if hint_mode == 'text':
+        text = (task.get('hint_text') or '').strip()
+        if not text:
+            return jsonset(content={'error': 'подсказка не задана'}, status_code=404)
+        await coursesDB.mark_task_hint(user['user_uid'], key)
+        return jsonset(content={'solution': text, 'hint_used': True, 'kind': 'hint'}, status_code=200)
     sol = (inst or {}).get('internal_solution') or {}
     if not sol:
-        task = await coursesDB.search_tasks__id(_id=task_id)
         sol = (task or {}).get('internal_solution') or {}
+    if sol.get('kind') == 'quiz':
+        answer_map = {str(answer.get('id')): str(answer.get('text', ''))
+                      for answer in (inst or {}).get('condition', {}).get('answers', [])}
+        display = ', '.join(answer_map.get(str(answer_id), str(answer_id))
+                            for answer_id in sol.get('correct', []))
+        await coursesDB.mark_task_hint(user['user_uid'], key)
+        return jsonset(content={'solution': display, 'hint_used': True, 'kind': 'solution'}, status_code=200)
     canonical = sol.get('canonical_5_3') or sol.get('canonical')
     if canonical is None:
         return jsonset(content={'error': 'подсказки для этой задачи нет'}, status_code=404)
@@ -271,6 +346,8 @@ async def main_solvedList(user=Depends(get_current_user)):
 
 @crouter.post('/lesson/read/{lesson_id}')
 async def main_lessonRead(lesson_id: str, user=Depends(get_current_user)):
+    if not await coursesDB.course_for_lesson(user, lesson_id):
+        raise HTTPException(404, 'lesson not found')
     # урок прочитан: фронт зовет, когда долистал контент до конца
     fresh = await coursesDB.mark_lesson_read(user['user_uid'], lesson_id)
     return jsonset(content={'ok': True, 'fresh': fresh}, status_code=200)
@@ -278,6 +355,8 @@ async def main_lessonRead(lesson_id: str, user=Depends(get_current_user)):
 
 @crouter.get('/me/reads/{course_id}')
 async def main_readList(course_id: str, user=Depends(get_current_user)):
+    if not await coursesDB.course_for_user(user, course_id):
+        raise HTTPException(404, 'course not found')
     # какие уроки курса уже прочитаны
     return jsonset(content={'read': list(await coursesDB.read_lesson_ids(user['user_uid'], course_id))}, status_code=200)
 
@@ -423,10 +502,10 @@ async def rtNews():
             'url': 'https://avatars.mds.yandex.net/i?id=7e4846a676fa7b0274b0df9998596bac_l-5233432-images-thumbs&n=13'
         },
         {
-        'title': 'Мы обновились!', 
-        'text': 'Система NotALMS обновилась! Посмотреть наши новости вы сможете в <a href="https://t.me/NotALMS">✈️ Telegram</a>',
-        'url': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQDnUwfncYXorPAjtljnLQ0r31A6Y20kersdw&s', 
-        'emoji': '📩'
+            'title': 'Мы обновились!',
+            'text': 'Система NotALMS обновилась! Посмотреть наши новости вы сможете в <a href="https://t.me/NotALMS">✈️ Telegram</a>',
+            'url': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQDnUwfncYXorPAjtljnLQ0r31A6Y20kersdw&s',
+            'emoji': '📩'
         },
         {
             'title': 'Ищем ошибки',

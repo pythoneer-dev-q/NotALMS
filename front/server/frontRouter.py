@@ -56,6 +56,21 @@ async def courseEditPage(courseId: str):
     return page('course', 'edit_course.html')
 
 
+@frouter.get('/teacher', response_class=HTMLResponse)
+async def teacherPage():
+    return page('teacher', 'teacher.html')
+
+
+@frouter.get('/teacher/course/{courseId}/edit', response_class=HTMLResponse)
+async def teacherCourseEditPage(courseId: str):
+    return page('course', 'edit_course.html')
+
+
+@frouter.get('/invite/{token}', response_class=HTMLResponse)
+async def invitePage(token: str):
+    return page('public', 'invite.html')
+
+
 @frouter.get('/adminSecret', response_class=HTMLResponse)
 @frouter.get('/adminsecret.html', response_class=HTMLResponse)
 async def adminPage():

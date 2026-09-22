@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     mongo_lmsnews: str = 'ntnews'  # новости платформы
     mongo_deleted_logins: str = 'nt_deleted_logins'  # занятые навсегда логины удалённых аккаунтов
     mongo_lmsplatform: str = 'nt_platform_settings'  # редактируемые настройки платформы
+    mongo_study_roles: str = 'nt_study_roles'
+    mongo_role_memberships: str = 'nt_role_memberships'
+    mongo_role_invites: str = 'nt_role_invites'
 
     # jwt
     secret_key: str = 'твой_очень_длинный_секрет_1234567890abcde99999999'
@@ -53,6 +56,11 @@ class Settings(BaseSettings):
     cache_ttl: int = 60        # кэш списка курсов, сек; 0 = выключить
     rate_limit: str = '20/minute'
     captcha_suspicious_rps: int = 15
+    logging_enabled: bool = True
+    access_log_enabled: bool = False
+    log_level: str = 'info'
+    expected_disconnect_log_level: str = 'debug'
+    disconnect_log_interval_seconds: int = 60
 
     # Cloudflare Turnstile. Оба ключа задаются только через .env.
     turnstile_site_key: str = ''

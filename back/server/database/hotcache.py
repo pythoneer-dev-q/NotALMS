@@ -64,3 +64,14 @@ async def delete_prefix(prefix: str) -> None:
             pass
     for k in [k for k in _mem if k.startswith(prefix)]:
         _mem.pop(k, None)
+
+
+async def close() -> None:
+    global _redis
+    redis_client, _redis = _redis, None
+    _mem.clear()
+    if redis_client is not None:
+        try:
+            await redis_client.aclose()
+        except (ConnectionError, OSError):
+            pass

@@ -1062,6 +1062,7 @@
         (async () => {
             try {
                 const me = await apiGet('/me');
+                if (me.account_type === 'teacher') { location.replace('/teacher'); return; }
                 const chip = document.getElementById('user-name');
                 if (chip) {
                     const label = chip.querySelector('span') || chip;

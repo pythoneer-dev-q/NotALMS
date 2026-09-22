@@ -870,6 +870,10 @@
     .dna-input.success {
       border-color: var(--accent);
     }
+    .quiz-options{display:grid;gap:10px;margin-top:14px}
+    .quiz-option{display:flex;align-items:flex-start;gap:12px;padding:13px 14px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.025);cursor:pointer;line-height:1.45}
+    .quiz-option:hover{border-color:var(--primary)}
+    .quiz-option input{width:20px;height:20px;flex:0 0 20px;margin-top:1px;accent-color:var(--primary)}
 
     .submit-btn {
       position: relative;
@@ -1475,6 +1479,7 @@
     if (!token) location.href = '/login';
     const courseID = location.pathname.split('/').pop();
     let currentTaskId = null;
+    let currentTaskType = '';
     let currentTaskDefId = null;
     let currentTaskTitle = '';
     let attemptCounter = 0;
@@ -1636,9 +1641,11 @@
       }
       const task = response;
       currentTaskId = task.task_id;
+      currentTaskType = (task.task_type || '').toLowerCase();
       attemptCounter = 0;
       const condition = task.condition || {};
       const isMath = condition.kind === 'math' || (task.task_type || '').toLowerCase() === 'math';
+      const isQuiz = currentTaskType === 'quiz';
       const topStrand = condition.top || condition.single_chain || '';
       const bottomStrand = condition.bottom || '';
       const expression = condition.expression || '';
@@ -1658,7 +1665,9 @@
            </span>`;
 
       // условие задания: у математики — выражение, у ДНК/РНК — цепи
-      const taskConditionHtml = isMath
+      const taskConditionHtml = isQuiz
+        ? `<div class="quiz-question">${escapeHtml(condition.question || '')}</div>`
+        : isMath
         ? `<div class="math-display"><span class="math-expr">${escapeHtml(expression || '—')}</span></div>`
         : `<div class="dna-display">
               ${topStrand ? `<div class="strand">${formatStrand(topStrand)}</div>` : ''}
@@ -1676,19 +1685,18 @@
             <div class="task-head-right" id="task-head-right">
               ${rewardChip}
               <span class="task-id">ID ${escapeHtml(String(task.task_id))}</span>
-              <button class="bulb-btn ${hintUsed ? 'used' : ''}" id="bulb-btn"
+              ${task.hint_available ? `<button class="bulb-btn ${hintUsed ? 'used' : ''}" id="bulb-btn"
                 title="${hintUsed ? 'Подсказка уже была открыта — очки не начислятся' : 'Показать ответ — очки не начислятся'}">
                 <i class="ti ti-bulb"></i> <span>${hintUsed ? 'использована' : 'подсказка'}</span>
-              </button>
+              </button>` : ''}
             </div>
           </div>
           <div class="task-body">
             <p class="task-instruction">${escapeHtml(instruction)}</p>
             ${taskConditionHtml}
             <div class="input-area">
-              <label class="field-label" for="user-input">Ваш ответ</label>
-              <input type="text" id="user-input" class="dna-input" inputmode="${isMath ? 'decimal' : 'text'}"
-                placeholder="${isMath ? 'например 42' : "5'-...-3'"}" autocomplete="off">
+              <label class="field-label">Ваш ответ</label>
+              ${isQuiz ? `<div class="quiz-options">${(condition.answers||[]).map(answer=>`<label class="quiz-option"><input name="quiz-answer" type="${condition.multiple?'checkbox':'radio'}" value="${escapeHtml(answer.id)}"><span>${escapeHtml(answer.text)}</span></label>`).join('')}</div>` : `<input type="text" id="user-input" class="dna-input" inputmode="${isMath ? 'decimal' : 'text'}" placeholder="${isMath ? 'например 42' : "5'-...-3'"}" autocomplete="off">`}
               <div id="feedback" class="feedback-msg"></div>
             </div>
           </div>
@@ -1776,19 +1784,16 @@
       closeHintPopover();
       showToast('подсказка открывает ответ — очков за эту задачу не будет', true);
       const input = document.getElementById('user-input');
-      if (!input) { showToast('получить подсказку не удалось', true); return; }
-      const originalPlaceholder = input.placeholder;
-      input.placeholder = 'загрузка ответа...';
-      input.value = '';
-      input.disabled = true;
+      const originalPlaceholder = input?.placeholder || '';
+      if(input){ input.placeholder = 'загрузка ответа...'; input.value = ''; input.disabled = true; }
       const res = await apiRequest(`/solve_task/${taskId}`, 'GET');
       const fb = document.getElementById('feedback');
       if (res && res.solution) {
-        input.value = res.solution;
-        input.disabled = false;
+        if(input && res.kind !== 'hint') input.value = res.solution;
+        if(input) input.disabled = false;
         if (fb) {
           fb.className = 'feedback-msg';
-          fb.textContent = 'ответ показан — очков за это задание не будет';
+          fb.textContent = (res.kind === 'hint' ? 'Подсказка: ' : 'Решение: ') + res.solution + ' — очков за это задание не будет';
           fb.style.color = 'var(--warning)';
         }
         const bulb = document.getElementById('bulb-btn');
@@ -1815,8 +1820,7 @@
           chip.innerHTML = '<i class="ti ti-bulb"></i> без очков';
         }
       } else {
-        input.disabled = false;
-        input.placeholder = originalPlaceholder;
+        if(input){ input.disabled = false; input.placeholder = originalPlaceholder; }
         if (fb) {
           fb.className = 'feedback-msg error';
           fb.textContent = `подсказка недоступна: ${escapeHtml(res?.error || 'задача закрыта или id устарел')}`;
@@ -1826,29 +1830,32 @@
 
     async function submitAnswer() {
       const input = document.getElementById('user-input');
-      if (!input) return;
       const feedback = document.getElementById('feedback');
       if (!feedback) return;
       const btn = document.getElementById('submit-btn');
       if (!btn) return;
-      const userVal = input.value.trim().toUpperCase();
-      if (!userVal) return;
-      input.disabled = true;
+      const quizInputs=Array.from(document.querySelectorAll('input[name="quiz-answer"]'));
+      const userVal = currentTaskType === 'quiz'
+        ? quizInputs.filter(item=>item.checked).map(item=>item.value)
+        : (input?.value || '').trim().toUpperCase();
+      if (!userVal || (Array.isArray(userVal) && !userVal.length)) return;
+      if(input) input.disabled = true;
+      quizInputs.forEach(item=>item.disabled=true);
       btn.disabled = true;
       const original = btn.innerHTML;
       btn.innerHTML = getLoaderHtml('btn-loader');
       const res = await apiRequest('/check_answer', 'POST', { task_id: currentTaskId, user_input: userVal });
       btn.innerHTML = original;
-      input.disabled = false;
+      if(input) input.disabled = false;
+      quizInputs.forEach(item=>item.disabled=false);
       if (res && res.is_correct) {
-        input.classList.remove('error');
-        input.classList.add('success');
+        if(input){ input.classList.remove('error'); input.classList.add('success'); }
         feedback.className = 'feedback-msg success';
         if (res.hint_used) {
           // решено с подсказкой: это НЕ самостоятельное решение —
           // очков нет, в «решено» не засчитано, задание остаётся открытым
           feedback.textContent = 'решено с подсказкой — не самостоятельное решение: очков нет, в «решено» не идёт';
-          input.disabled = false;
+          if(input) input.disabled = false;
           btn.disabled = false;
           btn.innerHTML = '<i class="ti ti-repeat"></i> решить ещё раз';
           btn.onclick = () => loadTestInterface(currentTaskDefId);
@@ -1883,7 +1890,7 @@
         attemptCounter++;
         updateAttempts();
         btn.disabled = false;
-        input.classList.add('error');
+        if(input) input.classList.add('error');
         feedback.className = 'feedback-msg error';
         if (res && res.errors && res.errors.length) {
           feedback.innerHTML = res.errors.slice(0, 5).map(err => {
@@ -1894,12 +1901,12 @@
         } else {
           feedback.textContent = 'Неверно, попробуйте ещё раз.';
         }
-        setTimeout(() => input.classList.remove('error'), 500);
+        if(input) setTimeout(() => input.classList.remove('error'), 500);
         if (attemptCounter >= 3) {
           const bulb = document.getElementById('bulb-btn');
           if (bulb && !bulb.classList.contains('used')) bulb.classList.add('visible');
         }
-        input.focus();
+        if(input) input.focus();
       }
     }
 

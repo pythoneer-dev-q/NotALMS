@@ -277,6 +277,11 @@ FRONT_PORT_HOST=$FRONT_PORT"
     TURNSTILE_SECRET_KEY="$(ask '  Turnstile secret key' "${NTLMS_TURNSTILE_SECRET_KEY:-}")"
   fi
 
+  LOGGING_ENABLED="$(ask '  включить журналы приложения? (Y/n)' 'Y')"
+  ACCESS_LOG_ENABLED="$(ask '  журналировать каждый HTTP-запрос? (y/N)' 'N')"
+  case "$LOGGING_ENABLED" in [Yy]*) LOGGING_ENABLED=true ;; *) LOGGING_ENABLED=false ;; esac
+  case "$ACCESS_LOG_ENABLED" in [Yy]*) ACCESS_LOG_ENABLED=true ;; *) ACCESS_LOG_ENABLED=false ;; esac
+
   cat > "$ROOT/.env" <<EOF
 HOST=127.0.0.1
 FRONT_HOST=127.0.0.1
@@ -308,6 +313,11 @@ WORKERS=$WORKERS
 MONGO_MAX_POOL=100
 CACHE_TTL=60
 RATE_LIMIT=20/minute
+LOGGING_ENABLED=$LOGGING_ENABLED
+ACCESS_LOG_ENABLED=$ACCESS_LOG_ENABLED
+LOG_LEVEL=info
+EXPECTED_DISCONNECT_LOG_LEVEL=debug
+DISCONNECT_LOG_INTERVAL_SECONDS=60
 CAPTCHA_SUSPICIOUS_RPS=15
 TURNSTILE_SITE_KEY=$TURNSTILE_SITE_KEY
 TURNSTILE_SECRET_KEY=$TURNSTILE_SECRET_KEY
@@ -381,6 +391,11 @@ if [ "$MODE" = venv ]; then
   esac
 fi
 ensure_env_var "CAPTCHA_SUSPICIOUS_RPS" "15"
+ensure_env_var "LOGGING_ENABLED" "true"
+ensure_env_var "ACCESS_LOG_ENABLED" "false"
+ensure_env_var "LOG_LEVEL" "info"
+ensure_env_var "EXPECTED_DISCONNECT_LOG_LEVEL" "debug"
+ensure_env_var "DISCONNECT_LOG_INTERVAL_SECONDS" "60"
 ensure_env_var "TURNSTILE_SITE_KEY" ""
 ensure_env_var "TURNSTILE_SECRET_KEY" ""
 ok "проверены фоллбеки CAPTCHA в .env"

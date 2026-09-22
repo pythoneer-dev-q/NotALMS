@@ -65,6 +65,8 @@ EnvironmentFile=$ROOT/.env
 ExecStart=$ROOT/.venv/bin/python -m $2
 Restart=always
 RestartSec=5
+LogRateLimitIntervalSec=30s
+LogRateLimitBurst=200
 
 [Install]
 WantedBy=multi-user.target

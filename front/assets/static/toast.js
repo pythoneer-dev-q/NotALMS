@@ -161,13 +161,13 @@
                     var blockedToken = response.headers.get('X-Blocked-Token');
                     if (blockedToken) localStorage.setItem('token', blockedToken);
                     if (location.pathname !== '/blocked') location.replace('/blocked');
-                } else if (response.status === 401 && location.pathname !== '/' && location.pathname !== '/login') {
+                } else if (response.status === 401) {
                     var headers = requestInit.headers;
                     var authorization = headers && (headers.Authorization || headers.authorization
                         || (typeof headers.get === 'function' && headers.get('Authorization')));
                     if (authorization) {
                         localStorage.removeItem('token');
-                        location.replace('/');
+                        if (location.pathname !== '/' && location.pathname !== '/login') location.replace('/');
                     }
                 }
                 if (response.headers.get('X-Captcha-Required') === '1' && window.openCaptchaChallenge) {

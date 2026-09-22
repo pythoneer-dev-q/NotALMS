@@ -7,6 +7,7 @@ db = client[MONGO_DB_NAME]
 auth_collection = db['auth_collection']
 
 LOGIN_CODE_TTL = 300  # код входа живет 5 минут
+_closed = False
 
 
 async def ensure_indexes():
@@ -68,4 +69,12 @@ async def drop_login_code(code: str):
     # код одноразовый, помечаем использованным
     await auth_collection.delete_one({'code': code})
     return True
+
+
+def close_client() -> None:
+    global _closed
+    if _closed:
+        return
+    _closed = True
+    client.close()
 

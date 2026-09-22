@@ -191,6 +191,7 @@
                     ? '<div class="desc"><i class="ti ti-eye-off"></i> участник скрыл себя из публичного рейтинга</div>'
                     : '';
                 const rank = u.rank ? `#${u.rank} в топе` : 'вне рейтинга';
+                const accountRole = u.account_type === 'teacher' ? 'Учитель' : 'Ученик';
 
                 document.getElementById('content').innerHTML = `
                 <div class="grid">
@@ -198,6 +199,8 @@
                         <div class="label">Логин</div>
                         <div class="info"${color}><i class="ti ti-user"></i> ${esc(u.user_login)}</div>
                         ${verified}
+                        <div class="label" style="margin-top:1rem">Роль</div>
+                        <div class="info"><i class="ti ti-id-badge-2"></i> ${accountRole}</div>
                         <div class="label" style="margin-top:1rem">Статус</div>
                         <div class="info ${u.status ? 'ok' : 'bad'}">${u.status ? '● активен' : '● заблокирован'}</div>
                     </div>

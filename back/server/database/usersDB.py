@@ -23,6 +23,7 @@ async def register_user(user_login: str, user_password: str, user_telegram_FOR_A
             {'registered': 'Первый шаг к учебе!'}
         ],
         'rating': 0,  # очки за решенные задачи
+        'account_type': 'student',
         'status': True,
         'verified': False,      # галочка «профиль проверен админом»
         'hide_leaderboard': False,  # скрыт из рейтинга (админ видит всегда)
@@ -116,7 +117,7 @@ async def settg(user_id: int, to_user: str):
 async def add_rating(user_uid: str, points: int):
     await users.update_one(
         {'user_uid': user_uid},
-        {'$inc': {'rating': points}}
+        [{'$set': {'rating': {'$max': [0, {'$add': [{'$ifNull': ['$rating', 0]}, int(points)]}]}}}]
     )
 
 
@@ -131,6 +132,8 @@ async def rating_position(user_uid: str, include_hidden: bool = False) -> int:
     me = await search_usersByID(user_uid)
     if not me:
         return 0
+    if me.get('account_type') == 'teacher':
+        return 0
     rating = int(me.get('rating') or 0)
     if rating <= 0:
         return 0  # не решал задач — в топе не участвует
@@ -143,7 +146,7 @@ async def rating_position(user_uid: str, include_hidden: bool = False) -> int:
 
 def _rank_base_filter(include_hidden: bool = False) -> dict:
     # участники рейтинга: только с очками; скрытых не показываем никому, кроме админа
-    flt: dict = {'rating': {'$gt': 0}}
+    flt: dict = {'rating': {'$gt': 0}, 'account_type': {'$ne': 'teacher'}}
     if not include_hidden:
         flt['hide_leaderboard'] = {'$ne': True}
     return flt
@@ -165,6 +168,7 @@ def _leaderboard_filter(include_hidden: bool = False, q: str = '', verified_only
 LB_FIELDS = {
     '_id': 0, 'user_uid': 1, 'user_login': 1, 'rating': 1,
     'name_color': 1, 'verified': 1, 'hide_leaderboard': 1, 'achivements': 1,
+    'account_type': 1,
 }
 
 
@@ -205,7 +209,11 @@ async def search_users_public(q: str, limit: int = 20, include_hidden: bool = Fa
     # лёгкий поиск людей по логину (для страницы рейтинга)
     if not q or len(q.strip()) < 2:
         return []
-    flt = {'user_login': {'$regex': re.escape(q.strip()), '$options': 'i'}}
+    value = q.strip()
+    flt = {'$or': [
+        {'user_login': {'$regex': re.escape(value), '$options': 'i'}},
+        {'user_uid': value},
+    ]}
     if not include_hidden:
         flt['hide_leaderboard'] = {'$ne': True}
     return await users.find(
@@ -351,7 +359,7 @@ async def admin_update_user(user_uid: str, fields: dict) -> bool:
 
 async def admin_delete_user(user_uid: str):
     # каскадное удаление админом: юзер + прогресс + прочитанные уроки + подсказки
-    from back.server.database import coursesDB
+    from back.server.database import accessDB, coursesDB
     user = await users.find_one({'user_uid': user_uid}, {'user_login': 1})
     if not user:
         return False
@@ -359,6 +367,9 @@ async def admin_delete_user(user_uid: str):
     await coursesDB.progress.delete_many({'user_uid': user_uid})
     await coursesDB.reads.delete_many({'user_uid': user_uid})
     await coursesDB.hints.delete_many({'user_uid': user_uid})
+    await coursesDB.tests.delete_many({'owner_uid': user_uid})
+    await coursesDB.delete_owned_courses(user_uid)
+    await accessDB.delete_user_access(user_uid)
     res = await users.find_one_and_delete({'user_uid': user_uid})
     return res is not None
 
@@ -397,7 +408,7 @@ async def change_username(user_uid: str, new_login: str) -> dict:
 
 async def delete_user(user_uid: str):
     # каскадное удаление: пользователь + прогресс + прочитанные уроки + подсказки
-    from back.server.database import coursesDB
+    from back.server.database import accessDB, coursesDB
     user = await users.find_one({'user_uid': user_uid}, {'user_login': 1})
     if not user:
         return False
@@ -405,5 +416,8 @@ async def delete_user(user_uid: str):
     await coursesDB.progress.delete_many({'user_uid': user_uid})
     await coursesDB.reads.delete_many({'user_uid': user_uid})
     await coursesDB.hints.delete_many({'user_uid': user_uid})
+    await coursesDB.tests.delete_many({'owner_uid': user_uid})
+    await coursesDB.delete_owned_courses(user_uid)
+    await accessDB.delete_user_access(user_uid)
     res = await users.find_one_and_delete({'user_uid': user_uid})
     return res is not None

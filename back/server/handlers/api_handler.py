@@ -61,9 +61,10 @@ async def main_loginReturnToken(data: models.Login, request: Request):
     if user and await utils.verify_password(data.user_password, user['hashed_password']):
         # Блокировка должна переживать обновление страницы: выдаем отдельный
         # бессрочный токен, но все защищенные API все равно отклонят его по status.
+        account_type = user.get('account_type') or 'student'
         if user.get('status') is False:
             token = await utils.create_access_token({
-                'role': 'user',
+                'role': 'teacher' if account_type == 'teacher' else 'user',
                 'user_uid': user['user_uid'],
                 'blocked': True,
             }, expires=False)
@@ -71,7 +72,7 @@ async def main_loginReturnToken(data: models.Login, request: Request):
                 content={'JWTSession': token, 'blocked': True}, status_code=200,
             )
         token = await utils.create_access_token({
-            'role': 'user',
+            'role': 'teacher' if account_type == 'teacher' else 'user',
             'user_uid': user['user_uid']
         })
         return jsonset(content={'JWTSession': token}, status_code=200)
@@ -99,6 +100,7 @@ async def me(user=Depends(get_current_user)):
         'user_login': user['user_login'],
         'user_uid': user['user_uid'],
         'role': user['role'],
+        'account_type': user.get('account_type', 'student'),
         'rating': full.get('rating', 0),
         'name_color': full.get('name_color'),
         'theme': full.get('theme'),
@@ -173,7 +175,7 @@ async def change_password(data: models.PasswordChange, user=Depends(get_current_
     '/getData'
 )
 async def main_datagetterJWT(data: models.GetSession):
-    if (tmp := utils.decode_token(
+    if (tmp := await utils.decode_token(
         data.year_token
     )) is not None:
         return jsonset(
@@ -198,9 +200,10 @@ async def main_loginTelegram(data: models.TelegramLogin):
     if not user:
         return jsonset(content={'error': 'аккаунт не привязан к telegram'}, status_code=403)
     # Для Telegram-входа действует тот же устойчивый сценарий блокировки.
+    account_type = user.get('account_type') or 'student'
     if user.get('status') is False:
         token = await utils.create_access_token({
-            'role': 'user',
+            'role': 'teacher' if account_type == 'teacher' else 'user',
             'user_uid': user['user_uid'],
             'blocked': True,
         }, expires=False)
@@ -208,7 +211,7 @@ async def main_loginTelegram(data: models.TelegramLogin):
             content={'JWTSession': token, 'blocked': True}, status_code=200,
         )
     token = await utils.create_access_token({
-        'role': 'user',
+        'role': 'teacher' if account_type == 'teacher' else 'user',
         'user_uid': user['user_uid']
     })
     return jsonset(content={'JWTSession': token}, status_code=200)

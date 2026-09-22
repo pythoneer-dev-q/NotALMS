@@ -18,6 +18,9 @@ async def ensure_indexes():
     from back.server.database import newsDB
     await newsDB.ensure_indexes()
 
+    from back.server.database import accessDB
+    await accessDB.ensure_indexes()
+
     # прогресс: одна решенная задача на юзера
     progress = get_db(settings.mongo_lmscluster)[settings.mongo_lmsprogress]
     await progress.create_index(
