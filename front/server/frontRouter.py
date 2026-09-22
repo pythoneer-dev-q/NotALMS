@@ -17,8 +17,11 @@ FAVICON = os.path.join(ROOT_DIR, 'favicon.ico')
 def page(section: str, filename: str) -> str:
     with open(os.path.join(PAGES_DIR, section, filename), encoding='utf-8') as file:
         html = file.read()
-    control_link = '<link rel="stylesheet" href="/assets/static/controls.css">'
-    return html.replace('</head>', control_link + '</head>', 1)
+    shared = (
+        '<link rel="stylesheet" href="/assets/static/controls.css">'
+        '<script defer src="/assets/static/app-runtime.js"></script>'
+    )
+    return html.replace('</head>', shared + '</head>', 1)
 
 # раньше функции дублировали имя profile — исправил
 
@@ -89,6 +92,11 @@ async def privacy():
 @frouter.get('/terms', response_class=HTMLResponse)
 async def terms():
     return page('public', 'terms.html')
+
+
+@frouter.get('/error', response_class=HTMLResponse)
+async def error_page():
+    return page('public', 'error.html')
 
 
 

@@ -46,7 +46,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             )
         bucket.append(now)
         self.hits[ip] = bucket
-        # подрезаем карту, чтобы не текла
+        # Подрезаем обе карты, чтобы поток уникальных IP не расходовал память бесконечно.
         if len(self.hits) > 10000:
             self.hits = {k: v for k, v in self.hits.items() if now - v[-1] < self.window}
+        if len(self.second_hits) > 10000:
+            self.second_hits = {
+                key: values for key, values in self.second_hits.items()
+                if values and now - values[-1] < 1
+            }
         return await call_next(request)

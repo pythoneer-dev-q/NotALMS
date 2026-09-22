@@ -1,12 +1,19 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 from back.auth.bot.config.authConfig import MONGO_URI, MONGO_DB_NAME
-import time
+from datetime import datetime, timedelta, timezone
 
 client = AsyncIOMotorClient(MONGO_URI)
 db = client[MONGO_DB_NAME]
 auth_collection = db['auth_collection']
 
 LOGIN_CODE_TTL = 300  # код входа живет 5 минут
+
+
+async def ensure_indexes():
+    await auth_collection.delete_many({'code': {'$exists': True}, 'expires_at': {'$exists': False}})
+    await auth_collection.create_index('user_id', sparse=True)
+    await auth_collection.create_index('code', unique=True, sparse=True)
+    await auth_collection.create_index('expires_at', expireAfterSeconds=0)
 
 async def find_user(user_id: int, username: str):
     return await auth_collection.find_one({'user_id': user_id, 'username': username})
@@ -37,27 +44,28 @@ async def isExistOTP(otp: str, user_id: int):
 
 async def save_login_code(user_id: int, code: str):
     # одноразовый код для входа на сайт
+    now = datetime.now(timezone.utc)
+    await auth_collection.delete_many({'login_user_id': user_id, 'code': {'$exists': True}})
     await auth_collection.insert_one({
         'code': code,
         'login_user_id': user_id,
-        'created_at': int(time.time()),
-        'ttl': LOGIN_CODE_TTL,
-        'used': False
+        'created_at': now,
+        'expires_at': now + timedelta(seconds=LOGIN_CODE_TTL),
+        'used': False,
     })
     return True
 
 
 async def find_login_code(code: str):
-    doc = await auth_collection.find_one({'code': code, 'used': False})
-    if not doc:
-        return None
-    if int(time.time()) - doc.get('created_at', 0) > doc.get('ttl', LOGIN_CODE_TTL):
-        return None
-    return doc
+    return await auth_collection.find_one({
+        'code': code,
+        'used': False,
+        'expires_at': {'$gt': datetime.now(timezone.utc)},
+    })
 
 
 async def drop_login_code(code: str):
     # код одноразовый, помечаем использованным
-    await auth_collection.update_one({'code': code}, {'$set': {'used': True}})
+    await auth_collection.delete_one({'code': code})
     return True
 

@@ -3,6 +3,7 @@ from aiogram import Bot, Dispatcher, Router
 from aiogram.client.default import DefaultBotProperties as DefProp
 from back.auth.bot.config.authConfig import TOKEN
 from back.auth.bot.handlers.handlers import vrouter
+from back.auth.bot.databaseAuth import database as bot_database
 from aiogram.utils.deep_linking import create_start_link
 
 # токена может не быть (api-процесс), тогда бот только генерит ссылки по запросу
@@ -26,6 +27,7 @@ async def main():
     if not TOKEN:
         raise RuntimeError('BOT_TOKEN не задан в .env, бот не запустится')
     dp.include_router(vrouter)
+    await bot_database.ensure_indexes()
     await dp.start_polling(bot)
 
 if __name__ == '__main__':

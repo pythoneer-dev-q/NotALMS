@@ -322,6 +322,64 @@ ensure_env_var() {
   local key="$1" value="$2"
   grep -q "^${key}=" "$ROOT/.env" 2>/dev/null || echo "${key}=${value}" >> "$ROOT/.env"
 }
+
+install_mongodb_local() {
+  if command -v mongod >/dev/null 2>&1; then
+    ok "MongoDB уже установлена: $(mongod --version 2>/dev/null | head -n 1)"
+  else
+    info "MongoDB не найдена, устанавливаю..."
+    [ -f /etc/os-release ] || die "не удалось определить Linux для установки MongoDB"
+    # shellcheck disable=SC1091
+    . /etc/os-release
+    case "${ID:-} ${ID_LIKE:-}" in
+      *ubuntu*|*debian*)
+        $SUDO apt-get update -qq
+        $SUDO apt-get install -y -qq curl gnupg ca-certificates
+        curl -fsSL https://pgp.mongodb.com/server-8.0.asc \
+          | $SUDO gpg --dearmor --yes -o /usr/share/keyrings/mongodb-server-8.0.gpg
+        local mongo_family="debian"
+        local mongo_component="main"
+        if [ "${ID:-}" = "ubuntu" ]; then
+          mongo_family="ubuntu"
+          mongo_component="multiverse"
+        fi
+        local mongo_codename="${VERSION_CODENAME:-}"
+        [ -n "$mongo_codename" ] || die "не удалось определить codename дистрибутива"
+        echo "deb [signed-by=/usr/share/keyrings/mongodb-server-8.0.gpg] https://repo.mongodb.org/apt/$mongo_family $mongo_codename/mongodb-org/8.0 $mongo_component" \
+          | $SUDO tee /etc/apt/sources.list.d/mongodb-org-8.0.list >/dev/null
+        $SUDO apt-get update -qq
+        $SUDO apt-get install -y mongodb-org
+        ;;
+      *rhel*|*centos*|*fedora*|*almalinux*|*rocky*)
+        local rpm_major="${VERSION_ID%%.*}"
+        [ -n "$rpm_major" ] || rpm_major=9
+        $SUDO tee /etc/yum.repos.d/mongodb-org-8.0.repo >/dev/null <<EOF
+[mongodb-org-8.0]
+name=MongoDB Repository
+baseurl=https://repo.mongodb.org/yum/redhat/$rpm_major/mongodb-org/8.0/x86_64/
+gpgcheck=1
+enabled=1
+gpgkey=https://pgp.mongodb.com/server-8.0.asc
+EOF
+        $SUDO dnf install -y mongodb-org
+        ;;
+      *) die "автоустановка MongoDB поддерживает Debian, Ubuntu и RHEL-подобные системы" ;;
+    esac
+  fi
+
+  if command -v systemctl >/dev/null 2>&1; then
+    $SUDO systemctl enable --now mongod || die "MongoDB установлена, но mongod не запустился"
+  fi
+  command -v mongosh >/dev/null 2>&1 && mongosh --quiet --eval "db.adminCommand('ping')" >/dev/null \
+    || warn "MongoDB запущена, но проверка через mongosh не выполнена"
+}
+ACTIVE_MONGO_URI="$(grep -E '^MONGO_URI=' "$ROOT/.env" 2>/dev/null | cut -d= -f2- || true)"
+if [ "$MODE" = venv ]; then
+  case "$ACTIVE_MONGO_URI" in
+    mongodb://localhost*|mongodb://127.0.0.1*) install_mongodb_local ;;
+    *) ok "используется внешняя MongoDB, локальная установка не требуется" ;;
+  esac
+fi
 ensure_env_var "CAPTCHA_SUSPICIOUS_RPS" "15"
 ensure_env_var "TURNSTILE_SITE_KEY" ""
 ensure_env_var "TURNSTILE_SECRET_KEY" ""
@@ -350,6 +408,13 @@ if [ -f "$ROOT/scripts/ntlms.sh" ]; then
   if ! grep -q 'scripts/ntlms.sh' "$HOME/.bashrc" 2>/dev/null; then
     echo "source \"$ROOT/scripts/ntlms.sh\"" >> "$HOME/.bashrc"
   fi
+fi
+
+if [ -f "$HOME/.bashrc" ]; then
+  set +u
+  # shellcheck disable=SC1090
+  . "$HOME/.bashrc" || true
+  set -u
 fi
 
 say "Готово!"

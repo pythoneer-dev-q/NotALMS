@@ -420,8 +420,9 @@
 
         /* ===== page ===== */
         .page {
-            max-width: 62rem;
-            margin: 0 auto;
+            width: min(1180px, 100%);
+            max-width: none;
+            margin: 0;
             padding: 2rem 1.2rem 3rem;
         }
 
@@ -438,9 +439,10 @@
         }
         .s-layout {
             display: grid;
-            grid-template-columns: 230px minmax(0, 1fr);
-            gap: 16px;
+            grid-template-columns: 220px minmax(0, 860px);
+            gap: 22px;
             align-items: start;
+            justify-content: start;
         }
 
         .s-nav {
@@ -565,15 +567,28 @@
 
         .check-control {
             position: relative;
-            display: inline-flex;
+            display: flex;
             align-items: center;
             gap: 10px;
+            width: 100%;
             margin-top: .9rem;
+            padding: 11px 12px;
+            border: 1px solid var(--line2);
+            border-radius: 14px;
+            background: rgba(255, 255, 255, .035);
             color: var(--text);
             font-size: .92rem;
             line-height: 1.35;
             cursor: pointer;
             user-select: none;
+            transition: background .2s, border-color .2s, box-shadow .2s;
+        }
+
+        .check-control:hover { background: rgba(255, 255, 255, .065); }
+        .check-control:has(input:checked) {
+            border-color: color-mix(in srgb, var(--primary) 65%, transparent);
+            background: color-mix(in srgb, var(--primary) 16%, transparent);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1);
         }
 
         .check-control input {
@@ -598,6 +613,13 @@
             box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08);
             transition: transform .14s, background .2s, border-color .2s, box-shadow .2s;
         }
+
+        .card {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card .row > .btn:only-child { flex: 1 1 100%; width: 100%; }
 
         .check-control__box i {
             font-size: 1.05rem;
@@ -1078,14 +1100,14 @@
             document.getElementById('content').innerHTML = `
             <div class="s-layout">
                 <nav class="s-nav" id="s-nav">
-                    <button type="button" data-sec="appearance" class="active"><i class="ti ti-palette"></i> Оформление</button>
+                    <button type="button" data-sec="profile" class="active"><i class="ti ti-user-circle"></i> Профиль</button>
+                    <button type="button" data-sec="appearance"><i class="ti ti-palette"></i> Оформление</button>
                     <button type="button" data-sec="privacy"><i class="ti ti-shield-lock"></i> Приватность</button>
-                    <button type="button" data-sec="profile"><i class="ti ti-user-circle"></i> Профиль</button>
                     <button type="button" data-sec="support"><i class="ti ti-lifebuoy"></i> Поддержка</button>
                     <button type="button" data-sec="danger" class="s-nav-danger"><i class="ti ti-alert-triangle"></i> Опасная зона</button>
                 </nav>
                 <div class="s-body">
-                    <section class="s-section active" id="sec-appearance">
+                    <section class="s-section" id="sec-appearance">
                     <div class="grid">
                 <div class="card wide">
                     <div class="label">Тема сайта</div>
@@ -1097,6 +1119,7 @@
                     <div class="desc">виден в профиле и в топе учеников</div>
                     <div class="palette" id="s-colors"></div>
                 </div>
+                    </div>
                     </section>
                     <section class="s-section" id="sec-privacy">
                     <div class="grid">
@@ -1117,6 +1140,7 @@
                         <span id="s-tg-actions"></span>
                     </div>
                 </div>
+                    </div>
                     </section>
                     <section class="s-section" id="sec-support">
                     <div class="grid">
@@ -1125,8 +1149,9 @@
                     <div class="desc">если что-то работает неправильно, напиши нам: приложи скриншот и опиши, что произошло.</div>
                     <div class="row" id="support-actions"></div>
                 </div>
+                    </div>
                     </section>
-                    <section class="s-section" id="sec-profile">
+                    <section class="s-section active" id="sec-profile">
                     <div class="grid">
                 <div class="card wide">
                     <div class="label">О себе</div>
@@ -1151,6 +1176,7 @@
                     <div class="desc">используй не меньше 8 символов, строчную и заглавную букву, а также спецсимвол</div>
                     <div class="row"><button class="btn" onclick="askPassword()"><i class="ti ti-key"></i> Сменить пароль</button></div>
                 </div>
+                    </div>
                     </section>
                     <section class="s-section" id="sec-danger">
                     <div class="grid">
@@ -1161,6 +1187,7 @@
                         <button class="btn warn" onclick="deleteAccount()"><i class="ti ti-trash"></i> Удалить аккаунт</button>
                     </div>
                 </div>
+                    </div>
                     </section>
                 </div>
             </div>`;

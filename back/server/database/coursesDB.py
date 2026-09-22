@@ -1,6 +1,6 @@
 # ! back/server/database/coursesDB.py
 import time
-from datetime import timezone, datetime
+from datetime import timezone, datetime, timedelta
 from back.server.database.client import get_db
 from back.server.database import hotcache
 from back.server.server_configs.settings import settings
@@ -26,11 +26,17 @@ async def invalidate_course_cache():
 
 async def ensure_indexes():
     # индексы под частые запросы
+    # Старые варианты заданий были временными, но не имели TTL и копились бесконечно.
+    await tests.delete_many({'expires_at': {'$exists': False}})
     await courses.create_index('granted_to')
     await courses.create_index('order')
     await lessons.create_index('course_id')
     await tasks.create_index('lesson_id')
     await tests.create_index('task_id')
+    await tests.create_index([('parent_task_id', 1), ('owner_uid', 1)])
+    await tests.create_index('expires_at', expireAfterSeconds=0)
+    await hints.create_index([('user_uid', 1), ('task_id', 1)])
+    await reads.create_index([('user_uid', 1), ('lesson_id', 1)])
 
 
 async def create_courseVisible(
@@ -147,16 +153,26 @@ async def create_Test(
 async def create_test(
     data: dict[str]
 ):
-    doc = {**data, 'created_at': datetime.now(timezone.utc).replace(microsecond=0).isoformat(timespec='seconds', sep='T')}
+    now = datetime.now(timezone.utc).replace(microsecond=0)
+    owner_filter = {
+        'parent_task_id': str(data.get('parent_task_id', '')),
+        'owner_uid': data.get('owner_uid'),
+    }
+    if owner_filter['parent_task_id'] and owner_filter['owner_uid']:
+        await tests.delete_many(owner_filter)
+    doc = {
+        **data,
+        'created_at': now,
+        'expires_at': now + timedelta(hours=1),
+    }
     await tests.insert_one(doc)
     return doc
 
 
 async def recent_test(task_def_id: str, owner_uid: str = None, minutes: int = 30):
     # недавно сгенерированный вариант этого задания у этого же юзера
-    border = (datetime.now(timezone.utc).replace(microsecond=0)).timestamp() - minutes * 60
-    border_iso = datetime.fromtimestamp(border, timezone.utc).isoformat(timespec='seconds', sep='T')
-    flt = {'parent_task_id': task_def_id, 'created_at': {'$gte': border_iso}}
+    border = datetime.now(timezone.utc).replace(microsecond=0) - timedelta(minutes=minutes)
+    flt = {'parent_task_id': task_def_id, 'created_at': {'$gte': border}}
     if owner_uid is not None:
         flt['owner_uid'] = owner_uid
     return await tests.find_one(flt)

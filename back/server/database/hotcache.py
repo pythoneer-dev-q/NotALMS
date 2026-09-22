@@ -26,7 +26,15 @@ async def set_json(key: str, value, ttl: int = 60) -> None:
             return
         except Exception:
             pass  # redis умер, пишем в память
-    _mem[key] = (time.monotonic() + ttl, raw)
+    now = time.monotonic()
+    if len(_mem) >= 1000:
+        expired = [cache_key for cache_key, item in _mem.items() if item[0] <= now]
+        for cache_key in expired:
+            _mem.pop(cache_key, None)
+        if len(_mem) >= 1000:
+            oldest = min(_mem, key=lambda cache_key: _mem[cache_key][0])
+            _mem.pop(oldest, None)
+    _mem[key] = (now + ttl, raw)
 
 
 async def get_json(key: str):
@@ -40,6 +48,8 @@ async def get_json(key: str):
     hit = _mem.get(key)
     if hit and hit[0] > time.monotonic():
         return json.loads(hit[1])
+    if hit:
+        _mem.pop(key, None)
     return None
 
 
