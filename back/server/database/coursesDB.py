@@ -122,6 +122,7 @@ async def create_Test(
     lesson_id: str,
     mode: str,
     settings: dict,
+    title: str = '',
     task_type: str = 'undefined',
     difficulty: Literal['easy', 'hard'] = 'easy'
 ):
@@ -142,6 +143,7 @@ async def create_Test(
         raise ValueError('выбранный урок не существует')
     task = {
         "_id": _id,
+        "title": title,
         "lesson_id": lesson_id,
         "type": task_type,
         "mode": mode,

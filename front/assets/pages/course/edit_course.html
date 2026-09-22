@@ -311,6 +311,9 @@ body.modal-open{overflow:hidden}
         <div class="field"><label>mode</label><input id="t-mode" class="input" placeholder="например 1 / dna"></div>
       </div>
       <div class="form-row">
+        <div class="field full"><label>Название для ученика</label><input id="t-title" class="input" placeholder="например: Сложение однозначных чисел"></div>
+      </div>
+      <div class="form-row">
         <div class="field"><label>type_task</label><input id="t-type" class="input" placeholder="task_type"></div>
         <div class="field"><label>difficulty</label>
           <select id="t-diff"><option value="easy">easy</option><option value="hard">hard</option></select>
@@ -795,6 +798,7 @@ function openNewTask(){
   const id=document.getElementById('t-id');
   id.readOnly=false;
   id.value='';
+  document.getElementById('t-title').value='';
   document.getElementById('t-mode').value='';
   document.getElementById('t-type').value='';
   document.getElementById('t-diff').value='easy';
@@ -814,6 +818,7 @@ function editTask(id){
   const idInput=document.getElementById('t-id');
   idInput.readOnly=true;
   idInput.value=t._id;
+  document.getElementById('t-title').value=t.title||'';
   fillTaskLessonOptions(t.lesson_id||courseLessonId()||'');
   document.getElementById('t-mode').value=t.mode||'';
   document.getElementById('t-type').value=t.type||t.type_task||'';
@@ -840,6 +845,7 @@ document.getElementById('btn-save-task').onclick=async()=>{
   try{ settings=JSON.parse(document.getElementById('t-settings').value||'{}'); }catch(e){ toast('settings: невалидный json',true); return; }
   const taskId=document.getElementById('t-id').value.trim();
   const body={
+    title: document.getElementById('t-title').value.trim(),
     lesson_id: document.getElementById('t-lesson').value,
     mode: document.getElementById('t-mode').value.trim()||undefined,
     type_task: document.getElementById('t-type').value.trim()||undefined,

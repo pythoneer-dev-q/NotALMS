@@ -65,6 +65,7 @@ class RegVisibleLesson(BaseModel):
     """
 class RegVisibleTask(BaseModel):
   id: str
+  title: str = ''
   lesson_id: str
   type_task: str
   mode: str
@@ -98,6 +99,7 @@ class AdminLessonUpdate(BaseModel):
 
 # правка задачи: mode / settings / difficulty / type / привязка к уроку
 class AdminTaskUpdate(BaseModel):
+    title: str | None = None
     lesson_id: str | None = None
     mode: str | None = None
     difficulty: str | None = None

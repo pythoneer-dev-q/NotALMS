@@ -136,6 +136,7 @@ async def main_taskCreate(
     try:
         task = await coursesDB.create_Test(
             _id=task_id,
+            title=data.title.strip(),
             lesson_id=lesson_id,
             mode=mode,
             settings=data.settings,
