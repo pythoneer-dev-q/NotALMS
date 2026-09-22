@@ -294,7 +294,10 @@ body.modal-open{overflow:hidden}
   <div class="tabpanel" id="panel-tasks">
     <div class="card">
       <div class="card-head"><h3>Задания курса</h3>
-        <span class="toggle-detail">отображаются по урокам; редактируйте mode/settings/difficulty/type</span>
+        <div class="action-bar">
+          <span class="toggle-detail">отображаются по урокам</span>
+          <button id="btn-new-task" class="btn-primary"><i class="ti ti-plus"></i> добавить задание</button>
+        </div>
       </div>
       <div id="tasks-list"><div class="toggle-detail">загрузка...</div></div>
     </div>
@@ -304,7 +307,7 @@ body.modal-open{overflow:hidden}
       </div>
       <div class="form-row">
         <div class="field"><label>id</label><input id="t-id" class="input" readonly></div>
-        <div class="field"><label>lesson_id</label><input id="t-lesson" class="input" placeholder="lesson_id"></div>
+        <div class="field"><label>Урок</label><select id="t-lesson"></select></div>
         <div class="field"><label>mode</label><input id="t-mode" class="input" placeholder="например 1 / dna"></div>
       </div>
       <div class="form-row">
@@ -739,18 +742,17 @@ async function createNewLesson(){
 <script>
 window.currentTask=null;
 
-function loadTasksForLesson(lesson_id){
+async function loadTasksForLesson(lesson_id){
   if(!lesson_id) return;
-  apiGet('/admin/lesson/'+encodeURIComponent(lesson_id)+'/tasks').then(r=>{
-    document.getElementById('tasks-list').innerHTML='';
-    if(!r||r.error){
-      tasksCache=[];
-      document.getElementById('tasks-list').innerHTML='<div class="toggle-detail">загрузка задач...</div>';
-      return;
-    }
-    tasksCache=r;
-    renderTasks();
-  });
+  document.getElementById('tasks-list').innerHTML='<div class="toggle-detail">загрузка...</div>';
+  const r=await apiGet('/admin/lesson/'+encodeURIComponent(lesson_id)+'/tasks');
+  if(!r||r.error){
+    tasksCache=[];
+    document.getElementById('tasks-list').innerHTML='<div class="toggle-detail">не удалось загрузить задания</div>';
+    return;
+  }
+  tasksCache=r;
+  renderTasks();
 }
 
 function renderTasks(){
@@ -776,17 +778,50 @@ function taskRowHtml(t){
   </div>`;
 }
 
+function fillTaskLessonOptions(selected){
+  const select=document.getElementById('t-lesson');
+  const sorted=[...lessonsCache].sort((a,b)=>(a.order||0)-(b.order||0));
+  select.innerHTML=sorted.map(lesson=>
+    `<option value="${escapeHtml(lesson._id)}">${escapeHtml(lesson.title||lesson._id)} (${escapeHtml(lesson._id)})</option>`
+  ).join('');
+  if(selected && sorted.some(lesson=>lesson._id===selected)) select.value=selected;
+}
+
+function openNewTask(){
+  if(!lessonsCache.length){ toast('сначала добавьте урок',true); return; }
+  window.currentTask=null;
+  const lessonId=courseLessonId()||lessonsCache[0]._id;
+  fillTaskLessonOptions(lessonId);
+  const id=document.getElementById('t-id');
+  id.readOnly=false;
+  id.value='';
+  document.getElementById('t-mode').value='';
+  document.getElementById('t-type').value='';
+  document.getElementById('t-diff').value='easy';
+  document.getElementById('t-settings').value='{}';
+  document.getElementById('task-edit-title').textContent='Новое задание';
+  document.getElementById('btn-save-task').innerHTML='<i class="ti ti-plus"></i> добавить задание';
+  document.getElementById('btn-delete-task').style.display='none';
+  document.getElementById('task-res').textContent='';
+  document.getElementById('task-edit-card').style.display='block';
+  id.focus();
+}
+
 function editTask(id){
   const t=tasksCache.find(x=>x._id===id);
   if(!t) return;
   window.currentTask={...t};
-  document.getElementById('t-id').value=t._id;
-  document.getElementById('t-lesson').value=t.lesson_id||courseLessonId()||'';
+  const idInput=document.getElementById('t-id');
+  idInput.readOnly=true;
+  idInput.value=t._id;
+  fillTaskLessonOptions(t.lesson_id||courseLessonId()||'');
   document.getElementById('t-mode').value=t.mode||'';
   document.getElementById('t-type').value=t.type||t.type_task||'';
   document.getElementById('t-diff').value=t.difficulty||'easy';
   document.getElementById('t-settings').value=typeof t.settings==='string'?t.settings:JSON.stringify(t.settings||{});
   document.getElementById('task-edit-title').textContent='Задача: '+(t._id);
+  document.getElementById('btn-save-task').innerHTML='<i class="ti ti-device-floppy"></i> сохранить задачу';
+  document.getElementById('btn-delete-task').style.display='';
   document.getElementById('task-edit-card').style.display='block';
   document.getElementById('task-res').textContent='';
 }
@@ -798,22 +833,41 @@ function courseLessonId(){
 document.getElementById('btn-close-task-edit').onclick=()=>{
   window.currentTask=null; document.getElementById('task-edit-card').style.display='none';
 };
+document.getElementById('btn-new-task').onclick=openNewTask;
 
 document.getElementById('btn-save-task').onclick=async()=>{
-  if(!window.currentTask){ toast('сначала выберите задачу',true); return; }
   let settings={};
   try{ settings=JSON.parse(document.getElementById('t-settings').value||'{}'); }catch(e){ toast('settings: невалидный json',true); return; }
+  const taskId=document.getElementById('t-id').value.trim();
   const body={
-    lesson_id: document.getElementById('t-lesson').value.trim()||undefined,
+    lesson_id: document.getElementById('t-lesson').value,
     mode: document.getElementById('t-mode').value.trim()||undefined,
     type_task: document.getElementById('t-type').value.trim()||undefined,
     difficulty: document.getElementById('t-diff').value||undefined,
     settings
   };
   Object.keys(body).forEach(k=>{ if(body[k]===undefined) delete body[k]; });
+  if(!taskId||!body.lesson_id||!body.mode||!body.type_task){ toast('заполните id, урок, mode и тип',true); return; }
   setMsg('task-res','сохранение...');
-  const r=await apiPut('/admin/task/'+encodeURIComponent(window.currentTask._id), body);
+  const creating=!window.currentTask;
+  const r=creating
+    ? await apiPost('/admin/task',{id:taskId,...body})
+    : await apiPut('/admin/task/'+encodeURIComponent(window.currentTask._id), body);
   if(r&&!r.error){
+    if(creating){
+      window.currentLesson=lessonsCache.find(lesson=>lesson._id===body.lesson_id)||window.currentLesson;
+      await loadTasksForLesson(body.lesson_id);
+      editTask(r._id||taskId);
+      toast('задача добавлена'); setMsg('task-res','добавлено');
+      return;
+    }
+    if(body.lesson_id!==window.currentTask.lesson_id){
+      window.currentLesson=lessonsCache.find(lesson=>lesson._id===body.lesson_id)||window.currentLesson;
+      await loadTasksForLesson(body.lesson_id);
+      editTask(window.currentTask._id);
+      toast('задача сохранена'); setMsg('task-res','сохранено');
+      return;
+    }
     const idx=tasksCache.findIndex(x=>x._id===window.currentTask._id);
     if(idx>=0){
       const mapped={...tasksCache[idx], ...body, type: body.type_task!==undefined?body.type_task:tasksCache[idx].type};

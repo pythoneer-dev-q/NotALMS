@@ -136,8 +136,10 @@ async def create_Test(
     """
     nowIs = datetime.now(timezone.utc).replace(microsecond=0)
     timestamp = nowIs.isoformat(timespec='seconds', sep='T')
-    if (await lessons.find_one({'_id': _id}) is not None) or (await tasks.find_one({'_id': _id}) is not None):
-        raise ValueError(' либо такой урок уже существует, либо такого курса не существует')
+    if await tasks.find_one({'_id': _id}) is not None:
+        raise ValueError('задание с таким id уже существует')
+    if await lessons.find_one({'_id': lesson_id}) is None:
+        raise ValueError('выбранный урок не существует')
     task = {
         "_id": _id,
         "lesson_id": lesson_id,
@@ -461,6 +463,8 @@ async def delete_lesson(lesson_id: str):
 async def update_task(task_id: str, fields: dict):
     if not fields:
         return None
+    if 'lesson_id' in fields and await lessons.find_one({'_id': fields['lesson_id']}) is None:
+        raise ValueError('выбранный урок не существует')
     fields['updated_at'] = datetime.now(timezone.utc).replace(microsecond=0).isoformat(timespec='seconds', sep='T')
     res = await tasks.find_one_and_update(
         {'_id': task_id}, {'$set': fields}, return_document=True

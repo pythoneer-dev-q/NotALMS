@@ -121,17 +121,30 @@ async def main_LessonCreater(
         created_at - временная метка
     """
 @crouter.post('/createTask', dependencies=[Depends(require_admin)])
-async def main_taskUpdater(
+@crouter.post('/admin/task', dependencies=[Depends(require_admin)])
+async def main_taskCreate(
     data: models.RegVisibleTask
 ):
-    return await coursesDB.create_Test(
-        _id=data.id, 
-        lesson_id=data.lesson_id,
-        mode=data.mode,
-        settings=data.settings,
-        task_type=data.type_task,
-        difficulty=data.difficulty
-    )
+    task_id = data.id.strip()
+    lesson_id = data.lesson_id.strip()
+    mode = data.mode.strip()
+    task_type = data.type_task.strip()
+    if not task_id or not lesson_id or not mode or not task_type:
+        return jsonset(content={'error': 'заполните id, урок, mode и тип задания'}, status_code=400)
+    if data.difficulty not in {'easy', 'hard'}:
+        return jsonset(content={'error': 'неверная сложность задания'}, status_code=400)
+    try:
+        task = await coursesDB.create_Test(
+            _id=task_id,
+            lesson_id=lesson_id,
+            mode=mode,
+            settings=data.settings,
+            task_type=task_type,
+            difficulty=data.difficulty,
+        )
+    except ValueError as exc:
+        return jsonset(content={'error': str(exc)}, status_code=409)
+    return jsonset(content=task, status_code=201)
 
 
 
@@ -340,8 +353,16 @@ async def main_adminTaskUpdate(task_id: str, data: models.AdminTaskUpdate):
     # в базе поле называется type, а не type_task
     fields = {}
     for k, v in raw.items():
-        fields['type' if k == 'type_task' else k] = v
-    res = await coursesDB.update_task(task_id, fields)
+        field = 'type' if k == 'type_task' else k
+        fields[field] = v.strip() if isinstance(v, str) else v
+    if any(fields.get(name) == '' for name in ('lesson_id', 'mode', 'type')):
+        return jsonset(content={'error': 'урок, mode и тип не могут быть пустыми'}, status_code=400)
+    if 'difficulty' in fields and fields['difficulty'] not in {'easy', 'hard'}:
+        return jsonset(content={'error': 'неверная сложность задания'}, status_code=400)
+    try:
+        res = await coursesDB.update_task(task_id, fields)
+    except ValueError as exc:
+        return jsonset(content={'error': str(exc)}, status_code=409)
     if res is None:
         return jsonset(content={'error': 'задача не найдена'}, status_code=404)
     return jsonset(content={'ok': True}, status_code=200)
