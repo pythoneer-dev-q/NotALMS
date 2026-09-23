@@ -15,6 +15,7 @@ from back.server.handlers.front_apiHandler import (
 from back.server.handlers.fronthandler_conf.models import RegVisibleCourse
 from back.server.handlers.teacher_handler import _owned_roles
 from back.server.runtime import _expected_disconnect
+from back.server.tasks import biologyUtil
 
 
 class RuntimeTests(unittest.TestCase):
@@ -156,6 +157,24 @@ class CourseValidationTests(unittest.TestCase):
         }
         with self.assertRaises(ValidationError):
             RegVisibleCourse(**payload)
+
+
+class BiologyInputTests(unittest.IsolatedAsyncioTestCase):
+    async def test_direction_accepts_common_quote_styles(self):
+        solution = {'canonical_5_3': 'АТГЦ'}
+        answers = [
+            "5'-АТГЦ-3'",
+            '5’-АТГЦ-3’',
+            '5"-АТГЦ-3"',
+            '5«-АТГЦ-3»',
+            '5′-АТГЦ-3′',
+            '5`-АТГЦ-3`',
+        ]
+
+        for answer in answers:
+            with self.subTest(answer=answer):
+                result = await biologyUtil.validate_submission(answer, solution)
+                self.assertTrue(result['is_correct'])
 
 
 if __name__ == '__main__':

@@ -1,8 +1,14 @@
 import random
+import re
 
 DNA_NUCS = ['А', 'Т', 'Г', 'Ц']
 DNA_COMP = {'А': 'Т', 'Т': 'А', 'Г': 'Ц', 'Ц': 'Г'}
 DNA_TO_RNA = {'А': 'У', 'Т': 'А', 'Г': 'Ц', 'Ц': 'Г'}
+QUOTE_CHARS = "'\"‘’‚‛“”„‟‹›«»ʼʹʻˈ´`′″＇＂"
+INPUT_TRANSLATION = str.maketrans({
+    **{char: "'" for char in QUOTE_CHARS},
+    **{char: '-' for char in '‐‑‒–—−'},
+})
 
 
 async def generate_sequence(length: int) -> str:
@@ -59,17 +65,23 @@ async def generate_task(mode: int, length: int = 18):
 
 
 async def validate_submission(user_input: str, solution: dict):
-    text = user_input.replace(" ", "").upper()
+    text = str(user_input or '').translate(INPUT_TRANSLATION).replace(" ", "").upper()
+    match = re.fullmatch(r"([53])'-?([АТГЦУ]+)-?([35])'", text)
+    if not match:
+        return {
+            "is_correct": False,
+            "score": 0,
+            "errors": [{"type": "DIRECTION", "msg": "Неверно указано направление"}]
+        }
 
-    start, end = text[:2], text[-2:]
-    seq = text[3:-3] if "-" in text else text[2:-2]
+    start, seq, end = match.groups()
 
     canonical = solution["canonical_5_3"]
     n = len(canonical)
 
-    if start == "5'" and end == "3'":
+    if start == "5" and end == "3":
         direction = "forward"
-    elif start == "3'" and end == "5'":
+    elif start == "3" and end == "5":
         direction = "reverse"
     else:
         return {

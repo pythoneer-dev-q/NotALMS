@@ -1,14 +1,29 @@
 (function () {
     'use strict';
 
-    var REQUEST_TIMEOUT_MS = 15000;
-    var PAGE_LOAD_TIMEOUT_MS = 20000;
+    var REQUEST_TIMEOUT_MS = 45000;
+    var PAGE_LOAD_TIMEOUT_MS = 75000;
+    var FAILURE_WINDOW_MS = 30000;
+    var failureCount = 0;
+    var lastFailureAt = 0;
     var nativeFetch = window.fetch.bind(window);
 
     function serviceError() {
         if (location.pathname !== '/error') {
             location.replace('/error');
         }
+    }
+
+    function recordFailure() {
+        var now = Date.now();
+        failureCount = now - lastFailureAt <= FAILURE_WINDOW_MS ? failureCount + 1 : 1;
+        lastFailureAt = now;
+        if (failureCount >= 3) serviceError();
+    }
+
+    function clearFailures() {
+        failureCount = 0;
+        lastFailureAt = 0;
     }
 
     function isPlatformRequest(input) {
@@ -43,7 +58,8 @@
         init.signal = controller.signal;
 
         return nativeFetch(input, init).then(function (response) {
-            if (isPlatformRequest(input) && response.status >= 500) serviceError();
+            if (isPlatformRequest(input) && response.status >= 500) recordFailure();
+            else if (isPlatformRequest(input)) clearFailures();
             if (isPlatformRequest(input) && response.status === 401 && hasAuthorization(init)) {
                 localStorage.removeItem('token');
                 if (location.pathname !== '/' && location.pathname !== '/login') location.replace('/');
@@ -51,7 +67,7 @@
             return response;
         }).catch(function (error) {
             if (isPlatformRequest(input) && (error instanceof TypeError || error?.name === 'AbortError')) {
-                serviceError();
+                recordFailure();
             }
             throw error;
         }).finally(function () { clearTimeout(timer); });
@@ -75,7 +91,6 @@
         var reason = event.reason;
         if (hasBlockingLoader() && (reason instanceof TypeError || reason?.name === 'AbortError')) {
             event.preventDefault();
-            serviceError();
         }
     });
 })();

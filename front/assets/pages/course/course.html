@@ -1525,7 +1525,10 @@
       readLessons = new Set(reads?.read || []);
       solvedTasks = new Set((solved?.solved || []).map(String));
       hintedTasks = new Set((solved?.hinted || []).map(String));
-      if (lessons && Array.isArray(lessons)) renderSidebar(lessons);
+      if (lessons && Array.isArray(lessons)) {
+        renderSidebar(lessons);
+        if (lessons.length) loadLesson(lessons[0]);
+      }
     }
 
     function statusHtml(isRead, isSolved, isHinted) {
@@ -1614,6 +1617,9 @@
     function loadLesson(lesson) {
       const main = document.getElementById('main-area');
       currentLessonId = lesson._id;
+      document.querySelectorAll('.nav-item').forEach(item=>item.classList.remove('active'));
+      Array.from(document.querySelectorAll('.nav-item[data-lesson-id]'))
+        .find(item=>item.dataset.lessonId===String(lesson._id))?.classList.add('active');
       // блоки рисует общий рендер — то же самое видно в превью редактора курса
       const contentHtml = `<div class="lesson-content">${renderLessonContent(lesson.content)}</div>`;
       main.innerHTML = `<div style="max-width:900px;width:100%;margin:0 auto;" id="lesson-root">
@@ -1631,6 +1637,9 @@
 
     async function loadTestInterface(taskId) {
       const main = document.getElementById('main-area');
+      document.querySelectorAll('.nav-item').forEach(item=>item.classList.remove('active'));
+      Array.from(document.querySelectorAll('.nav-item[data-task-id]'))
+        .find(item=>item.dataset.taskId===String(taskId))?.classList.add('active');
       main.innerHTML = getLoaderHtml();
       main.scrollTop = 0;
       window.scrollTo({ top: 0, behavior: 'instant' });
