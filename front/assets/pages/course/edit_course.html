@@ -270,7 +270,7 @@ body.teacher-mode #t-type{display:none}
       </div>
       <div class="form-row">
         <div class="field full"><label>title</label><input id="c-title" class="input" placeholder="заголовок"></div>
-        <div class="field"><label>description</label><textarea id="c-desc" placeholder="описание под карточку"></textarea></div>
+        <div class="field"><label>Описание</label><textarea id="c-desc" maxlength="500" placeholder="Краткое описание для карточки, до 500 символов"></textarea></div>
         <div class="field"><label>cover url</label><input id="c-cover" class="input" placeholder="ссылка на обложку"></div>
         <div class="field"><label>difficulty</label>
           <select id="c-diff">
@@ -408,6 +408,10 @@ body.teacher-mode #t-type{display:none}
       </div>
       <div class="form-row">
         <div class="field full"><label>settings (json)</label><textarea id="t-settings" placeholder='{"taskLen": 8}'></textarea></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Лимит неправильных ответов</label><input id="t-max-wrong" class="input" type="number" min="0" max="100" value="0"><div class="toggle-detail">0 — без ограничения</div></div>
+        <div class="field" id="one-variant-field"><label>Выдача вариантов</label><label class="correct-toggle"><input id="t-one-variant" type="checkbox" checked><i class="ti ti-user-check"></i><span>Один вариант на ученика</span></label></div>
       </div>
       <div class="form-row">
         <div class="field"><label>Подсказка</label><select id="t-hint-mode"><option value="solution">Показать решение</option><option value="text">Свой текст</option><option value="none">Отключена</option></select></div>
@@ -969,6 +973,8 @@ function openNewTask(){
   setTaskType('quiz');
   document.getElementById('t-diff').value='easy';
   document.getElementById('t-settings').value='{}';
+  document.getElementById('t-max-wrong').value='0';
+  document.getElementById('t-one-variant').checked=true;
   document.getElementById('t-hint-mode').value='solution';
   document.getElementById('t-hint-text').value='';
   renderQuizVariants([]);
@@ -998,6 +1004,8 @@ function editTask(id){
   setTaskType(t.type||t.type_task||'');
   document.getElementById('t-diff').value=t.difficulty||'easy';
   document.getElementById('t-settings').value=JSON.stringify(taskSettings);
+  document.getElementById('t-max-wrong').value=Number(taskSettings.max_wrong_attempts||0);
+  document.getElementById('t-one-variant').checked=taskSettings.one_variant_per_student!==false;
   document.getElementById('t-hint-mode').value=t.hint_mode||'solution';
   document.getElementById('t-hint-text').value=t.hint_text||'';
   renderQuizVariants(taskSettings.variants||[]);
@@ -1022,6 +1030,7 @@ function syncQuizBuilder(){
   const selectedType=document.getElementById('t-type').value.trim().toLowerCase();
   const quiz=selectedType==='quiz';
   document.getElementById('quiz-builder').style.display=quiz?'block':'none';
+  document.getElementById('one-variant-field').style.display=quiz?'block':'none';
   document.getElementById('t-settings').closest('.form-row').style.display=quiz?'none':'';
   document.querySelectorAll('[data-task-type]').forEach(button=>{
     const active=button.dataset.taskType===selectedType;
@@ -1096,6 +1105,7 @@ document.getElementById('btn-add-quiz-variant').onclick=()=>addQuizVariant({});
 document.getElementById('btn-save-task').onclick=async()=>{
   let settings={};
   const quiz=document.getElementById('t-type').value.trim().toLowerCase()==='quiz';
+  const maxWrong=Math.max(0,Math.min(100,Number(document.getElementById('t-max-wrong').value||0)));
   if(quiz){
     const quizData=readQuizVariants();
     if(quizData.firstInvalid){
@@ -1103,9 +1113,15 @@ document.getElementById('btn-save-task').onclick=async()=>{
       quizData.firstInvalid.scrollIntoView({behavior:'smooth',block:'center'});
       return;
     }
-    settings={variants:quizData.variants};
+    settings={
+      variants:quizData.variants,
+      max_wrong_attempts:maxWrong,
+      one_variant_per_student:document.getElementById('t-one-variant').checked,
+    };
   } else {
     try{ settings=JSON.parse(document.getElementById('t-settings').value||'{}'); }catch(e){ toast('settings: невалидный json',true); return; }
+    settings.max_wrong_attempts=maxWrong;
+    delete settings.one_variant_per_student;
   }
   const taskId=document.getElementById('t-id').value.trim();
   const body={

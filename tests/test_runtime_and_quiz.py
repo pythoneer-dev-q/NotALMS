@@ -2,10 +2,17 @@ import unittest
 from unittest.mock import AsyncMock, patch
 
 from fastapi import HTTPException
+from pydantic import ValidationError
 
 from back.server.database.coursesDB import total_points_for_row
 from back.server.database import utils
-from back.server.handlers.front_apiHandler import _generate_variant, _validate_submission
+from back.server.handlers.front_apiHandler import (
+    _generate_variant,
+    _max_wrong_attempts,
+    _one_variant_per_student,
+    _validate_submission,
+)
+from back.server.handlers.fronthandler_conf.models import RegVisibleCourse
 from back.server.handlers.teacher_handler import _owned_roles
 from back.server.runtime import _expected_disconnect
 
@@ -94,6 +101,33 @@ class QuizTests(unittest.IsolatedAsyncioTestCase):
             'quiz', ['two'], variant['internal_solution'],
         ))['is_correct'])
 
+    async def test_quiz_variant_is_stable_for_student(self):
+        definition = {
+            'type': 'quiz',
+            'settings': {
+                'one_variant_per_student': True,
+                'variants': [
+                    {'question': f'Вариант {index}', 'answers': [
+                        {'id': 'yes', 'text': 'Да', 'correct': True},
+                        {'id': 'no', 'text': 'Нет', 'correct': False},
+                    ]}
+                    for index in range(8)
+                ],
+            },
+        }
+
+        first = await _generate_variant(definition, variant_key='student-1:task-1')
+        second = await _generate_variant(definition, variant_key='student-1:task-1')
+
+        self.assertEqual(first['condition']['question'], second['condition']['question'])
+        self.assertTrue(_one_variant_per_student(definition))
+
+    def test_wrong_attempt_limit_is_normalized(self):
+        self.assertEqual(_max_wrong_attempts({'settings': {'max_wrong_attempts': 5}}), 5)
+        self.assertEqual(_max_wrong_attempts({'settings': {'max_wrong_attempts': -2}}), 0)
+        self.assertEqual(_max_wrong_attempts({'settings': {'max_wrong_attempts': 999}}), 100)
+        self.assertEqual(_max_wrong_attempts({'settings': {}}), 0)
+
 
 class TeacherRoleAccessTests(unittest.IsolatedAsyncioTestCase):
     async def test_owned_roles_accepts_and_deduplicates_teacher_groups(self):
@@ -111,6 +145,17 @@ class TeacherRoleAccessTests(unittest.IsolatedAsyncioTestCase):
                 await _owned_roles('teacher-1', ['group-1', 'group-2'])
 
         self.assertEqual(error.exception.status_code, 403)
+
+
+class CourseValidationTests(unittest.TestCase):
+    def test_course_description_is_limited(self):
+        payload = {
+            'id': 'course-1', 'title': 'Курс', 'description': 'x' * 501,
+            'cover': '', 'difficulty': 'easy', 'tags': [], 'lessons': [],
+            'granted_to': [],
+        }
+        with self.assertRaises(ValidationError):
+            RegVisibleCourse(**payload)
 
 
 if __name__ == '__main__':

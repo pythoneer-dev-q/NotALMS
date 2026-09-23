@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Header, HTTPException
+import hashlib
 import inspect
 import secrets
 from fastapi.responses import JSONResponse as jsonset
@@ -18,7 +19,25 @@ def _is_math(task_type) -> bool:
     return (task_type or '').strip().lower() in MATH_TYPES
 
 
-async def _generate_variant(task_def: dict) -> dict:
+def _max_wrong_attempts(task_def: dict) -> int:
+    settings_ = task_def.get('settings') or {}
+    if not isinstance(settings_, dict):
+        return 0
+    try:
+        value = int(settings_.get('max_wrong_attempts') or 0)
+    except (TypeError, ValueError):
+        return 0
+    return max(0, min(value, 100))
+
+
+def _one_variant_per_student(task_def: dict) -> bool:
+    settings_ = task_def.get('settings') or {}
+    return isinstance(settings_, dict) \
+        and str(task_def.get('type') or '').strip().lower() == 'quiz' \
+        and settings_.get('one_variant_per_student', True) is not False
+
+
+async def _generate_variant(task_def: dict, variant_key: str | None = None) -> dict:
     """Вариант задания генерирует нужный мини-инструмент по типу задачи."""
     task_type = (task_def.get('type') or '').strip().lower()
     settings_ = task_def.get('settings') or {}
@@ -26,7 +45,11 @@ async def _generate_variant(task_def: dict) -> dict:
         variants = settings_.get('variants') or []
         if not variants:
             raise ValueError('quiz has no variants')
-        variant = secrets.choice(variants)
+        if variant_key and _one_variant_per_student(task_def):
+            digest = hashlib.sha256(variant_key.encode('utf-8')).digest()
+            variant = variants[int.from_bytes(digest[:8], 'big') % len(variants)]
+        else:
+            variant = secrets.choice(variants)
         answers = list(variant.get('answers') or [])
         secrets.SystemRandom().shuffle(answers)
         public_answers = [
@@ -200,20 +223,42 @@ async def main_taskCreate(
 
 @crouter.post('/check_answer')
 async def main_answerCheck(data: dict, user=Depends(get_current_user)):
-    sol = await coursesDB.search_test__id(data['task_id'])
+    task_instance_id = data.get('task_id')
+    sol = await coursesDB.search_test__id(task_instance_id)
     if not sol:
         return jsonset(content={'error': 'задача не найдена'}, status_code=404)
+    if sol.get('owner_uid') != user['user_uid']:
+        return jsonset(content={'error': 'задача не найдена'}, status_code=404)
     # считаем по определению задачи, а не по сгенерированному варианту
-    key = sol.get('parent_task_id') or data['task_id']
+    key = str(sol.get('parent_task_id') or task_instance_id)
     if not await coursesDB.course_for_task(user, str(key)):
         raise HTTPException(404, 'task not found')
+    task_def = await coursesDB.search_tasks__id(_id=key)
+    if not task_def:
+        return jsonset(content={'error': 'задача не найдена'}, status_code=404)
+    one_variant = _one_variant_per_student(task_def)
+    if one_variant and key in await coursesDB.solved_task_ids(user['user_uid']):
+        return jsonset(content={
+            'error': 'назначенный вариант уже решён',
+            'completed': True,
+            'one_variant_per_student': True,
+        }, status_code=409)
+    max_wrong = _max_wrong_attempts(task_def)
+    wrong_count = await coursesDB.wrong_attempts(user['user_uid'], key)
+    if max_wrong and wrong_count >= max_wrong:
+        return jsonset(content={
+            'error': 'лимит неправильных ответов исчерпан',
+            'attempts': wrong_count,
+            'max_wrong_attempts': max_wrong,
+            'attempts_remaining': 0,
+            'locked': True,
+        }, status_code=409)
     # подсказка не блокирует, но очков за задание больше не даёт
     hinted = key in await coursesDB.hinted_task_ids(user['user_uid'])
     # тип задания берем из варианта, а если его нет (старые записи) — из определения
     task_type = sol.get('task_type')
     if task_type is None:
-        task_def = await coursesDB.search_tasks__id(_id=key)
-        task_type = (task_def or {}).get('type')
+        task_type = task_def.get('type')
     sub = await _validate_submission(task_type, data['user_input'], sol['internal_solution'])
     if sub.get('is_correct'):
         if hinted:
@@ -234,6 +279,19 @@ async def main_answerCheck(data: dict, user=Depends(get_current_user)):
             await usersDB.add_rating(user['user_uid'], reward)
         # этот вариант отработан — в следующий раз сгенерируем новое задание
         await coursesDB.drop_tests_for(key, user['user_uid'])
+    else:
+        registered = await coursesDB.register_wrong_attempt(
+            user['user_uid'], key, max_wrong,
+        )
+        if registered is None:
+            registered = await coursesDB.wrong_attempts(user['user_uid'], key)
+        wrong_count = registered
+    sub['attempts'] = wrong_count
+    sub['max_wrong_attempts'] = max_wrong
+    sub['attempts_remaining'] = max(0, max_wrong - wrong_count) if max_wrong else None
+    sub['locked'] = bool(max_wrong and wrong_count >= max_wrong and not sub.get('is_correct'))
+    sub['one_variant_per_student'] = one_variant
+    sub['completed'] = bool(one_variant and sub.get('is_correct'))
     return jsonset(content=sub, status_code=200)
 
 
@@ -259,19 +317,28 @@ async def main_taskGetter(click_from: str, user=Depends(get_current_user)):
         # вариант держим 30 минут: меньше мусора в базе и стабильные очки
         cached = await coursesDB.recent_test(click_from, user['user_uid'], minutes=30)
         if cached is None:
-            cached = await _generate_variant(tmp)
+            variant_key = f"{user['user_uid']}:{click_from}" if _one_variant_per_student(tmp) else None
+            cached = await _generate_variant(tmp, variant_key=variant_key)
             cached['parent_task_id'] = str(click_from)
             cached['owner_uid'] = user['user_uid']
             cached['task_type'] = tmp.get('type')
             await coursesDB.create_test(cached)
         solves = await coursesDB.task_solves(user['user_uid'], str(click_from))
+        wrong_count = await coursesDB.wrong_attempts(user['user_uid'], str(click_from))
+        max_wrong = _max_wrong_attempts(tmp)
+        one_variant = _one_variant_per_student(tmp)
         # наружу отдаём без ответа и служебных полей
         return jsonset(content={
             'mode': cached.get('mode'),
             'task_id': cached.get('task_id'),
             'task_type': cached.get('task_type') or tmp.get('type'),
             'condition': cached.get('condition', {}),
-            'tryings': cached.get('tryings', 0),
+            'tryings': wrong_count,
+            'max_wrong_attempts': max_wrong,
+            'attempts_remaining': max(0, max_wrong - wrong_count) if max_wrong else None,
+            'locked': bool(max_wrong and wrong_count >= max_wrong),
+            'one_variant_per_student': one_variant,
+            'completed': bool(one_variant and already),
             'solved': already,
             'solves': solves,
             'next_reward': coursesDB.reward_for(coursesDB.BASE_TASK_REWARD, solves),

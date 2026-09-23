@@ -542,6 +542,16 @@
             font-weight: 700;
         }
 
+        .course-description {
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 3;
+            line-clamp: 3;
+            overflow: hidden;
+            overflow-wrap: anywhere;
+            line-height: 1.5;
+        }
+
         .course-head {
             display: flex;
             justify-content: space-between;
@@ -959,14 +969,14 @@
                 el.className = 'course';
                 const diff = (c.difficulty || '').toLowerCase();
                 const tags = Array.isArray(c.tags) && c.tags.length
-                    ? `<div class="course-tags">${c.tags.map(t => `<span class="course-tag">${String(t)}</span>`).join('')}</div>`
+                    ? `<div class="course-tags">${c.tags.map(t => `<span class="course-tag">${escapeHtml(t)}</span>`).join('')}</div>`
                     : '';
                 el.innerHTML = `
                     <div class="course-head">
-                        <h3>${c.title}</h3>
-                        ${diff ? `<span class="badge ${diff}">${diff}</span>` : ''}
+                        <h3>${escapeHtml(c.title)}</h3>
+                        ${diff ? `<span class="badge ${escapeHtml(diff)}">${escapeHtml(diff)}</span>` : ''}
                     </div>
-                    <div>${c.description || 'Без описания'}</div>
+                    <div class="course-description">${escapeHtml(c.description || 'Без описания')}</div>
                     ${tags}
                 `;
                 el.onclick = () => location.href = `/course/${c._id || c.id}`;

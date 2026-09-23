@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     mongo_lmsprogress: str = 'ntprogress'
     mongo_lmstasks: str = 'nttasks'
     mongo_lmstests: str = 'nttests'
+    mongo_lmsattempts: str = 'nttask_attempts'
     mongo_lmsreads: str = 'ntlesson_reads'  # прочитанные уроки
     mongo_lmshints: str = 'nthints'  # использованные подсказки
     mongo_lmsnews: str = 'ntnews'  # новости платформы

@@ -5,6 +5,8 @@ from back.server.database.client import get_db
 from back.server.database import hotcache
 from back.server.server_configs.settings import settings
 from typing import Literal, Optional
+from pymongo import ReturnDocument
+from pymongo.errors import DuplicateKeyError
 
 database = get_db(settings.mongo_lmscluster)
 courses = database[settings.mongo_lmscoursesdata]
@@ -12,6 +14,7 @@ lessons = database[settings.mongo_lmslessons]
 progress = database[settings.mongo_lmsprogress]
 tasks = database[settings.mongo_lmstasks]
 tests = database[settings.mongo_lmstests]
+attempts = database[settings.mongo_lmsattempts]
 projection = {'_id': 0}
 
 # кэш в redis (hotcache), ключ по роли
@@ -39,6 +42,8 @@ async def ensure_indexes():
     await tests.create_index('task_id')
     await tests.create_index([('parent_task_id', 1), ('owner_uid', 1)])
     await tests.create_index('expires_at', expireAfterSeconds=0)
+    await attempts.create_index([('user_uid', 1), ('task_id', 1)], unique=True)
+    await attempts.create_index('task_id')
     await hints.create_index([('user_uid', 1), ('task_id', 1)])
     await reads.create_index([('user_uid', 1), ('lesson_id', 1)])
 
@@ -71,7 +76,7 @@ async def create_courseVisible(
     short_info = {
         "_id": _id,
         "title": title,
-        "description": description,
+        "description": str(description or '').strip()[:500],
         "cover": cover,
         "difficulty": difficulty,
         "tags": tags,
@@ -196,6 +201,46 @@ async def recent_test(task_def_id: str, owner_uid: str = None, minutes: int = 30
 async def search_test(task_id: int):
     return await tests.find_one({'task_id': task_id})
 
+
+async def wrong_attempts(user_uid: str, task_id: str) -> int:
+    row = await attempts.find_one(
+        {'user_uid': user_uid, 'task_id': str(task_id)},
+        {'wrong_attempts': 1},
+    )
+    return int((row or {}).get('wrong_attempts', 0))
+
+
+async def register_wrong_attempt(user_uid: str, task_id: str,
+                                 limit: int = 0) -> int | None:
+    """Atomically increment errors, or return None when the configured limit is reached."""
+    key = {'user_uid': user_uid, 'task_id': str(task_id)}
+    flt = dict(key)
+    if limit > 0:
+        flt['wrong_attempts'] = {'$lt': limit}
+    stamp = datetime.now(timezone.utc).replace(microsecond=0)
+    updated = await attempts.find_one_and_update(
+        flt,
+        {'$inc': {'wrong_attempts': 1}, '$set': {'updated_at': stamp}},
+        return_document=ReturnDocument.AFTER,
+    )
+    if updated:
+        return int(updated.get('wrong_attempts', 0))
+
+    existing = await attempts.find_one(key, {'wrong_attempts': 1})
+    if existing:
+        return None if limit > 0 and int(existing.get('wrong_attempts', 0)) >= limit \
+            else int(existing.get('wrong_attempts', 0))
+
+    try:
+        await attempts.insert_one({
+            **key, 'wrong_attempts': 1,
+            'created_at': stamp, 'updated_at': stamp,
+        })
+        return 1
+    except DuplicateKeyError:
+        # Another request inserted the counter between find and insert.
+        return await register_wrong_attempt(user_uid, task_id, limit)
+
 async def search_courses(role: str):
     # сначала горячий кэш (redis -> память)
     ttl = settings.cache_ttl
@@ -314,6 +359,7 @@ async def clear_user_course_progress(user_uid: str, course_ids: list[str]):
         await progress.delete_many({'user_uid': user_uid, 'task_id': {'$in': task_ids}})
         await hints.delete_many({'user_uid': user_uid, 'task_id': {'$in': task_ids}})
         await tests.delete_many({'owner_uid': user_uid, 'parent_task_id': {'$in': task_ids}})
+        await attempts.delete_many({'user_uid': user_uid, 'task_id': {'$in': task_ids}})
         removed_points = sum(total_points_for_row(row) for row in point_rows)
         if removed_points:
             from back.server.database import usersDB
@@ -542,6 +588,8 @@ async def update_course(course_id: str, fields: dict):
     # пустой апдейт не шлем
     if not fields:
         return None
+    if 'description' in fields:
+        fields['description'] = str(fields['description'] or '').strip()[:500]
     fields['updated_at'] = datetime.now(timezone.utc).replace(microsecond=0).isoformat(timespec='seconds', sep='T')
     res = await courses.find_one_and_update(
         {'_id': course_id}, {'$set': fields}, return_document=True
@@ -566,6 +614,7 @@ async def delete_course(course_id: str):
     if task_ids:
         await tasks.delete_many({'_id': {'$in': task_ids}})
         await tests.delete_many({'parent_task_id': {'$in': [str(t) for t in task_ids]}})
+        await attempts.delete_many({'task_id': {'$in': [str(t) for t in task_ids]}})
         await delete_progress_for_tasks([str(t) for t in task_ids])
         await hints.delete_many({'task_id': {'$in': [str(t) for t in task_ids]}})
     if lesson_ids:
@@ -602,6 +651,7 @@ async def delete_lesson(lesson_id: str):
     if task_ids:
         await tasks.delete_many({'_id': {'$in': task_ids}})
         await tests.delete_many({'parent_task_id': {'$in': [str(t) for t in task_ids]}})
+        await attempts.delete_many({'task_id': {'$in': [str(t) for t in task_ids]}})
         await delete_progress_for_tasks([str(t) for t in task_ids])
         await hints.delete_many({'task_id': {'$in': [str(t) for t in task_ids]}})
     await reads.delete_many({'lesson_id': lesson_id})
@@ -620,6 +670,8 @@ async def update_task(task_id: str, fields: dict):
     res = await tasks.find_one_and_update(
         {'_id': task_id}, {'$set': fields}, return_document=True
     )
+    if res is not None and ({'settings', 'type', 'mode'} & fields.keys()):
+        await tests.delete_many({'parent_task_id': str(task_id)})
     if res is None:
         return None
     return {**res, '_id': str(res['_id'])}
@@ -628,6 +680,7 @@ async def update_task(task_id: str, fields: dict):
 async def delete_task(task_id: str):
     # каскад: задача -> сгенеренные варианты (tests)
     await tests.delete_many({'parent_task_id': str(task_id)})
+    await attempts.delete_many({'task_id': str(task_id)})
     await delete_progress_for_tasks([str(task_id)])
     await hints.delete_many({'task_id': str(task_id)})
     res = await tasks.find_one_and_delete({'_id': task_id})

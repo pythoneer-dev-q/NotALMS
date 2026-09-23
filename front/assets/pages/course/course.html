@@ -1483,6 +1483,7 @@
     let currentTaskDefId = null;
     let currentTaskTitle = '';
     let attemptCounter = 0;
+    let maxWrongAttempts = 0;
 
     function getLoaderHtml(customClass = '') {
       return `
@@ -1642,7 +1643,8 @@
       const task = response;
       currentTaskId = task.task_id;
       currentTaskType = (task.task_type || '').toLowerCase();
-      attemptCounter = 0;
+      attemptCounter = Number(task.tryings || 0);
+      maxWrongAttempts = Number(task.max_wrong_attempts || 0);
       const condition = task.condition || {};
       const isMath = condition.kind === 'math' || (task.task_type || '').toLowerCase() === 'math';
       const isQuiz = currentTaskType === 'quiz';
@@ -1697,12 +1699,12 @@
             <div class="input-area">
               <label class="field-label">Ваш ответ</label>
               ${isQuiz ? `<div class="quiz-options">${(condition.answers||[]).map(answer=>`<label class="quiz-option"><input name="quiz-answer" type="${condition.multiple?'checkbox':'radio'}" value="${escapeHtml(answer.id)}"><span>${escapeHtml(answer.text)}</span></label>`).join('')}</div>` : `<input type="text" id="user-input" class="dna-input" inputmode="${isMath ? 'decimal' : 'text'}" placeholder="${isMath ? 'например 42' : "5'-...-3'"}" autocomplete="off">`}
-              <div id="feedback" class="feedback-msg"></div>
+              <div id="feedback" class="feedback-msg ${task.locked ? 'error' : task.completed ? 'success' : ''}">${task.locked ? 'Лимит неправильных ответов исчерпан.' : task.completed ? 'Назначенный вариант уже решён.' : ''}</div>
             </div>
           </div>
           <div class="task-foot">
             <span class="attempts" id="attempts">попыток: 0</span>
-            <button class="submit-btn" id="submit-btn" onclick="submitAnswer()"><span>Проверить</span></button>
+            <button class="submit-btn" id="submit-btn" onclick="submitAnswer()" ${task.locked || task.completed ? 'disabled' : ''}><span>${task.locked ? 'Попытки закончились' : task.completed ? 'Вариант решён' : 'Проверить'}</span></button>
           </div>
         </div>
       </div>`;
@@ -1713,6 +1715,11 @@
           e.stopPropagation();
           openHintPopover(currentTaskId, hintUsed);
         };
+      }
+      if(task.locked || task.completed){
+        const input=document.getElementById('user-input');
+        if(input) input.disabled=true;
+        document.querySelectorAll('input[name="quiz-answer"]').forEach(item=>item.disabled=true);
       }
       updateAttempts();
     }
@@ -1846,6 +1853,21 @@
       btn.innerHTML = getLoaderHtml('btn-loader');
       const res = await apiRequest('/check_answer', 'POST', { task_id: currentTaskId, user_input: userVal });
       btn.innerHTML = original;
+      if(res && Number.isFinite(Number(res.attempts))) attemptCounter=Number(res.attempts);
+      if(res && Number.isFinite(Number(res.max_wrong_attempts))) maxWrongAttempts=Number(res.max_wrong_attempts);
+      if(res?.error){
+        feedback.className='feedback-msg error';
+        feedback.textContent=res.error;
+        const locked=!!res.locked;
+        const completed=!!res.completed;
+        if(input) input.disabled=locked||completed;
+        quizInputs.forEach(item=>item.disabled=locked||completed);
+        btn.disabled=locked||completed;
+        if(locked) btn.innerHTML='<span>Попытки закончились</span>';
+        if(completed) btn.innerHTML='<span>Вариант решён</span>';
+        updateAttempts();
+        return;
+      }
       if(input) input.disabled = false;
       quizInputs.forEach(item=>item.disabled=false);
       if (res && res.is_correct) {
@@ -1871,9 +1893,15 @@
           }
         } else {
           feedback.textContent = `Верно! +${res.rating_awarded ?? 100} к рейтингу (${res.solve_count || 1}-е решение)`;
-          btn.disabled = false;
-          btn.innerHTML = '<i class="ti ti-repeat"></i> решить ещё раз';
-          btn.onclick = () => loadTestInterface(currentTaskDefId);
+          btn.disabled = !!res.one_variant_per_student;
+          btn.innerHTML = res.one_variant_per_student
+            ? '<i class="ti ti-circle-check"></i> вариант решён'
+            : '<i class="ti ti-repeat"></i> решить ещё раз';
+          if(!res.one_variant_per_student) btn.onclick = () => loadTestInterface(currentTaskDefId);
+          if(res.one_variant_per_student){
+            if(input) input.disabled=true;
+            quizInputs.forEach(item=>item.disabled=true);
+          }
           solvedTasks.add(String(currentTaskDefId));
           hintedTasks.delete(String(currentTaskDefId));
           const item = document.querySelector(`.nav-item[data-task-id="${currentTaskDefId}"]`);
@@ -1887,9 +1915,9 @@
         }
         updateAttempts();
       } else {
-        attemptCounter++;
         updateAttempts();
-        btn.disabled = false;
+        const locked=!!res?.locked;
+        btn.disabled = locked;
         if(input) input.classList.add('error');
         feedback.className = 'feedback-msg error';
         if (res && res.errors && res.errors.length) {
@@ -1902,17 +1930,24 @@
           feedback.textContent = 'Неверно, попробуйте ещё раз.';
         }
         if(input) setTimeout(() => input.classList.remove('error'), 500);
-        if (attemptCounter >= 3) {
+        if (attemptCounter >= Math.min(3, maxWrongAttempts || 3)) {
           const bulb = document.getElementById('bulb-btn');
           if (bulb && !bulb.classList.contains('used')) bulb.classList.add('visible');
         }
-        if(input) input.focus();
+        if(locked){
+          if(input) input.disabled=true;
+          quizInputs.forEach(item=>item.disabled=true);
+          btn.innerHTML='<span>Попытки закончились</span>';
+          feedback.textContent='Неверно. Лимит неправильных ответов исчерпан.';
+        } else if(input) input.focus();
       }
     }
 
     function updateAttempts() {
       const a = document.getElementById('attempts');
-      if (a) a.textContent = `попыток: ${attemptCounter}`;
+      if (a) a.textContent = maxWrongAttempts
+        ? `ошибок: ${attemptCounter} из ${maxWrongAttempts}`
+        : `ошибок: ${attemptCounter}`;
     }
 
     // escapeHtml / videoEmbedUrl / renderVideo / mountEmbedScripts — из lesson-blocks.js

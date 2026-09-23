@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 """ _id - ид курса
         title - заголовок для сайта
         description - описание под карточку
@@ -12,7 +12,7 @@ from pydantic import BaseModel
 class RegVisibleCourse(BaseModel):
     id: str
     title: str
-    description: str
+    description: str = Field(max_length=500)
     order: int = -1
     cover: str
     is_published: bool = False
@@ -82,7 +82,7 @@ class UserRequest(BaseModel):
 # правка курса из админки: все поля опциональны, None не пишется
 class AdminCourseUpdate(BaseModel):
     title: str | None = None
-    description: str | None = None
+    description: str | None = Field(default=None, max_length=500)
     difficulty: str | None = None
     tags: list[str] | None = None
     order: int | None = None
