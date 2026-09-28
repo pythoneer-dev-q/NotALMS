@@ -32,8 +32,9 @@ def _max_wrong_attempts(task_def: dict) -> int:
 
 def _one_variant_per_student(task_def: dict) -> bool:
     settings_ = task_def.get('settings') or {}
+    t = str(task_def.get('type') or '').strip().lower()
     return isinstance(settings_, dict) \
-        and str(task_def.get('type') or '').strip().lower() == 'quiz' \
+        and t in ('quiz', 'matching') \
         and settings_.get('one_variant_per_student', True) is not False
 
 
@@ -41,7 +42,7 @@ async def _generate_variant(task_def: dict, variant_key: str | None = None) -> d
     """Вариант задания генерирует нужный мини-инструмент по типу задачи."""
     task_type = (task_def.get('type') or '').strip().lower()
     settings_ = task_def.get('settings') or {}
-    if task_type == 'quiz':
+    if task_type in ('quiz', 'matching'):
         variants = settings_.get('variants') or []
         if not variants:
             raise ValueError('quiz has no variants')
@@ -50,6 +51,46 @@ async def _generate_variant(task_def: dict, variant_key: str | None = None) -> d
             variant = variants[int.from_bytes(digest[:8], 'big') % len(variants)]
         else:
             variant = secrets.choice(variants)
+
+        # Режим сопоставления / соединения пар
+        is_matching = variant.get('kind') == 'matching' or variant.get('type') == 'matching' or 'pairs' in variant
+        if is_matching:
+            raw_pairs = list(variant.get('pairs') or [])
+            if not raw_pairs:
+                raise ValueError('matching task has no pairs')
+            left_items = [
+                {'id': f'L{i}', 'text': str(p.get('left', ''))}
+                for i, p in enumerate(raw_pairs)
+            ]
+            right_items = [
+                {'id': f'R{i}', 'text': str(p.get('right', ''))}
+                for i, p in enumerate(raw_pairs)
+            ]
+            secrets.SystemRandom().shuffle(right_items)
+            correct_pairs = {f'L{i}': f'R{i}' for i in range(len(raw_pairs))}
+            canonical = '; '.join(f"{p.get('left')} ↔ {p.get('right')}" for p in raw_pairs)
+
+            cond = {
+                'kind': 'matching',
+                'question': str(variant.get('question', '')),
+                'left_items': left_items,
+                'right_items': right_items,
+            }
+            if variant.get('image'):
+                cond['image'] = str(variant['image'])
+            return {
+                'mode': 'quiz',
+                'task_id': secrets.randbelow(900000000) + 100000000,
+                'condition': cond,
+                'internal_solution': {
+                    'kind': 'matching',
+                    'pairs': correct_pairs,
+                    'canonical': canonical
+                },
+                'tryings': 0,
+            }
+
+        # Обычный тест с вариантами ответов
         answers = list(variant.get('answers') or [])
         secrets.SystemRandom().shuffle(answers)
         public_answers = [
@@ -61,14 +102,17 @@ async def _generate_variant(task_def: dict, variant_key: str | None = None) -> d
             str(answer.get('id', index)) for index, answer in enumerate(answers)
             if answer.get('correct') is True
         ]
+        cond = {
+            'question': str(variant.get('question', '')),
+            'answers': public_answers,
+            'multiple': bool(variant.get('multiple') or len(correct) > 1),
+        }
+        if variant.get('image'):
+            cond['image'] = str(variant['image'])
         return {
             'mode': 'quiz',
             'task_id': secrets.randbelow(900000000) + 100000000,
-            'condition': {
-                'question': str(variant.get('question', '')),
-                'answers': public_answers,
-                'multiple': bool(variant.get('multiple') or len(correct) > 1),
-            },
+            'condition': cond,
             'internal_solution': {'kind': 'quiz', 'correct': correct},
             'tryings': 0,
         }
@@ -78,19 +122,53 @@ async def _generate_variant(task_def: dict, variant_key: str | None = None) -> d
             difficulty=task_def.get('difficulty') or 'easy',
             settings=settings_,
         )
+    try:
+        bio_mode = int(task_def.get('mode') or 1)
+    except (ValueError, TypeError):
+        bio_mode = 1
     return await biologyUtil.generate_task(
-        mode=int(task_def.get('mode') or 1),
+        mode=bio_mode,
         length=int(settings_.get('taskLen') or 18),
     )
 
 
 async def _validate_submission(task_type, user_input, solution: dict):
-    if (task_type or '').strip().lower() == 'quiz':
-        selected = user_input if isinstance(user_input, list) else [user_input]
-        selected = {str(value) for value in selected if value is not None}
-        correct = {str(value) for value in solution.get('correct', [])}
-        result = {'is_correct': selected == correct,
-                  'score': coursesDB.BASE_TASK_REWARD}
+    t_clean = (task_type or '').strip().lower()
+    if t_clean in ('quiz', 'matching'):
+        if solution.get('kind') == 'matching':
+            correct_pairs = {str(k): str(v) for k, v in solution.get('pairs', {}).items()}
+            given_pairs = {}
+            if isinstance(user_input, dict):
+                given_pairs = {str(k): str(v) for k, v in user_input.items()}
+            elif isinstance(user_input, list):
+                for item in user_input:
+                    if isinstance(item, (list, tuple)) and len(item) == 2:
+                        given_pairs[str(item[0])] = str(item[1])
+                    elif isinstance(item, dict):
+                        l = item.get('left') or item.get('l')
+                        r = item.get('right') or item.get('r')
+                        if l and r:
+                            given_pairs[str(l)] = str(r)
+            elif isinstance(user_input, str):
+                try:
+                    import json
+                    parsed = json.loads(user_input)
+                    if isinstance(parsed, dict):
+                        given_pairs = {str(k): str(v) for k, v in parsed.items()}
+                    elif isinstance(parsed, list):
+                        for item in parsed:
+                            if isinstance(item, (list, tuple)) and len(item) == 2:
+                                given_pairs[str(item[0])] = str(item[1])
+                except Exception:
+                    pass
+            is_correct = bool(correct_pairs and given_pairs == correct_pairs)
+            result = {'is_correct': is_correct, 'score': coursesDB.BASE_TASK_REWARD}
+        else:
+            selected = user_input if isinstance(user_input, list) else [user_input]
+            selected = {str(value) for value in selected if value is not None}
+            correct = {str(value) for value in solution.get('correct', [])}
+            result = {'is_correct': selected == correct,
+                      'score': coursesDB.BASE_TASK_REWARD}
     elif _is_math(task_type):
         result = mathUtil.validate_submission(
             user_input=user_input, solution=solution)
@@ -316,6 +394,21 @@ async def main_taskGetter(click_from: str, user=Depends(get_current_user)):
                     }, status_code=403)
         # вариант держим 30 минут: меньше мусора в базе и стабильные очки
         cached = await coursesDB.recent_test(click_from, user['user_uid'], minutes=30)
+        is_stale = False
+        if cached:
+            c_cond = cached.get('condition') or {}
+            c_sol = cached.get('internal_solution') or {}
+            if cached.get('task_type') != tmp.get('type'):
+                is_stale = True
+            elif str(cached.get('mode', '')) != str(tmp.get('mode', '')):
+                is_stale = True
+            elif not c_cond or not c_sol:
+                is_stale = True
+            elif tmp.get('type') == 'matching' and c_cond.get('kind') != 'matching':
+                is_stale = True
+        if is_stale:
+            await coursesDB.tests.delete_many({'parent_task_id': str(click_from), 'owner_uid': user['user_uid']})
+            cached = None
         if cached is None:
             variant_key = f"{user['user_uid']}:{click_from}" if _one_variant_per_student(tmp) else None
             cached = await _generate_variant(tmp, variant_key=variant_key)
@@ -386,11 +479,30 @@ async def main_taskSolver(task_id: str, user=Depends(get_current_user)):
                             for answer_id in sol.get('correct', []))
         await coursesDB.mark_task_hint(user['user_uid'], key)
         return jsonset(content={'solution': display, 'hint_used': True, 'kind': 'solution'}, status_code=200)
+    if sol.get('kind') == 'matching':
+        display = sol.get('canonical')
+        if not display:
+            left_map = {str(item.get('id')): str(item.get('text', '')) for item in (inst or {}).get('condition', {}).get('left_items', [])}
+            right_map = {str(item.get('id')): str(item.get('text', '')) for item in (inst or {}).get('condition', {}).get('right_items', [])}
+            display = '; '.join(f"{left_map.get(k, k)} ↔ {right_map.get(v, v)}" for k, v in sol.get('pairs', {}).items())
+        await coursesDB.mark_task_hint(user['user_uid'], key)
+        return jsonset(content={'solution': display, 'hint_used': True, 'kind': 'solution'}, status_code=200)
     canonical = sol.get('canonical_5_3') or sol.get('canonical')
     if canonical is None:
+        sol_t = str(sol.get('type') or '').lower()
+        if 'nucleotide' in sol_t:
+            canonical = f"{sol.get('base', '')} + {sol.get('sugar', '')} + фосфат"
+        elif 'chain' in sol_t:
+            canonical = f"5'-{sol.get('sequence', '')}-3'"
+        elif 'cloverleaf' in sol_t:
+            canonical = f"Антикодон: {sol.get('anticodon', '')}"
+    if canonical is None:
         return jsonset(content={'error': 'подсказки для этой задачи нет'}, status_code=404)
-    # у математики ответ — просто число, у ДНК/РНК оборачиваем в 5'/3'
-    if sol.get('kind') == 'math' or sol.get('type') == 'number':
+    # у математики, пептидов и интерактивов ответ не оборачиваем в 5'/3'
+    sol_type = str(sol.get('type') or '').lower()
+    if sol.get('kind') == 'math' or any(k in sol_type for k in ('protein', 'anticodon', 'interactive', 'nucleotide', 'cloverleaf', 'chain')):
+        display = str(canonical)
+    elif str(canonical).startswith("5'") or str(canonical).startswith("3'"):
         display = str(canonical)
     else:
         display = f"5'-{canonical}-3'"

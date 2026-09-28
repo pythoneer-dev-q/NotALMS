@@ -26,7 +26,21 @@ body[data-theme="emerald"]{--primary:#10b981;--bg:#08130e;--panel:rgba(10,35,26,
 body[data-theme="sunset"]{--primary:#f59e0b;--bg:#171009;--panel:rgba(40,27,9,.95);--text:#fef3c7;--accent:#fbbf24}
 body[data-theme="rose"]{--primary:#f43f5e;--bg:#170a12;--panel:rgba(45,12,26,.95);--text:#ffe4e6;--accent:#fb7185}
 body[data-theme="ocean"]{--primary:#0ea5e9;--bg:#071224;--panel:rgba(9,34,64,.95);--text:#e0f2fe;--accent:#38bdf8}
-*{box-sizing:border-box}
+*, *::before, *::after {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-touch-callout: none;
+}
+:focus, :focus-visible, :active {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+button, .btn, .btn-ghost, .btn-primary, .tab, .tag, [data-task-type], [data-bio-mode], [data-math-mode] {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  outline: none !important;
+}
 body{margin:0;font-family:'Onest',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 
 .header{height:60px;display:flex;align-items:center;padding:0 16px;background:var(--panel);border-bottom:1px solid var(--primary);position:sticky;top:0;z-index:100}
@@ -116,7 +130,21 @@ body.modal-open{overflow:hidden}
 .correct-toggle i{font-size:1.1rem}
 .answer-line{display:grid;grid-template-columns:32px minmax(0,1fr) 40px;gap:8px;align-items:center}
 .answer-index{width:32px;height:32px;border-radius:10px;background:var(--surface2);display:grid;place-items:center;color:var(--muted);font-size:.78rem;font-weight:700}
-.task-kind{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+*, *::before, *::after {
+  -webkit-tap-highlight-color: transparent !important;
+}
+:focus {
+  outline: none !important;
+}
+:focus-visible {
+  outline: 2px solid var(--primary, #6366f1) !important;
+  outline-offset: 2px !important;
+}
+button, a, input, select, textarea, label, [role="button"], [tabindex] {
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-touch-callout: none;
+}
+.task-kind{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
 .task-kind button{min-height:58px;border:1px solid var(--line2);border-radius:12px;background:transparent;color:var(--muted);padding:9px 11px;text-align:left;cursor:pointer;transition:.18s}
 .task-kind button strong,.task-kind button span{display:block}
 .task-kind button strong{color:var(--text);font-size:.9rem;margin-bottom:2px}
@@ -380,6 +408,45 @@ body.teacher-mode #t-type{display:none}
       <div class="card-head"><h3 id="task-edit-title">Редактирование задачи</h3>
         <button id="btn-close-task-edit" class="btn-ghost"><i class="ti ti-x"></i></button>
       </div>
+
+      <details class="teacher-guide-accordion" style="margin-bottom:14px;background:rgba(99,102,241,0.08);border:1px solid var(--line2);border-radius:12px;padding:12px 16px;font-size:0.88rem">
+        <summary style="cursor:pointer;font-weight:700;color:var(--primary);display:flex;align-items:center;gap:8px;user-select:none">
+          <i class="ti ti-help-circle" style="font-size:1.15rem"></i> Справочник учителя: как устроены типы заданий и их настройка (нажмите, чтобы развернуть)
+        </summary>
+        <div style="margin-top:12px;display:grid;gap:10px;line-height:1.55;color:var(--text)">
+          <div>
+            <strong style="color:var(--accent)"><i class="ti ti-list-check"></i> 1. Тест с выбором ответа (quiz):</strong>
+            <p style="margin:2px 0 0;color:var(--muted)">Создавайте вопросы с одиночным или множественным выбором. Можно прикрепить URL иллюстрации к вопросу. Отмечайте один или несколько верных ответов кнопкой с галочкой.</p>
+          </div>
+          <div>
+            <strong style="color:var(--accent)"><i class="ti ti-arrows-exchange"></i> 2. Сопоставление / Соединение пар (matching):</strong>
+            <p style="margin:2px 0 0;color:var(--muted)">Задание на соответствие двух колонок (например, органоид ↔ функция, термин ↔ определение, формула ↔ название). Ученик кликом или перетаскиванием соединяет пары. Правая колонка перемешивается автоматически.</p>
+          </div>
+          <div>
+            <strong style="color:var(--accent)"><i class="ti ti-dna-2"></i> 3. Биологический генератор (biology):</strong>
+            <p style="margin:2px 0 0;color:var(--muted)">
+              • <b>Режимы 1–3:</b> ДНК→иРНК (транскрипция), иРНК→ДНК (обратная транскрипция), репликация ДНК. Ученик вводит ответ с 5' и 3' концами (напр. <code>5'-АТГЦ-3'</code>).<br>
+              • <b>Режим 4:</b> Биосинтез белка. Генератор создает случайную иРНК, ученик ищет аминокислоты по встроенной интерактивной таблице генетического кода и вводит их через дефис (напр. <code>МЕТ-АЛА-СЕР</code>).<br>
+              • <b>Режим 5:</b> Антикодоны тРНК. Ученик вводит триплеты антикодонов через запятую (напр. <code>УАЦ, ЦГА</code>).<br>
+              • <b>Режим 6 [Интерактив]:</b> Конструктор нуклеотида (сборка остатка фосфата, пентозы и азотистого основания мышкой или пальцем в слоты).<br>
+              • <b>Режим 7 [Интерактив]:</b> Сборка 5'→3' цепи ДНК (пошаговое соединение нуклеотидов в цепочку с отображением водородных связей А=Т, Г≡Ц).<br>
+              • <b>Режим 8 [Интерактив]:</b> Вторичная структура тРНК («Трилистник») со скручиванием петель и указанием антикодона.
+            </p>
+          </div>
+          <div>
+            <strong style="color:var(--accent)"><i class="ti ti-math"></i> 4. Математический генератор (math):</strong>
+            <p style="margin:2px 0 0;color:var(--muted)">Режимы 1–4 (+, -, *, /). В поле <i>settings (json)</i> можно настроить диапазон чисел, например <code>{"min": 10, "max": 99}</code>.</p>
+          </div>
+          <div>
+            <strong style="color:var(--accent)"><i class="ti ti-adjustments"></i> 5. Параметры оценивания и подсказок:</strong>
+            <p style="margin:2px 0 0;color:var(--muted)">
+              • <b>Лимит ошибок:</b> допустимое число неверных ответов до блокировки задачи (0 — без ограничения).<br>
+              • <b>Один вариант на ученика:</b> случайный вариант теста жестко фиксируется за учеником и не меняется при перезагрузке.<br>
+              • <b>Подсказка:</b> «Показать решение» (раскрывает ответ, но аннулирует баллы за задание) или «Свой текст» (наводящая подсказка учителя без готового ответа).
+            </p>
+          </div>
+        </div>
+      </details>
       <div class="form-row">
         <div class="field"><label>ID задания</label><input id="t-id" class="input" readonly placeholder="например: fractions_quiz"></div>
         <div class="field"><label>Урок</label><select id="t-lesson"></select></div>
@@ -391,16 +458,40 @@ body.teacher-mode #t-type{display:none}
       <div class="form-row">
         <div class="field full"><label>Тип задания</label>
           <div class="task-kind" id="task-kind">
-            <button type="button" data-task-type="quiz"><strong><i class="ti ti-list-check"></i> Тест с вариантами</strong><span>Один или несколько правильных ответов</span></button>
-            <button type="button" data-task-type="math"><strong><i class="ti ti-math"></i> Математика</strong><span>Сложение, вычитание, умножение или деление</span></button>
-            <button type="button" data-task-type="biology"><strong><i class="ti ti-dna-2"></i> Биология</strong><span>Задание из биологического генератора</span></button>
+            <button type="button" data-task-type="quiz"><strong><i class="ti ti-list-check"></i> Тест</strong><span>Выбор одного или нескольких ответов</span></button>
+            <button type="button" data-task-type="matching"><strong><i class="ti ti-arrows-exchange"></i> Соединение пар</strong><span>Сопоставление двух колонок элементов</span></button>
+            <button type="button" data-task-type="math"><strong><i class="ti ti-math"></i> Математика</strong><span>Арифметика (+, -, *, /)</span></button>
+            <button type="button" data-task-type="biology"><strong><i class="ti ti-dna-2"></i> Биология</strong><span>8 встроенных интерактивных режимов</span></button>
           </div>
           <select id="t-type" class="input" style="margin-top:8px" aria-label="Технический тип задания">
             <option value="">Выберите тип</option>
-            <option value="quiz">Тест с вариантами</option>
+            <option value="quiz">Тест с выбором ответа</option>
+            <option value="matching">Сопоставление / Соединение пар</option>
             <option value="math">Математическая задача</option>
             <option value="biology">Биологическая задача</option>
           </select>
+          <div id="bio-mode-presets" style="display:none;margin-top:10px">
+            <label style="font-size:.82rem;color:var(--muted);margin-bottom:6px;display:block">Готовые биологические режимы (клик для выбора):</label>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:6px">
+              <button type="button" class="btn-ghost" data-bio-mode="1" style="font-size:.82rem;padding:7px 10px;text-align:left"><i class="ti ti-dna"></i> 1. Транскрипция (ДНК→иРНК)</button>
+              <button type="button" class="btn-ghost" data-bio-mode="2" style="font-size:.82rem;padding:7px 10px;text-align:left"><i class="ti ti-refresh"></i> 2. Обратная транскрипция</button>
+              <button type="button" class="btn-ghost" data-bio-mode="3" style="font-size:.82rem;padding:7px 10px;text-align:left"><i class="ti ti-copy"></i> 3. Репликация ДНК</button>
+              <button type="button" class="btn-ghost" data-bio-mode="4" style="font-size:.82rem;padding:7px 10px;text-align:left"><i class="ti ti-flask"></i> 4. Биосинтез белка (иРНК→Пептид)</button>
+              <button type="button" class="btn-ghost" data-bio-mode="5" style="font-size:.82rem;padding:7px 10px;text-align:left"><i class="ti ti-microscope"></i> 5. Антикодоны тРНК</button>
+              <button type="button" class="btn-ghost" data-bio-mode="6" style="font-size:.82rem;padding:7px 10px;text-align:left"><i class="ti ti-puzzle"></i> 6. Конструктор нуклеотида [Интерактив]</button>
+              <button type="button" class="btn-ghost" data-bio-mode="7" style="font-size:.82rem;padding:7px 10px;text-align:left"><i class="ti ti-link"></i> 7. Сборка 5'→3' цепи [Интерактив]</button>
+              <button type="button" class="btn-ghost" data-bio-mode="8" style="font-size:.82rem;padding:7px 10px;text-align:left"><i class="ti ti-clover"></i> 8. Вторичная структура тРНК [Интерактив]</button>
+            </div>
+          </div>
+          <div id="math-mode-presets" style="display:none;margin-top:10px">
+            <label style="font-size:.82rem;color:var(--muted);margin-bottom:6px;display:block">Готовые математические режимы:</label>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:6px">
+              <button type="button" class="btn-ghost" data-math-mode="1" style="font-size:.82rem;padding:7px 10px"><i class="ti ti-plus"></i> 1. Сложение</button>
+              <button type="button" class="btn-ghost" data-math-mode="2" style="font-size:.82rem;padding:7px 10px"><i class="ti ti-minus"></i> 2. Вычитание</button>
+              <button type="button" class="btn-ghost" data-math-mode="3" style="font-size:.82rem;padding:7px 10px"><i class="ti ti-x"></i> 3. Умножение</button>
+              <button type="button" class="btn-ghost" data-math-mode="4" style="font-size:.82rem;padding:7px 10px"><i class="ti ti-divide"></i> 4. Деление</button>
+            </div>
+          </div>
         </div>
         <div class="field"><label>Сложность</label>
           <select id="t-diff"><option value="easy">Обычная</option><option value="hard">Сложная</option></select>
@@ -1028,31 +1119,69 @@ document.getElementById('btn-new-task').onclick=openNewTask;
 
 function syncQuizBuilder(){
   const selectedType=document.getElementById('t-type').value.trim().toLowerCase();
-  const quiz=selectedType==='quiz';
-  document.getElementById('quiz-builder').style.display=quiz?'block':'none';
-  document.getElementById('one-variant-field').style.display=quiz?'block':'none';
-  document.getElementById('t-settings').closest('.form-row').style.display=quiz?'none':'';
+  const isMatch = selectedType==='matching';
+  const isQuiz = selectedType==='quiz';
+  const isTestOrMatch = isQuiz || isMatch;
+  const bio=selectedType==='biology';
+  const math=selectedType==='math';
+  document.getElementById('quiz-builder').style.display=isTestOrMatch?'block':'none';
+  document.getElementById('one-variant-field').style.display=isTestOrMatch?'block':'none';
+  document.getElementById('t-settings').closest('.form-row').style.display=isTestOrMatch?'none':'';
+  const bioPresets=document.getElementById('bio-mode-presets');
+  if(bioPresets) bioPresets.style.display=bio?'block':'none';
+  const mathPresets=document.getElementById('math-mode-presets');
+  if(mathPresets) mathPresets.style.display=math?'block':'none';
   document.querySelectorAll('[data-task-type]').forEach(button=>{
     const active=button.dataset.taskType===selectedType;
     button.classList.toggle('active',active);
     button.setAttribute('aria-pressed',String(active));
   });
+
+  const modeInput=document.getElementById('t-mode');
+  if(isTestOrMatch && (!modeInput.value || modeInput.value !== 'quiz')){
+    modeInput.value='quiz';
+  }
 }
+
+function applyTaskTypeChange(type){
+  const mode=document.getElementById('t-mode');
+  if(type==='quiz'||type==='matching') mode.value='quiz';
+  else if(!mode.value || mode.value==='quiz') mode.value='1';
+
+  if(type==='matching'){
+    document.querySelectorAll('.qv-format').forEach(sel=>{
+      if(sel.value !== 'matching'){
+        sel.value='matching';
+        sel.dispatchEvent(new Event('change'));
+      }
+    });
+  } else if(type==='quiz'){
+    document.querySelectorAll('.qv-format').forEach(sel=>{
+      if(sel.value !== 'choice'){
+        sel.value='choice';
+        sel.dispatchEvent(new Event('change'));
+      }
+    });
+  }
+  syncQuizBuilder();
+}
+
 function setTaskType(value){
   const select=document.getElementById('t-type');
   if(value && !Array.from(select.options).some(option=>option.value===value)){
     select.add(new Option(value,value));
   }
   select.value=value;
-  syncQuizBuilder();
+  applyTaskTypeChange(value);
 }
-document.getElementById('t-type').addEventListener('change',syncQuizBuilder);
+
+document.getElementById('t-type').addEventListener('change', e=>{
+  applyTaskTypeChange(e.target.value);
+});
+
 document.querySelectorAll('[data-task-type]').forEach(button=>button.onclick=()=>{
   const type=button.dataset.taskType;
   setTaskType(type);
-  const mode=document.getElementById('t-mode');
-  if(type==='quiz') mode.value='quiz';
-  else if(!mode.value || mode.value==='quiz') mode.value='1';
 });
 
 function addQuizAnswer(box,answer={}){
@@ -1062,12 +1191,78 @@ function addQuizAnswer(box,answer={}){
   box.appendChild(row);
   reindexQuizBuilder();
 }
+
+function addQuizPair(box,pair={}){
+  const row=document.createElement('div'); row.className='quiz-pair-row';
+  row.style.cssText='display:grid;grid-template-columns:1fr auto 1fr auto;gap:8px;align-items:center;margin-top:8px';
+  row.innerHTML=`
+    <input class="input qp-left" placeholder="Левый элемент (напр. Митохондрия)" value="${escapeHtml(pair.left||'')}">
+    <span style="font-weight:700;color:var(--primary);font-size:1.1rem">↔</span>
+    <input class="input qp-right" placeholder="Правое соответствие (напр. Синтез АТФ)" value="${escapeHtml(pair.right||'')}">
+    <button type="button" class="btn-ghost qp-remove" title="Удалить пару" style="min-width:36px;padding:6px"><i class="ti ti-x"></i></button>
+  `;
+  row.querySelector('.qp-remove').onclick=()=>{
+    if(box.querySelectorAll('.quiz-pair-row').length<=2){toast('В сопоставлении должно быть минимум 2 пары',true);return;}
+    row.remove();
+  };
+  box.appendChild(row);
+}
+
 function addQuizVariant(variant={}){
   const box=document.createElement('div'); box.className='quiz-variant';
-  box.innerHTML=`<div class="quiz-variant-head"><span class="quiz-variant-title"></span><button type="button" class="btn-ghost qv-remove" title="Удалить вариант"><i class="ti ti-trash"></i></button></div><div class="field"><label>Вопрос</label><textarea class="qv-question" placeholder="Введите вопрос">${escapeHtml(variant.question||'')}</textarea></div><div class="qv-answers"></div><div class="action-bar"><button type="button" class="btn-ghost qv-add"><i class="ti ti-plus"></i> Добавить ответ</button></div>`;
-  const answers=box.querySelector('.qv-answers');
-  (variant.answers||[{},{}]).forEach(answer=>addQuizAnswer(answers,answer));
-  box.querySelector('.qv-add').onclick=()=>addQuizAnswer(answers,{});
+  const isMatch = variant.kind === 'matching' || (variant.pairs && variant.pairs.length > 0) || document.getElementById('t-type').value === 'matching';
+  box.innerHTML=`
+    <div class="quiz-variant-head">
+      <span class="quiz-variant-title"></span>
+      <button type="button" class="btn-ghost qv-remove" title="Удалить вариант"><i class="ti ti-trash"></i></button>
+    </div>
+    <div class="form-row" style="margin-bottom:8px">
+      <div class="field" style="max-width:260px">
+        <label>Формат вопроса</label>
+        <select class="input qv-format">
+          <option value="choice" ${!isMatch?'selected':''}>Выбор вариантов ответа</option>
+          <option value="matching" ${isMatch?'selected':''}>Сопоставление / соединение пар</option>
+        </select>
+      </div>
+      <div class="field full">
+        <label>URL картинки к вопросу (необязательно)</label>
+        <input class="input qv-image" placeholder="https://... или /img/..." value="${escapeHtml(variant.image||'')}">
+      </div>
+    </div>
+    <div class="field">
+      <label>Текст вопроса / задание</label>
+      <textarea class="qv-question" placeholder="${isMatch?'Например: Установите соответствие между органоидом и его функцией':'Введите вопрос'}">${escapeHtml(variant.question||'')}</textarea>
+    </div>
+    <div class="qv-choice-box" style="${isMatch?'display:none':''}">
+      <div class="qv-answers"></div>
+      <div class="action-bar"><button type="button" class="btn-ghost qv-add-answer"><i class="ti ti-plus"></i> Добавить ответ</button></div>
+    </div>
+    <div class="qv-matching-box" style="${!isMatch?'display:none':''}">
+      <div style="font-size:0.82rem;color:var(--muted);margin-bottom:6px">Укажите пары элементов для соединения (левый ↔ правый):</div>
+      <div class="qv-pairs"></div>
+      <div class="action-bar"><button type="button" class="btn-ghost qv-add-pair"><i class="ti ti-plus"></i> Добавить пару</button></div>
+    </div>
+  `;
+
+  const answersBox=box.querySelector('.qv-answers');
+  (variant.answers||[{},{}]).forEach(answer=>addQuizAnswer(answersBox,answer));
+  box.querySelector('.qv-add-answer').onclick=()=>addQuizAnswer(answersBox,{});
+
+  const pairsBox=box.querySelector('.qv-pairs');
+  (variant.pairs||[{},{}]).forEach(pair=>addQuizPair(pairsBox,pair));
+  box.querySelector('.qv-add-pair').onclick=()=>addQuizPair(pairsBox,{});
+
+  const formatSelect=box.querySelector('.qv-format');
+  formatSelect.onchange=()=>{
+    const m = formatSelect.value === 'matching';
+    box.querySelector('.qv-choice-box').style.display = m ? 'none' : '';
+    box.querySelector('.qv-matching-box').style.display = m ? '' : 'none';
+    if(m && !box.querySelectorAll('.quiz-pair-row').length){
+      addQuizPair(pairsBox,{});
+      addQuizPair(pairsBox,{});
+    }
+  };
+
   box.querySelector('.qv-remove').onclick=()=>{
     if(document.querySelectorAll('.quiz-variant').length===1){toast('В тесте должен остаться хотя бы один вариант',true);return}
     box.remove();reindexQuizBuilder();
@@ -1075,6 +1270,7 @@ function addQuizVariant(variant={}){
   document.getElementById('quiz-variants').appendChild(box);
   reindexQuizBuilder();
 }
+
 function reindexQuizBuilder(){
   document.querySelectorAll('.quiz-variant').forEach((variant,variantIndex)=>{
     variant.querySelector('.quiz-variant-title').textContent=`Вариант ${variantIndex+1}`;
@@ -1087,29 +1283,107 @@ function renderQuizVariants(variants){
 }
 function readQuizVariants(){
   const elements=Array.from(document.querySelectorAll('.quiz-variant'));
-  const variants=elements.map((variant,index)=>({
-    question:variant.querySelector('.qv-question').value.trim(),
-    answers:Array.from(variant.querySelectorAll('.quiz-answer')).map((row,answerIndex)=>({id:`v${index}a${answerIndex}`,text:row.querySelector('.qa-text').value.trim(),correct:row.querySelector('.qa-correct').checked})),
-  }));
+  const variants=elements.map((variant,index)=>{
+    const isMatch = variant.querySelector('.qv-format').value === 'matching';
+    const imgVal = variant.querySelector('.qv-image')?.value.trim();
+    const qText = variant.querySelector('.qv-question').value.trim();
+    if (isMatch) {
+      const pairs = Array.from(variant.querySelectorAll('.quiz-pair-row')).map(row=>({
+        left: row.querySelector('.qp-left').value.trim(),
+        right: row.querySelector('.qp-right').value.trim()
+      })).filter(p => p.left || p.right);
+      const item = { kind: 'matching', question: qText, pairs };
+      if (imgVal) item.image = imgVal;
+      return item;
+    } else {
+      const answers = Array.from(variant.querySelectorAll('.quiz-answer')).map((row,answerIndex)=>({
+        id: `v${index}a${answerIndex}`,
+        text: row.querySelector('.qa-text').value.trim(),
+        correct: row.querySelector('.qa-correct').checked
+      }));
+      const item = { kind: 'choice', question: qText, answers };
+      if (imgVal) item.image = imgVal;
+      return item;
+    }
+  });
+
   let firstInvalid=null;
+  let firstInvalidKind='choice';
   elements.forEach((element,index)=>{
     const item=variants[index];
-    const invalid=!item.question||item.answers.length<2||item.answers.some(answer=>!answer.text)||!item.answers.some(answer=>answer.correct);
+    let invalid = !item.question;
+    if (item.kind === 'matching') {
+      invalid = invalid || !item.pairs || item.pairs.length < 2 || item.pairs.some(p => !p.left || !p.right);
+    } else {
+      invalid = invalid || !item.answers || item.answers.length < 2 || item.answers.some(a => !a.text) || !item.answers.some(a => a.correct);
+    }
     element.classList.toggle('invalid',invalid);
-    if(invalid&&!firstInvalid) firstInvalid=element;
+    if(invalid&&!firstInvalid){
+      firstInvalid=element;
+      firstInvalidKind=item.kind;
+    }
   });
-  return {variants,firstInvalid};
+  return {variants,firstInvalid,firstInvalidKind};
 }
 document.getElementById('btn-add-quiz-variant').onclick=()=>addQuizVariant({});
 
+document.querySelectorAll('[data-bio-mode]').forEach(button=>{
+  button.onclick=()=>{
+    const m=button.dataset.bioMode;
+    document.getElementById('t-mode').value=m;
+    const titleEl=document.getElementById('t-title');
+    const titles={
+      '1':'Транскрипция (ДНК → иРНК)',
+      '2':'Обратная транскрипция (иРНК → ДНК)',
+      '3':'Репликация ДНК (ДНК → ДНК)',
+      '4':'Биосинтез белка (иРНК → полипептид)',
+      '5':'Антикодоны тРНК',
+      '6':'Строение нуклеотида (сборка)',
+      '7':"Сборка полинуклеотидной цепи 5'→3'",
+      '8':'Вторичная структура тРНК (трилистник)'
+    };
+    if(!titleEl.value.trim() && titles[m]) titleEl.value=titles[m];
+    const defSettings={
+      '1':'{"taskLen": 15}',
+      '2':'{"taskLen": 15}',
+      '3':'{"taskLen": 15}',
+      '4':'{"taskLen": 12}',
+      '5':'{"taskLen": 12}',
+      '6':'{}',
+      '7':'{"taskLen": 4}',
+      '8':'{}'
+    };
+    const setEl=document.getElementById('t-settings');
+    if(!setEl.value.trim() || setEl.value.trim()==='{}' || setEl.value.includes('taskLen')){
+      setEl.value=defSettings[m]||'{}';
+    }
+    toast('Выбран режим '+m+': '+(titles[m]||''));
+  };
+});
+document.querySelectorAll('[data-math-mode]').forEach(button=>{
+  button.onclick=()=>{
+    const m=button.dataset.mathMode;
+    document.getElementById('t-mode').value=m;
+    const titleEl=document.getElementById('t-title');
+    const titles={'1':'Сложение','2':'Вычитание','3':'Умножение','4':'Деление'};
+    if(!titleEl.value.trim() && titles[m]) titleEl.value=titles[m];
+    toast('Выбран режим '+m+': '+(titles[m]||''));
+  };
+});
+
 document.getElementById('btn-save-task').onclick=async()=>{
   let settings={};
-  const quiz=document.getElementById('t-type').value.trim().toLowerCase()==='quiz';
+  const selectedType=document.getElementById('t-type').value.trim().toLowerCase();
+  const quiz=selectedType==='quiz' || selectedType==='matching';
   const maxWrong=Math.max(0,Math.min(100,Number(document.getElementById('t-max-wrong').value||0)));
   if(quiz){
     const quizData=readQuizVariants();
     if(quizData.firstInvalid){
-      toast('Заполните вопрос и минимум два ответа, затем отметьте правильный',true);
+      if(quizData.firstInvalidKind === 'matching'){
+        toast('Для сопоставления заполните вопрос и минимум 2 пары (левый и правый элементы)',true);
+      } else {
+        toast('Заполните вопрос и минимум два ответа, затем отметьте правильный',true);
+      }
       quizData.firstInvalid.scrollIntoView({behavior:'smooth',block:'center'});
       return;
     }
@@ -1164,21 +1438,39 @@ document.getElementById('btn-save-task').onclick=async()=>{
       renderTasks();
     }
     toast('задача сохранена'); setMsg('task-res','сохранено');
-  } else { toast('ошибка: '+(r?.error||'unknown'),true); setMsg('task-res','err: '+(r?.error||'unknown')); }
+  } else {
+    const errMsg = r?.error || r?.detail || 'неизвестная ошибка';
+    toast('ошибка сохранения: '+errMsg,true);
+    setMsg('task-res','err: '+errMsg);
+    if(String(errMsg).includes('id')){
+      document.getElementById('t-id').focus();
+    }
+  }
 };
 
 function askDeleteTask(id,title){
-  askConfirm(`удалить задачу «${title||id}»? её сгенерированные варианты тоже будут удалены — отменить нельзя`,()=>{
-    apiDelete('/admin/task/'+encodeURIComponent(id)).then(r=>{
-      if(r&&!r.error){
-        if(window.currentTask&&window.currentTask._id===id){ window.currentTask=null; document.getElementById('task-edit-card').style.display='none'; }
-        tasksCache=tasksCache.filter(x=>x._id!==id);
-        renderTasks();
-        toast('задача удалена');
-      } else { toast('ошибка удаления: '+(r?.error||'unknown'),true); }
-    });
+  askConfirm(`удалить задачу «${title||id}»? её сгенерированные варианты тоже будут удалены — отменить нельзя`,async ()=>{
+    const r=await apiDelete('/admin/task/'+encodeURIComponent(id));
+    if(r&&!r.error){
+      if(window.currentTask&&window.currentTask._id===id){
+        window.currentTask=null;
+        document.getElementById('task-edit-card').style.display='none';
+      }
+      tasksCache=tasksCache.filter(x=>x._id!==id);
+      renderTasks();
+      const curL = courseLessonId();
+      if(curL) await loadTasksForLesson(curL);
+      toast('задача удалена');
+    } else {
+      toast('ошибка удаления: '+(r?.error||'unknown'),true);
+    }
   });
-}</script>
+}
+
+document.getElementById('btn-delete-task').onclick=()=>{
+  if(!window.currentTask) return;
+  askDeleteTask(window.currentTask._id, document.getElementById('t-title').value || window.currentTask._id);
+};</script>
 <script>
 (async()=>{
   if(TEACHER_MODE){

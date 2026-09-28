@@ -20,6 +20,7 @@
   <script src="/assets/static/toast.js"></script>
   <script src="/assets/static/lesson-blocks.js"></script>
   <script src="/assets/static/loader.js"></script>
+  <script src="/assets/static/bio-interactive.js"></script>
   <style>
     :root {
       --primary: #6366f1;
@@ -73,8 +74,255 @@
       --accent: #38bdf8;
     }
 
-    * {
+    *, *::before, *::after {
       box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent !important;
+    }
+
+    :focus {
+      outline: none !important;
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--primary) !important;
+      outline-offset: 2px !important;
+    }
+
+    button, a, input, select, textarea, label, [role="button"], [tabindex] {
+      -webkit-tap-highlight-color: transparent !important;
+      -webkit-touch-callout: none;
+    }
+
+    /* ===== СОПОСТАВЛЕНИЕ / СОЕДИНЕНИЕ В ТЕСТАХ (КРИВЫЕ ЛИНИИ) ===== */
+    .matching-board-wrapper {
+      position: relative;
+      margin: 16px 0;
+      width: 100%;
+    }
+    .matching-svg-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 5;
+      overflow: visible;
+    }
+    .matching-curve-group {
+      pointer-events: stroke;
+      cursor: pointer;
+      transition: filter 0.18s ease;
+    }
+    .matching-curve-group:hover {
+      filter: brightness(1.25) drop-shadow(0 0 6px rgba(99, 102, 241, 0.45));
+    }
+    .matching-curve-group:hover .matching-curve-line {
+      stroke-width: 5;
+    }
+    .matching-mid-badge {
+      transition: transform 0.15s ease;
+      cursor: pointer;
+      pointer-events: all;
+    }
+    .matching-curve-group:hover .matching-mid-badge {
+      transform: scale(1.25);
+    }
+    .matching-board {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 58px;
+      position: relative;
+      user-select: none;
+      -webkit-user-select: none;
+      z-index: 2;
+    }
+    @media(max-width: 680px) {
+      .matching-board {
+        gap: 36px;
+      }
+    }
+    @media(max-width: 480px) {
+      .matching-board {
+        gap: 24px;
+      }
+    }
+    .matching-col {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .matching-col-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 2px;
+    }
+    .matching-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      background: var(--surface2);
+      border: 1px solid var(--line2);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      position: relative;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent !important;
+      outline: none !important;
+    }
+    .matching-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-1px);
+    }
+    .matching-card.selected {
+      border-color: var(--primary);
+      background: color-mix(in srgb, var(--primary) 18%, var(--surface2));
+      box-shadow: 0 0 0 2px var(--primary);
+    }
+    .matching-card.paired {
+      border-color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 10%, var(--surface2));
+    }
+    .matching-card.curve-hover {
+      border-color: var(--primary) !important;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.25);
+    }
+    .matching-badge-idx {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      font-size: 0.82rem;
+      flex-shrink: 0;
+      color: var(--muted);
+      transition: background 0.18s, color 0.18s;
+    }
+    .matching-card.paired .matching-badge-idx {
+      background: var(--accent);
+      color: #05140b;
+    }
+    .matching-card.selected .matching-badge-idx {
+      background: var(--primary);
+      color: #fff;
+    }
+    .matching-pin {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--surface2);
+      border: 2px solid var(--line2);
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      transition: all 0.18s ease;
+      z-index: 6;
+      pointer-events: none;
+    }
+    .matching-pin-right {
+      right: -6px;
+    }
+    .matching-pin-left {
+      left: -6px;
+    }
+    .matching-card.selected .matching-pin {
+      border-color: var(--primary);
+      background: var(--primary);
+      animation: pinPulse 1.2s infinite ease-in-out;
+    }
+    .matching-card.paired .matching-pin {
+      border-color: currentColor;
+      background: currentColor;
+    }
+    @keyframes pinPulse {
+      0%, 100% { transform: translateY(-50%) scale(1); box-shadow: 0 0 0 2px var(--primary); }
+      50% { transform: translateY(-50%) scale(1.35); box-shadow: 0 0 0 6px rgba(99, 102, 241, 0.4); }
+    }
+    .matching-card-text {
+      flex: 1;
+      font-size: 0.94rem;
+      line-height: 1.4;
+      color: var(--text);
+    }
+    .matching-pair-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: color-mix(in srgb, var(--accent) 25%, transparent);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      font-size: 0.76rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .matching-pair-badge .unpair-btn {
+      cursor: pointer;
+      color: inherit;
+      opacity: 0.8;
+      font-size: 0.9rem;
+      line-height: 1;
+    }
+    .matching-pair-badge .unpair-btn:hover {
+      opacity: 1;
+      color: var(--error);
+    }
+    .matching-helper-text {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Биологическая панель быстрого ввода нуклеотидов / аминокислот */
+    .bio-quick-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      margin: 10px 0 12px 0;
+      padding: 10px 12px;
+      background: rgba(0, 0, 0, 0.22);
+      border: 1px dashed var(--line2);
+      border-radius: 12px;
+    }
+    .bio-quick-chip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 12px;
+      border-radius: 8px;
+      background: var(--surface2);
+      border: 1px solid var(--line2);
+      color: var(--text);
+      font-weight: 700;
+      font-size: 0.9rem;
+      font-family: var(--dna-font, monospace);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent !important;
+    }
+    .bio-quick-chip:hover {
+      border-color: var(--primary);
+      background: color-mix(in srgb, var(--primary) 18%, var(--surface2));
+      transform: translateY(-1px);
+    }
+    .bio-quick-chip:active {
+      transform: scale(0.96);
     }
 
     html,
@@ -1635,6 +1883,252 @@
       attachReadTracker(lesson._id);
     }
 
+    function renderMatchingBoard(container, condition, onUpdate) {
+      const leftItems = condition.left_items || [];
+      const rightItems = condition.right_items || [];
+      window.__matchingValue = {};
+      let selectedLeftId = null;
+      let selectedRightId = null;
+
+      const palette = [
+        { border: '#6366f1', bg: 'rgba(99, 102, 241, 0.14)', text: '#818cf8' },
+        { border: '#10b981', bg: 'rgba(16, 185, 129, 0.14)', text: '#34d399' },
+        { border: '#f59e0b', bg: 'rgba(245, 158, 11, 0.14)', text: '#fbbf24' },
+        { border: '#ec4899', bg: 'rgba(236, 72, 153, 0.14)', text: '#f472b6' },
+        { border: '#0ea5e9', bg: 'rgba(14, 165, 233, 0.14)', text: '#38bdf8' },
+        { border: '#a855f7', bg: 'rgba(168, 85, 247, 0.14)', text: '#c084fc' }
+      ];
+
+      function getPairColor(lid) {
+        const leftIdx = leftItems.findIndex(l => l.id === lid);
+        return palette[(leftIdx >= 0 ? leftIdx : 0) % palette.length];
+      }
+
+      function drawCurves() {
+        const wrapper = container.querySelector('#matching-board-wrapper');
+        const svg = container.querySelector('#matching-svg-canvas');
+        if (!wrapper || !svg) return;
+
+        const wRect = wrapper.getBoundingClientRect();
+        if (wRect.width === 0 || wRect.height === 0) return;
+
+        svg.setAttribute('viewBox', `0 0 ${wRect.width} ${wRect.height}`);
+        svg.style.width = wRect.width + 'px';
+        svg.style.height = wRect.height + 'px';
+
+        let pathsHtml = '';
+        const entries = Object.entries(window.__matchingValue || {});
+
+        entries.forEach(([lid, rid]) => {
+          const cardL = wrapper.querySelector(`.matching-card[data-left-id="${lid}"]`);
+          const cardR = wrapper.querySelector(`.matching-card[data-right-id="${rid}"]`);
+          if (!cardL || !cardR) return;
+
+          const pinL = cardL.querySelector('.matching-pin-right') || cardL;
+          const pinR = cardR.querySelector('.matching-pin-left') || cardR;
+          const rL = pinL.getBoundingClientRect();
+          const rR = pinR.getBoundingClientRect();
+
+          const x1 = rL.left + rL.width / 2 - wRect.left;
+          const y1 = rL.top + rL.height / 2 - wRect.top;
+          const x2 = rR.left + rR.width / 2 - wRect.left;
+          const y2 = rR.top + rR.height / 2 - wRect.top;
+
+          const dx = Math.max(30, Math.abs(x2 - x1) * 0.52);
+          const d = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
+          const mx = (x1 + x2) / 2;
+          const my = (y1 + y2) / 2;
+          const color = getPairColor(lid);
+
+          pathsHtml += `
+            <g class="matching-curve-group" data-unpair-id="${escapeHtml(lid)}" style="--mx:${mx}px;--my:${my}px">
+              <!-- Широкая невидимая траектория для удобного клика/тапа -->
+              <path d="${d}" stroke="transparent" stroke-width="26" fill="none" />
+              <!-- Контрастная тень под кривой -->
+              <path d="${d}" stroke="rgba(0,0,0,0.36)" stroke-width="6" fill="none" stroke-linecap="round" />
+              <!-- Основная плавная кривая линия -->
+              <path d="${d}" stroke="${color.border}" stroke-width="3.5" fill="none" stroke-linecap="round" class="matching-curve-line" />
+              <!-- Концевые узлы на пинах -->
+              <circle cx="${x1}" cy="${y1}" r="4.5" fill="${color.border}" />
+              <circle cx="${x2}" cy="${y2}" r="4.5" fill="${color.border}" />
+              <!-- Центральный маркер разрыва связи с крестиком -->
+              <g class="matching-mid-badge" transform="translate(${mx}, ${my})" title="Разорвать связь">
+                <circle cx="0" cy="0" r="11" fill="${color.border}" />
+                <text x="0" y="4" text-anchor="middle" font-size="12" font-weight="900" fill="#ffffff">×</text>
+              </g>
+            </g>
+          `;
+        });
+
+        svg.innerHTML = pathsHtml;
+
+        // Клик по кривой разрывает связь
+        svg.querySelectorAll('.matching-curve-group').forEach(group => {
+          group.onclick = (e) => {
+            e.stopPropagation();
+            const lid = group.dataset.unpairId;
+            delete window.__matchingValue[lid];
+            selectedLeftId = null;
+            selectedRightId = null;
+            render();
+            if (onUpdate) onUpdate(window.__matchingValue);
+          };
+          group.onmouseenter = () => {
+            const lid = group.dataset.unpairId;
+            const rid = window.__matchingValue[lid];
+            wrapper.querySelector(`.matching-card[data-left-id="${lid}"]`)?.classList.add('curve-hover');
+            wrapper.querySelector(`.matching-card[data-right-id="${rid}"]`)?.classList.add('curve-hover');
+          };
+          group.onmouseleave = () => {
+            wrapper.querySelectorAll('.matching-card.curve-hover').forEach(c => c.classList.remove('curve-hover'));
+          };
+        });
+      }
+
+      function render() {
+        const total = leftItems.length;
+        const connected = Object.keys(window.__matchingValue).length;
+        const allDone = total > 0 && connected === total;
+
+        container.innerHTML = `
+          <div class="matching-helper-text" style="user-select:none;-webkit-user-select:none;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <i class="ti ti-arrows-exchange" style="color:var(--primary);font-size:1.15rem"></i>
+            <span>Выберите элемент в одной колонке, затем пару в другой. Соединения проводятся кривыми линиями.</span>
+            <span style="margin-left:auto;font-weight:600;color:${allDone ? 'var(--accent)' : 'var(--muted)'}">
+              ${allDone ? '<i class="ti ti-check"></i> Все пары соединены (' + connected + '/' + total + ')' : 'Соединено: ' + connected + ' из ' + total}
+            </span>
+          </div>
+          <div class="matching-board-wrapper" id="matching-board-wrapper">
+            <svg class="matching-svg-canvas" id="matching-svg-canvas"></svg>
+            <div class="matching-board">
+              <div class="matching-col matching-col-left">
+                <div class="matching-col-title">Колонка 1 (Элементы):</div>
+                ${leftItems.map((item, idx) => {
+                  const pairedRightId = window.__matchingValue[item.id];
+                  const pairedRight = rightItems.find(r => r.id === pairedRightId);
+                  const isSelected = selectedLeftId === item.id;
+                  const isPaired = !!pairedRightId;
+                  const color = isPaired ? getPairColor(item.id) : null;
+                  const style = isPaired
+                    ? `border-color:${color.border};background:${color.bg};color:${color.border};`
+                    : (isSelected ? 'border-color:var(--primary);box-shadow:0 0 0 2px var(--primary);' : '');
+                  return `
+                    <div class="matching-card ${isSelected ? 'selected' : ''} ${isPaired ? 'paired' : ''}"
+                         style="${style};user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;"
+                         data-left-id="${escapeHtml(item.id)}">
+                      <span class="matching-badge-idx" style="${isPaired ? `background:${color.border};color:#fff` : ''}">${idx + 1}</span>
+                      <span class="matching-card-text">${escapeHtml(item.text)}</span>
+                      ${isPaired ? `
+                        <span class="matching-pair-badge" style="background:${color.border};color:#fff;border-radius:6px;padding:3px 8px;font-size:0.8rem;font-weight:600;display:inline-flex;align-items:center;gap:6px">
+                          ↔ ${escapeHtml(pairedRight ? pairedRight.text : pairedRightId)}
+                          <span class="unpair-btn" title="Разорвать связь" data-unpair="${escapeHtml(item.id)}" style="cursor:pointer;font-weight:900;padding:0 3px">×</span>
+                        </span>` : ''}
+                      <span class="matching-pin matching-pin-right"></span>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+              <div class="matching-col matching-col-right">
+                <div class="matching-col-title">Колонка 2 (Соответствия):</div>
+                ${rightItems.map((item, idx) => {
+                  const pairedLeftKey = Object.keys(window.__matchingValue).find(k => window.__matchingValue[k] === item.id);
+                  const pairedLeftIdx = pairedLeftKey ? (leftItems.findIndex(l => l.id === pairedLeftKey) + 1) : null;
+                  const isSelected = selectedRightId === item.id;
+                  const isPaired = !!pairedLeftKey;
+                  const color = isPaired ? getPairColor(pairedLeftKey) : null;
+                  const style = isPaired
+                    ? `border-color:${color.border};background:${color.bg};color:${color.border};`
+                    : (isSelected ? 'border-color:var(--primary);box-shadow:0 0 0 2px var(--primary);' : '');
+                  return `
+                    <div class="matching-card ${isSelected ? 'selected' : ''} ${isPaired ? 'paired' : ''}"
+                         style="${style};user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;"
+                         data-right-id="${escapeHtml(item.id)}">
+                      <span class="matching-pin matching-pin-left"></span>
+                      <span class="matching-badge-idx" style="${isPaired ? `background:${color.border};color:#fff` : ''}">${String.fromCharCode(65 + idx)}</span>
+                      <span class="matching-card-text">${escapeHtml(item.text)}</span>
+                      ${isPaired ? `
+                        <span class="matching-pair-badge" style="background:${color.border};color:#fff;border-radius:6px;padding:3px 8px;font-size:0.8rem;font-weight:600;display:inline-flex;align-items:center;gap:6px">
+                          №${pairedLeftIdx}
+                          <span class="unpair-btn" title="Разорвать связь" data-unpair="${escapeHtml(pairedLeftKey)}" style="cursor:pointer;font-weight:900;padding:0 3px">×</span>
+                        </span>` : ''}
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          </div>
+        `;
+
+        container.querySelectorAll('[data-unpair]').forEach(btn => {
+          btn.onclick = (e) => {
+            e.stopPropagation();
+            const lid = btn.dataset.unpair;
+            delete window.__matchingValue[lid];
+            if (selectedLeftId === lid) selectedLeftId = null;
+            render();
+            if (onUpdate) onUpdate(window.__matchingValue);
+          };
+        });
+
+        container.querySelectorAll('.matching-col-left .matching-card').forEach(card => {
+          card.onclick = () => {
+            const lid = card.dataset.leftId;
+            if (selectedRightId) {
+              const rid = selectedRightId;
+              Object.keys(window.__matchingValue).forEach(k => {
+                if (window.__matchingValue[k] === rid) delete window.__matchingValue[k];
+              });
+              window.__matchingValue[lid] = rid;
+              selectedLeftId = null;
+              selectedRightId = null;
+              render();
+              if (onUpdate) onUpdate(window.__matchingValue);
+            } else {
+              selectedLeftId = (selectedLeftId === lid ? null : lid);
+              selectedRightId = null;
+              render();
+            }
+          };
+        });
+
+        container.querySelectorAll('.matching-col-right .matching-card').forEach(card => {
+          card.onclick = () => {
+            const rid = card.dataset.rightId;
+            if (selectedLeftId) {
+              const lid = selectedLeftId;
+              Object.keys(window.__matchingValue).forEach(k => {
+                if (window.__matchingValue[k] === rid) delete window.__matchingValue[k];
+              });
+              window.__matchingValue[lid] = rid;
+              selectedLeftId = null;
+              selectedRightId = null;
+              render();
+              if (onUpdate) onUpdate(window.__matchingValue);
+            } else {
+              selectedRightId = (selectedRightId === rid ? null : rid);
+              selectedLeftId = null;
+              render();
+            }
+          };
+        });
+
+        requestAnimationFrame(() => {
+          drawCurves();
+          setTimeout(drawCurves, 40);
+        });
+      }
+
+      if (window.__matchingResizeHandler) {
+        window.removeEventListener('resize', window.__matchingResizeHandler);
+        window.removeEventListener('scroll', window.__matchingResizeHandler);
+      }
+      window.__matchingResizeHandler = () => drawCurves();
+      window.addEventListener('resize', window.__matchingResizeHandler);
+      window.addEventListener('scroll', window.__matchingResizeHandler, { passive: true });
+
+      render();
+    }
+
     async function loadTestInterface(taskId) {
       const main = document.getElementById('main-area');
       document.querySelectorAll('.nav-item').forEach(item=>item.classList.remove('active'));
@@ -1655,8 +2149,9 @@
       attemptCounter = Number(task.tryings || 0);
       maxWrongAttempts = Number(task.max_wrong_attempts || 0);
       const condition = task.condition || {};
-      const isMath = condition.kind === 'math' || (task.task_type || '').toLowerCase() === 'math';
-      const isQuiz = currentTaskType === 'quiz';
+      const isMath = condition.kind === 'math' || currentTaskType === 'math';
+      const isMatching = condition.kind === 'matching' || currentTaskType === 'matching';
+      const isQuiz = currentTaskType === 'quiz' || isMatching;
       const topStrand = condition.top || condition.single_chain || '';
       const bottomStrand = condition.bottom || '';
       const expression = condition.expression || '';
@@ -1675,15 +2170,72 @@
              ${solves > 0 ? `<span class="reward-mult">×&nbsp;${solves + 1}</span>` : ''}
            </span>`;
 
-      // условие задания: у математики — выражение, у ДНК/РНК — цепи
-      const taskConditionHtml = isQuiz
-        ? `<div class="quiz-question">${escapeHtml(condition.question || '')}</div>`
+      // условие задания: тест (с опциональной картинкой), математика, интерактив или ДНК/РНК цепи
+      const quizImageHtml = (isQuiz || isMatching) && condition.image ? `<div class="quiz-img-wrap"><img src="${escapeHtml(condition.image)}" alt="Иллюстрация к вопросу" class="quiz-img" onerror="this.parentElement.style.display='none'" /></div>` : '';
+      let bioKind = condition.kind || (condition.interactive_type ? ('interactive_' + condition.interactive_type) : '');
+      const taskModeNum = Number(task.mode);
+      if (!bioKind && currentTaskType === 'biology') {
+        if (taskModeNum === 6) bioKind = 'interactive_nucleotide';
+        else if (taskModeNum === 7) bioKind = 'interactive_chain';
+        else if (taskModeNum === 8) bioKind = 'interactive_cloverleaf';
+      }
+      const isBioInteractive = ['interactive_nucleotide', 'interactive_chain', 'interactive_cloverleaf'].includes(bioKind);
+      const isProteinSynth = bioKind === 'protein_synth' || bioKind === 'trna_anticodons' || condition.table_hint || condition.mrna || taskModeNum === 4 || taskModeNum === 5;
+      const genTableButtonHtml = (condition.table_hint || taskModeNum === 4) ? `<div style="margin-top:8px"><button type="button" class="gen-table-btn" onclick="window.BioInteractive && window.BioInteractive.renderGeneticTableModal()"><i class="ti ti-table"></i> Таблица генетического кода</button></div>` : '';
+
+      const taskConditionHtml = isMatching
+        ? `${quizImageHtml}<div class="quiz-question">${escapeHtml(condition.question || 'Установите соответствие:')}</div><div id="matching-board-container"></div>`
+        : isQuiz
+        ? `${quizImageHtml}<div class="quiz-question">${escapeHtml(condition.question || '')}</div>`
+        : isBioInteractive
+        ? `<div id="bio-interactive-container"></div>`
         : isMath
         ? `<div class="math-display"><span class="math-expr">${escapeHtml(expression || '—')}</span></div>`
         : `<div class="dna-display">
+              ${condition.strand ? `<div class="strand"><span class="strand-tag">иРНК:</span> ${formatStrand(condition.strand)}</div>` : ''}
+              ${condition.mrna ? `<div class="strand"><span class="strand-tag">иРНК:</span> ${formatStrand(condition.mrna)}</div>` : ''}
+              ${condition.codons ? `<div class="strand"><span class="strand-tag">Кодоны иРНК:</span> <span class="seq">${escapeHtml(condition.codons)}</span></div>` : ''}
+              ${condition.peptides ? `<div class="strand"><span class="strand-tag">Пептид:</span> <span class="seq">${escapeHtml(condition.peptides)}</span></div>` : ''}
               ${topStrand ? `<div class="strand">${formatStrand(topStrand)}</div>` : ''}
               ${bottomStrand ? `<div class="strand">${formatStrand(bottomStrand)}</div>` : ''}
+              ${genTableButtonHtml}
            </div>`;
+
+      const bioQuickBarHtml = (currentTaskType === 'biology' && !isBioInteractive && !isQuiz && !isMatching) ? `
+        <div class="bio-quick-bar" id="bio-quick-bar">
+          ${(taskModeNum === 4) ? `
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <button type="button" class="btn-ghost gen-table-btn" onclick="window.BioInteractive && window.BioInteractive.renderGeneticTableModal()" style="font-size:0.85rem;padding:6px 12px">
+                <i class="ti ti-table"></i> Открыть таблицу генетического кода (клик по кодону добавит аминокислоту)
+              </button>
+            </div>
+          ` : (taskModeNum === 5) ? `
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+              <span style="font-size:0.8rem;color:var(--muted);margin-right:2px">Антикодоны:</span>
+              <button type="button" class="bio-quick-chip" data-insert="А">А</button>
+              <button type="button" class="bio-quick-chip" data-insert="У">У</button>
+              <button type="button" class="bio-quick-chip" data-insert="Г">Г</button>
+              <button type="button" class="bio-quick-chip" data-insert="Ц">Ц</button>
+              <button type="button" class="bio-quick-chip" data-insert=", ">запятая</button>
+              <button type="button" class="bio-quick-chip" data-action="backspace" title="Стереть"><i class="ti ti-backspace"></i></button>
+              <button type="button" class="bio-quick-chip" data-action="clear" title="Очистить"><i class="ti ti-trash"></i></button>
+            </div>
+          ` : `
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+              <span style="font-size:0.8rem;color:var(--muted);margin-right:2px">Ввод нуклеотидов:</span>
+              <button type="button" class="bio-quick-chip" data-insert="5'-">5'-</button>
+              <button type="button" class="bio-quick-chip" data-insert="А">А</button>
+              <button type="button" class="bio-quick-chip" data-insert="${taskModeNum === 1 ? 'У' : 'Т'}">${taskModeNum === 1 ? 'У' : 'Т'}</button>
+              <button type="button" class="bio-quick-chip" data-insert="Г">Г</button>
+              <button type="button" class="bio-quick-chip" data-insert="Ц">Ц</button>
+              ${taskModeNum !== 1 ? `<button type="button" class="bio-quick-chip" data-insert="У">У</button>` : ''}
+              <button type="button" class="bio-quick-chip" data-insert="-3'">-3'</button>
+              <button type="button" class="bio-quick-chip" data-action="backspace" title="Стереть"><i class="ti ti-backspace"></i></button>
+              <button type="button" class="bio-quick-chip" data-action="clear" title="Очистить"><i class="ti ti-trash"></i></button>
+            </div>
+          `}
+        </div>
+      ` : '';
 
       main.innerHTML = `
       <div class="test-container">
@@ -1705,11 +2257,12 @@
           <div class="task-body">
             <p class="task-instruction">${escapeHtml(instruction)}</p>
             ${taskConditionHtml}
-            <div class="input-area">
+            <div class="input-area" ${(isBioInteractive || isMatching) ? 'style="display:none"' : ''}>
+              ${bioQuickBarHtml}
               <label class="field-label">Ваш ответ</label>
-              ${isQuiz ? `<div class="quiz-options">${(condition.answers||[]).map(answer=>`<label class="quiz-option"><input name="quiz-answer" type="${condition.multiple?'checkbox':'radio'}" value="${escapeHtml(answer.id)}"><span>${escapeHtml(answer.text)}</span></label>`).join('')}</div>` : `<input type="text" id="user-input" class="dna-input" inputmode="${isMath ? 'decimal' : 'text'}" placeholder="${isMath ? 'например 42' : "5'-...-3'"}" autocomplete="off">`}
-              <div id="feedback" class="feedback-msg ${task.locked ? 'error' : task.completed ? 'success' : ''}">${task.locked ? 'Лимит неправильных ответов исчерпан.' : task.completed ? 'Назначенный вариант уже решён.' : ''}</div>
+              ${isQuiz ? `<div class="quiz-options">${(condition.answers||[]).map(answer=>`<label class="quiz-option"><input name="quiz-answer" type="${condition.multiple?'checkbox':'radio'}" value="${escapeHtml(answer.id)}"><span>${escapeHtml(answer.text)}</span></label>`).join('')}</div>` : `<input type="text" id="user-input" class="dna-input" inputmode="${isMath ? 'decimal' : 'text'}" placeholder="${isMath ? 'например 42' : (taskModeNum === 4) ? 'например МЕТ-АЛА-СЕР' : (taskModeNum === 5) ? 'например УАЦ, ЦГА' : "5'-...-3'"}" autocomplete="off">`}
             </div>
+            <div id="feedback" class="feedback-msg ${task.locked ? 'error' : task.completed ? 'success' : ''}" style="margin-top:10px">${task.locked ? 'Лимит неправильных ответов исчерпан.' : task.completed ? 'Назначенный вариант уже решён.' : ''}</div>
           </div>
           <div class="task-foot">
             <span class="attempts" id="attempts">попыток: 0</span>
@@ -1717,6 +2270,21 @@
           </div>
         </div>
       </div>`;
+
+      document.querySelectorAll('.bio-quick-chip').forEach(btn => {
+        btn.onclick = () => {
+          const input = document.getElementById('user-input');
+          if (!input) return;
+          if (btn.dataset.insert) {
+            input.value += btn.dataset.insert;
+          } else if (btn.dataset.action === 'backspace') {
+            input.value = input.value.slice(0, -1);
+          } else if (btn.dataset.action === 'clear') {
+            input.value = '';
+          }
+          input.focus();
+        };
+      });
 
       const bulb = document.getElementById('bulb-btn');
       if (bulb) {
@@ -1729,6 +2297,23 @@
         const input=document.getElementById('user-input');
         if(input) input.disabled=true;
         document.querySelectorAll('input[name="quiz-answer"]').forEach(item=>item.disabled=true);
+      }
+      window.__bioInteractiveValue = '';
+      window.__currentBioKind = isBioInteractive ? bioKind : null;
+      window.__matchingValue = {};
+      if (isMatching) {
+        const matchBox = document.getElementById('matching-board-container');
+        if (matchBox) renderMatchingBoard(matchBox, condition, (val) => { window.__matchingValue = val; });
+      }
+      if (isBioInteractive && window.BioInteractive) {
+        const bioBox = document.getElementById('bio-interactive-container');
+        if (bioKind === 'interactive_nucleotide') {
+          window.BioInteractive.renderNucleotideBuilder(bioBox, condition, (val) => { window.__bioInteractiveValue = val; });
+        } else if (bioKind === 'interactive_chain') {
+          window.BioInteractive.renderChainAssembly(bioBox, condition, (val) => { window.__bioInteractiveValue = val; });
+        } else if (bioKind === 'interactive_cloverleaf') {
+          window.BioInteractive.renderCloverleafFolding(bioBox, condition, (val) => { window.__bioInteractiveValue = val; });
+        }
       }
       updateAttempts();
     }
@@ -1850,11 +2435,53 @@
       if (!feedback) return;
       const btn = document.getElementById('submit-btn');
       if (!btn) return;
-      const quizInputs=Array.from(document.querySelectorAll('input[name="quiz-answer"]'));
-      const userVal = currentTaskType === 'quiz'
-        ? quizInputs.filter(item=>item.checked).map(item=>item.value)
-        : (input?.value || '').trim().toUpperCase();
-      if (!userVal || (Array.isArray(userVal) && !userVal.length)) return;
+      const quizInputs = Array.from(document.querySelectorAll('input[name="quiz-answer"]'));
+      let userVal;
+
+      if (currentTaskType === 'matching' || (window.__matchingValue && Object.keys(window.__matchingValue).length > 0)) {
+        userVal = window.__matchingValue || {};
+        if (!Object.keys(userVal).length) {
+          showToast('Соедините пары элементов перед проверкой', true);
+          return;
+        }
+      } else if (window.__currentBioKind) {
+        userVal = window.__bioInteractiveValue;
+        if (window.__currentBioKind === 'interactive_nucleotide') {
+          if (!userVal || typeof userVal !== 'object' || !userVal.sugar || !userVal.base) {
+            showToast('Соберите нуклеотид: выберите основание, сахар и фосфат', true);
+            return;
+          }
+        } else if (window.__currentBioKind === 'interactive_chain') {
+          if (!userVal || (Array.isArray(userVal) && (!userVal.length || userVal.some(x => !x))) || (typeof userVal === 'string' && !userVal)) {
+            showToast('Заполните все слоты цепочки нуклеотидами перед проверкой', true);
+            return;
+          }
+        } else if (window.__currentBioKind === 'interactive_cloverleaf') {
+          if (!userVal || typeof userVal !== 'object' || !userVal.paired || !userVal.anticodon || userVal.anticodon.length < 3 || userVal.anticodon.some(x => !x)) {
+            showToast('Скрутите тРНК в трилистник и укажите 3 буквы антикодона', true);
+            return;
+          }
+        }
+      } else if (window.__bioInteractiveValue !== undefined && window.__bioInteractiveValue !== '') {
+        userVal = window.__bioInteractiveValue;
+      } else if (currentTaskType === 'quiz') {
+        userVal = quizInputs.filter(item=>item.checked).map(item=>item.value);
+        if (!userVal.length) {
+          showToast('Выберите вариант ответа перед проверкой', true);
+          return;
+        }
+      } else {
+        userVal = (input?.value || '').trim().toUpperCase();
+        if (!userVal) {
+          showToast('Введите ответ перед проверкой', true);
+          return;
+        }
+      }
+
+      if (!userVal || (Array.isArray(userVal) && !userVal.length) || (typeof userVal === 'object' && !Object.keys(userVal).length)) {
+        showToast('Укажите ответ перед проверкой', true);
+        return;
+      }
       if(input) input.disabled = true;
       quizInputs.forEach(item=>item.disabled=true);
       btn.disabled = true;
@@ -1931,9 +2558,10 @@
         feedback.className = 'feedback-msg error';
         if (res && res.errors && res.errors.length) {
           feedback.innerHTML = res.errors.slice(0, 5).map(err => {
-            const idx = (typeof err.index === 'number') ? (err.index + 1) : '?';
+            const hasIdx = (typeof err.index === 'number');
+            const idxStr = hasIdx ? `позиция ${err.index + 1}: ` : '';
             const msg = err.msg ? escapeHtml(err.msg) : `ожидалось: ${escapeHtml(err.expected || '')}`;
-            return `<div class="err-line">позиция ${idx}: ${msg}</div>`;
+            return `<div class="err-line">${idxStr}${msg}</div>`;
           }).join('');
         } else {
           feedback.textContent = 'Неверно, попробуйте ещё раз.';

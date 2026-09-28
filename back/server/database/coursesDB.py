@@ -668,26 +668,26 @@ async def update_task(task_id: str, fields: dict):
         raise ValueError('выбранный урок не существует')
     fields['updated_at'] = datetime.now(timezone.utc).replace(microsecond=0).isoformat(timespec='seconds', sep='T')
     res = await tasks.find_one_and_update(
-        {'_id': task_id}, {'$set': fields}, return_document=True
+        {'$or': [{'_id': str(task_id)}, {'_id': task_id}]}, {'$set': fields}, return_document=True
     )
-    if res is not None and ({'settings', 'type', 'mode'} & fields.keys()):
-        await tests.delete_many({'parent_task_id': str(task_id)})
+    if res is not None:
+        await tests.delete_many({'$or': [{'parent_task_id': str(task_id)}, {'parent_task_id': task_id}]})
     if res is None:
         return None
     return {**res, '_id': str(res['_id'])}
 
 
 async def delete_task(task_id: str):
-    # каскад: задача -> сгенеренные варианты (tests)
-    await tests.delete_many({'parent_task_id': str(task_id)})
-    await attempts.delete_many({'task_id': str(task_id)})
-    await delete_progress_for_tasks([str(task_id)])
-    await hints.delete_many({'task_id': str(task_id)})
-    res = await tasks.find_one_and_delete({'_id': task_id})
+    # каскад: задача -> сгенеренные варианты (tests), попытки, подсказки
+    tid_str = str(task_id)
+    await tests.delete_many({'$or': [{'parent_task_id': tid_str}, {'parent_task_id': task_id}, {'task_id': tid_str}, {'task_id': task_id}]})
+    await attempts.delete_many({'$or': [{'task_id': tid_str}, {'task_id': task_id}]})
+    await delete_progress_for_tasks([tid_str, task_id] if isinstance(task_id, int) else [tid_str])
+    await hints.delete_many({'$or': [{'task_id': tid_str}, {'task_id': task_id}]})
+    res = await tasks.find_one_and_delete({'$or': [{'_id': tid_str}, {'_id': task_id}]})
     if res is None:
         return None
     return {**res, '_id': str(res['_id'])}
-
 
 async def admin_all_tasks():
     # для админки: все задачи-определения

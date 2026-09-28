@@ -78,6 +78,60 @@ class QuizTests(unittest.IsolatedAsyncioTestCase):
             'quiz', ['a'], variant['internal_solution'],
         ))['is_correct'])
 
+    async def test_matching_task_generation_and_validation(self):
+        definition = {
+            'type': 'quiz',
+            'mode': 'quiz',
+            'settings': {'variants': [{
+                'kind': 'matching',
+                'question': 'Установите соответствие',
+                'pairs': [
+                    {'left': 'Митохондрия', 'right': 'Синтез АТФ'},
+                    {'left': 'Рибосома', 'right': 'Синтез белка'},
+                ],
+            }]},
+        }
+        variant = await _generate_variant(definition)
+        cond = variant['condition']
+        self.assertEqual(cond['kind'], 'matching')
+        self.assertEqual(len(cond['left_items']), 2)
+        self.assertEqual(len(cond['right_items']), 2)
+
+        sol = variant['internal_solution']
+        correct_input = sol['pairs']  # e.g. {'L0': 'R0', 'L1': 'R1'}
+        self.assertTrue((await _validate_submission('quiz', correct_input, sol))['is_correct'])
+
+        # Valid as list of pairs
+        pair_list = list(correct_input.items())
+        self.assertTrue((await _validate_submission('quiz', pair_list, sol))['is_correct'])
+
+        # Wrong pair
+        wrong_input = {'L0': 'R1', 'L1': 'R0'}
+        self.assertFalse((await _validate_submission('quiz', wrong_input, sol))['is_correct'])
+
+    async def test_matching_task_type_and_validation(self):
+        definition = {
+            'type': 'matching',
+            'mode': 'quiz',
+            'settings': {'variants': [{
+                'kind': 'matching',
+                'question': 'Соедините органоиды и их функции',
+                'pairs': [
+                    {'left': 'Хлоропласт', 'right': 'Фотосинтез'},
+                    {'left': 'Митохондрия', 'right': 'Синтез АТФ'},
+                ],
+            }]},
+        }
+        variant = await _generate_variant(definition)
+        cond = variant['condition']
+        self.assertEqual(cond['kind'], 'matching')
+        sol = variant['internal_solution']
+        self.assertEqual(sol['kind'], 'matching')
+
+        # Test validation with 'matching' task type
+        self.assertTrue((await _validate_submission('matching', sol['pairs'], sol))['is_correct'])
+        self.assertFalse((await _validate_submission('matching', {'L0': 'R99'}, sol))['is_correct'])
+
     async def test_quiz_supports_multiple_correct_answers(self):
         definition = {
             'type': 'quiz',
@@ -122,6 +176,25 @@ class QuizTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(first['condition']['question'], second['condition']['question'])
         self.assertTrue(_one_variant_per_student(definition))
+
+    async def test_quiz_supports_image(self):
+        definition = {
+            'type': 'quiz',
+            'mode': 'quiz',
+            'settings': {'variants': [{
+                'question': 'Назовите структуру на рисунке',
+                'image': 'https://example.com/cell.png',
+                'answers': [
+                    {'id': 'a', 'text': 'Митохондрия', 'correct': True},
+                    {'id': 'b', 'text': 'Рибосома', 'correct': False},
+                ],
+            }]},
+        }
+        variant = await _generate_variant(definition)
+        self.assertEqual(variant['condition'].get('image'), 'https://example.com/cell.png')
+        self.assertTrue((await _validate_submission(
+            'quiz', ['a'], variant['internal_solution'],
+        ))['is_correct'])
 
     def test_wrong_attempt_limit_is_normalized(self):
         self.assertEqual(_max_wrong_attempts({'settings': {'max_wrong_attempts': 5}}), 5)
@@ -175,6 +248,84 @@ class BiologyInputTests(unittest.IsolatedAsyncioTestCase):
             with self.subTest(answer=answer):
                 result = await biologyUtil.validate_submission(answer, solution)
                 self.assertTrue(result['is_correct'])
+
+    async def test_protein_biosynthesis_generation_and_validation(self):
+        task = await biologyUtil.generate_task(mode=4, length=12)
+        self.assertEqual(task['mode'], 4)
+        self.assertIn('mrna', task['condition'])
+        self.assertTrue(task['condition'].get('table_hint'))
+        canonical = task['internal_solution']['canonical']
+        self.assertTrue(len(canonical) > 0)
+        # Test exact match
+        res = await biologyUtil.validate_submission(canonical, task['internal_solution'])
+        self.assertTrue(res['is_correct'])
+        # Test lowercase with spaces
+        res_spaced = await biologyUtil.validate_submission(canonical.lower().replace('-', ' '), task['internal_solution'])
+        self.assertTrue(res_spaced['is_correct'])
+        # Test incorrect answer
+        res_wrong = await biologyUtil.validate_submission('НЕВЕРНЫЙ-ОТВЕТ', task['internal_solution'])
+        self.assertFalse(res_wrong['is_correct'])
+
+    async def test_anticodons_generation_and_validation(self):
+        task = await biologyUtil.generate_task(mode=5, length=9)
+        self.assertEqual(task['mode'], 5)
+        self.assertIn('codons', task['condition'])
+        canonical = task['internal_solution']['canonical']
+        res = await biologyUtil.validate_submission(canonical, task['internal_solution'])
+        self.assertTrue(res['is_correct'])
+
+    async def test_interactive_nucleotide_generation_and_validation(self):
+        task = await biologyUtil.generate_task(mode=6)
+        self.assertEqual(task['mode'], 6)
+        sol = task['internal_solution']
+        correct_sub = {
+            'sugar': sol['sugar'],
+            'base': sol['base'],
+            'has_phosphate': sol['has_phosphate']
+        }
+        res = await biologyUtil.validate_submission(correct_sub, sol)
+        self.assertTrue(res['is_correct'])
+        # Wrong base
+        wrong_sub = {
+            'sugar': sol['sugar'],
+            'base': 'НЕ_ТА_БАЗА',
+            'has_phosphate': sol['has_phosphate']
+        }
+        res_wrong = await biologyUtil.validate_submission(wrong_sub, sol)
+        self.assertFalse(res_wrong['is_correct'])
+
+    async def test_interactive_chain_generation_and_validation(self):
+        task = await biologyUtil.generate_task(mode=7, length=4)
+        self.assertEqual(task['mode'], 7)
+        sol = task['internal_solution']
+        seq = sol['sequence']
+        # Valid string
+        res = await biologyUtil.validate_submission(seq, sol)
+        self.assertTrue(res['is_correct'])
+        # Valid list of chars
+        res_list = await biologyUtil.validate_submission(list(seq), sol)
+        self.assertTrue(res_list['is_correct'])
+        # Wrong seq
+        res_wrong = await biologyUtil.validate_submission('ЦЦЦЦ', sol)
+        if seq != 'ЦЦЦЦ':
+            self.assertFalse(res_wrong['is_correct'])
+
+    async def test_interactive_cloverleaf_generation_and_validation(self):
+        task = await biologyUtil.generate_task(mode=8)
+        self.assertEqual(task['mode'], 8)
+        sol = task['internal_solution']
+        correct_sub = {
+            'anticodon': sol['anticodon'],
+            'paired': True
+        }
+        res = await biologyUtil.validate_submission(correct_sub, sol)
+        self.assertTrue(res['is_correct'])
+        wrong_sub = {
+            'anticodon': 'ZZZ',
+            'paired': True
+        }
+        res_wrong = await biologyUtil.validate_submission(wrong_sub, sol)
+        self.assertFalse(res_wrong['is_correct'])
 
 
 if __name__ == '__main__':
