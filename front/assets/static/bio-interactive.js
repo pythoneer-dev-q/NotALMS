@@ -10,11 +10,6 @@
 (function () {
   'use strict';
 
-  function escapeHtml(s) {
-    if (s === null || s === undefined) return '';
-    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
-  }
-
   // Внедрение стилей интерактива
   function ensureStyles() {
     if (document.getElementById('bio-interactive-styles')) return;
@@ -428,25 +423,6 @@
 
     const searchInput = overlay.querySelector('#gen-search-input');
     const cells = overlay.querySelectorAll('.codon-cell');
-    cells.forEach(cell => {
-      cell.style.cursor = 'pointer';
-      const aa = cell.dataset.aa;
-      if (aa && aa !== 'СТОП' && aa !== '—') {
-        cell.title = `Кликните, чтобы вставить ${aa}`;
-        cell.onclick = () => {
-          const input = document.getElementById('user-input');
-          if (input) {
-            const cur = input.value.trim();
-            input.value = cur ? (cur + '-' + aa) : aa;
-            input.dispatchEvent(new Event('input'));
-            if (typeof window.showToast === 'function') {
-              window.showToast(`Добавлена аминокислота ${aa}`);
-            }
-          }
-        };
-      }
-    });
-
     searchInput.oninput = () => {
       const q = searchInput.value.trim().toUpperCase();
       cells.forEach(cell => {
@@ -604,8 +580,6 @@
       }
       updateSlots();
     }
-
-    notify();
   }
 
   // 3. Сборка цепи нуклеотидов (5' -> 3')
@@ -650,13 +624,12 @@
       </div>
 
       <div class="bio-palette" id="chain-nuc-palette">
-        <div class="bio-palette-label">Банк нуклеотидов (кликните нуклеотид, чтобы поместить в цепочку):</div>
+        <div class="bio-palette-label">Банк нуклеотидов:</div>
         <div class="bio-chip bio-chip-nuc" draggable="true" data-nuc="А">А</div>
         <div class="bio-chip bio-chip-nuc" draggable="true" data-nuc="Т">Т</div>
         <div class="bio-chip bio-chip-nuc" draggable="true" data-nuc="Г">Г</div>
         <div class="bio-chip bio-chip-nuc" draggable="true" data-nuc="Ц">Ц</div>
         <div class="bio-chip bio-chip-nuc" draggable="true" data-nuc="У">У</div>
-        <button type="button" class="btn-ghost" id="btn-clear-chain" style="font-size:0.8rem;padding:5px 12px;border-radius:8px;margin-left:auto"><i class="ti ti-trash"></i> Очистить</button>
       </div>
       <div class="bio-bonds-indicator">
         <span><i class="ti ti-info-circle"></i> Водородные связи: А=Т (2 связи), Г≡Ц (3 связи)</span>
@@ -730,16 +703,6 @@
         }
       });
     });
-
-    const clearBtn = wrap.querySelector('#btn-clear-chain');
-    if (clearBtn) {
-      clearBtn.onclick = () => {
-        for (let i = 0; i < currentChain.length; i++) currentChain[i] = '';
-        updateSlots();
-      };
-    }
-
-    notify();
   }
 
   // 4. Скручивание тРНК в трилистник
@@ -861,8 +824,6 @@
         }
       };
     });
-
-    notify();
   }
 
   // Экспорт в глобальный объект

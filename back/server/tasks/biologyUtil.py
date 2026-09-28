@@ -197,81 +197,53 @@ async def validate_submission(user_input, solution: dict):
             s_ok = str(user_input.get('sugar', '')).strip().lower() == str(solution['sugar']).strip().lower()
             b_ok = str(user_input.get('base', '')).strip().upper() == str(solution['base']).strip().upper()
             p_ok = bool(user_input.get('has_phosphate', user_input.get('phosphate', False))) == bool(solution.get('has_phosphate', True))
-            errs = []
-            if not s_ok:
-                errs.append({"type": "SUGAR", "msg": f"Неверный углевод (выбрано: {user_input.get('sugar') or 'ничего'})"})
-            if not b_ok:
-                errs.append({"type": "BASE", "msg": f"Неверное азотистое основание (выбрано: {user_input.get('base') or 'ничего'})"})
-            if not p_ok:
-                errs.append({"type": "PHOSPHATE", "msg": "Фосфатная группа указана неверно"})
-            return {
-                "is_correct": not errs,
-                "score": 100 if not errs else 0,
-                "errors": errs
-            }
+            is_correct = s_ok and b_ok and p_ok
         else:
-            return {"is_correct": False, "score": 0, "errors": [{"type": "INCORRECT", "msg": "Нуклеотид собран неверно"}]}
+            is_correct = False
+        return {
+            "is_correct": is_correct,
+            "score": 100 if is_correct else 0,
+            "errors": [] if is_correct else [{"type": "INCORRECT", "msg": "Нуклеотид собран неверно"}]
+        }
 
     # 2. Интерактивный трилистник тРНК (режим 8)
     if "anticodon" in solution and "paired" in solution:
         if isinstance(user_input, dict):
             a_ok = str(user_input.get('anticodon', '')).strip().upper() == str(solution['anticodon']).strip().upper()
             p_ok = bool(user_input.get('paired', False)) == bool(solution.get('paired', True))
-            errs = []
-            if not p_ok:
-                errs.append({"type": "STRUCTURE", "msg": "Вторичная структура не собрана: нажмите 'Скрутить цепь в трилистник'"})
-            if not a_ok:
-                errs.append({"type": "ANTICODON", "msg": f"Неверный антикодон в центральной петле (указано: {user_input.get('anticodon') or 'пусто'})"})
-            return {
-                "is_correct": not errs,
-                "score": 100 if not errs else 0,
-                "errors": errs
-            }
+            is_correct = a_ok and p_ok
         else:
-            a_ok = str(user_input or '').strip().upper() == str(solution['anticodon']).strip().upper()
-            return {
-                "is_correct": a_ok,
-                "score": 100 if a_ok else 0,
-                "errors": [] if a_ok else [{"type": "ANTICODON", "msg": f"Неверный антикодон (указано: {user_input or 'пусто'})"}]
-            }
+            is_correct = str(user_input or '').strip().upper() == str(solution['anticodon']).strip().upper()
+        return {
+            "is_correct": is_correct,
+            "score": 100 if is_correct else 0,
+            "errors": [] if is_correct else [{"type": "INCORRECT", "msg": "Антикодон или структура неверны"}]
+        }
 
     # 3. Интерактивная цепь ДНК (режим 7)
     if "sequence" in solution:
-        sol_seq = str(solution['sequence']).strip().upper()
         if isinstance(user_input, list):
             given = "".join(str(x) for x in user_input).strip().upper()
         elif isinstance(user_input, dict) and "sequence" in user_input:
             given = str(user_input["sequence"]).strip().upper()
         else:
             given = str(user_input or '').strip().upper()
-        errs = []
-        for i, exp in enumerate(sol_seq):
-            got = given[i] if i < len(given) else ''
-            if got != exp:
-                errs.append({"index": i, "expected": exp, "got": got, "msg": f"ожидался {exp}, получен {got or '—'}"})
-        if len(given) < len(sol_seq) and not errs:
-            errs.append({"msg": f"Собрано {len(given)} из {len(sol_seq)} нуклеотидов"})
+        is_correct = (given == str(solution['sequence']).strip().upper())
         return {
-            "is_correct": len(errs) == 0,
-            "score": 100 if not errs else 0,
-            "errors": errs
+            "is_correct": is_correct,
+            "score": 100 if is_correct else 0,
+            "errors": [] if is_correct else [{"type": "MISMATCH", "msg": "Последовательность цепи не совпадает"}]
         }
 
     # 4. Биосинтез белка и антикодоны (режимы 4, 5)
     if "canonical" in solution and "canonical_5_3" not in solution:
         user_tokens = [t.upper() for t in re.split(r'[^a-zA-Zа-яА-ЯёЁ0-9]+', str(user_input or '').strip()) if t]
         sol_tokens = [t.upper() for t in re.split(r'[^a-zA-Zа-яА-ЯёЁ0-9]+', str(solution['canonical']).strip()) if t]
-        errs = []
-        if len(user_tokens) != len(sol_tokens):
-            errs.append({"msg": f"Ожидается {len(sol_tokens)} элементов, получено {len(user_tokens)}"})
-        for i, (u, s) in enumerate(zip(user_tokens, sol_tokens)):
-            if u != s:
-                errs.append({"index": i, "expected": s, "got": u, "msg": f"ожидалось {s}, указано {u}"})
-        is_correct = bool(user_tokens and not errs)
+        is_correct = bool(user_tokens and user_tokens == sol_tokens)
         return {
             "is_correct": is_correct,
             "score": 100 if is_correct else 0,
-            "errors": errs
+            "errors": [] if is_correct else [{"type": "MISMATCH", "msg": "Неверный ответ"}]
         }
 
     # 5. Классические цепи 5'->3' / 3'->5' (режимы 1, 2, 3)

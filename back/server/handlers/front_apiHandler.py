@@ -122,12 +122,8 @@ async def _generate_variant(task_def: dict, variant_key: str | None = None) -> d
             difficulty=task_def.get('difficulty') or 'easy',
             settings=settings_,
         )
-    try:
-        bio_mode = int(task_def.get('mode') or 1)
-    except (ValueError, TypeError):
-        bio_mode = 1
     return await biologyUtil.generate_task(
-        mode=bio_mode,
+        mode=int(task_def.get('mode') or 1),
         length=int(settings_.get('taskLen') or 18),
     )
 
@@ -394,19 +390,7 @@ async def main_taskGetter(click_from: str, user=Depends(get_current_user)):
                     }, status_code=403)
         # вариант держим 30 минут: меньше мусора в базе и стабильные очки
         cached = await coursesDB.recent_test(click_from, user['user_uid'], minutes=30)
-        is_stale = False
-        if cached:
-            c_cond = cached.get('condition') or {}
-            c_sol = cached.get('internal_solution') or {}
-            if cached.get('task_type') != tmp.get('type'):
-                is_stale = True
-            elif str(cached.get('mode', '')) != str(tmp.get('mode', '')):
-                is_stale = True
-            elif not c_cond or not c_sol:
-                is_stale = True
-            elif tmp.get('type') == 'matching' and c_cond.get('kind') != 'matching':
-                is_stale = True
-        if is_stale:
+        if cached and (cached.get('task_type') != tmp.get('type') or (tmp.get('type') == 'matching' and cached.get('condition', {}).get('kind') != 'matching')):
             await coursesDB.tests.delete_many({'parent_task_id': str(click_from), 'owner_uid': user['user_uid']})
             cached = None
         if cached is None:
@@ -489,20 +473,10 @@ async def main_taskSolver(task_id: str, user=Depends(get_current_user)):
         return jsonset(content={'solution': display, 'hint_used': True, 'kind': 'solution'}, status_code=200)
     canonical = sol.get('canonical_5_3') or sol.get('canonical')
     if canonical is None:
-        sol_t = str(sol.get('type') or '').lower()
-        if 'nucleotide' in sol_t:
-            canonical = f"{sol.get('base', '')} + {sol.get('sugar', '')} + фосфат"
-        elif 'chain' in sol_t:
-            canonical = f"5'-{sol.get('sequence', '')}-3'"
-        elif 'cloverleaf' in sol_t:
-            canonical = f"Антикодон: {sol.get('anticodon', '')}"
-    if canonical is None:
         return jsonset(content={'error': 'подсказки для этой задачи нет'}, status_code=404)
     # у математики, пептидов и интерактивов ответ не оборачиваем в 5'/3'
-    sol_type = str(sol.get('type') or '').lower()
-    if sol.get('kind') == 'math' or any(k in sol_type for k in ('protein', 'anticodon', 'interactive', 'nucleotide', 'cloverleaf', 'chain')):
-        display = str(canonical)
-    elif str(canonical).startswith("5'") or str(canonical).startswith("3'"):
+    sol_type = sol.get('type')
+    if sol.get('kind') == 'math' or sol_type in ('number', 'PEPTIDE', 'ANTICODONS', 'NUCLEOTIDE', 'CLOVERLEAF', 'CHAIN'):
         display = str(canonical)
     else:
         display = f"5'-{canonical}-3'"

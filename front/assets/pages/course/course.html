@@ -286,45 +286,6 @@
       gap: 6px;
     }
 
-    /* Биологическая панель быстрого ввода нуклеотидов / аминокислот */
-    .bio-quick-bar {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 6px;
-      margin: 10px 0 12px 0;
-      padding: 10px 12px;
-      background: rgba(0, 0, 0, 0.22);
-      border: 1px dashed var(--line2);
-      border-radius: 12px;
-    }
-    .bio-quick-chip {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 6px 12px;
-      border-radius: 8px;
-      background: var(--surface2);
-      border: 1px solid var(--line2);
-      color: var(--text);
-      font-weight: 700;
-      font-size: 0.9rem;
-      font-family: var(--dna-font, monospace);
-      cursor: pointer;
-      transition: all 0.15s ease;
-      user-select: none;
-      -webkit-user-select: none;
-      -webkit-tap-highlight-color: transparent !important;
-    }
-    .bio-quick-chip:hover {
-      border-color: var(--primary);
-      background: color-mix(in srgb, var(--primary) 18%, var(--surface2));
-      transform: translateY(-1px);
-    }
-    .bio-quick-chip:active {
-      transform: scale(0.96);
-    }
-
     html,
     body {
       height: 100%;
@@ -2172,16 +2133,10 @@
 
       // условие задания: тест (с опциональной картинкой), математика, интерактив или ДНК/РНК цепи
       const quizImageHtml = (isQuiz || isMatching) && condition.image ? `<div class="quiz-img-wrap"><img src="${escapeHtml(condition.image)}" alt="Иллюстрация к вопросу" class="quiz-img" onerror="this.parentElement.style.display='none'" /></div>` : '';
-      let bioKind = condition.kind || (condition.interactive_type ? ('interactive_' + condition.interactive_type) : '');
-      const taskModeNum = Number(task.mode);
-      if (!bioKind && currentTaskType === 'biology') {
-        if (taskModeNum === 6) bioKind = 'interactive_nucleotide';
-        else if (taskModeNum === 7) bioKind = 'interactive_chain';
-        else if (taskModeNum === 8) bioKind = 'interactive_cloverleaf';
-      }
+      const bioKind = condition.kind || (condition.interactive_type ? ('interactive_' + condition.interactive_type) : '');
       const isBioInteractive = ['interactive_nucleotide', 'interactive_chain', 'interactive_cloverleaf'].includes(bioKind);
-      const isProteinSynth = bioKind === 'protein_synth' || bioKind === 'trna_anticodons' || condition.table_hint || condition.mrna || taskModeNum === 4 || taskModeNum === 5;
-      const genTableButtonHtml = (condition.table_hint || taskModeNum === 4) ? `<div style="margin-top:8px"><button type="button" class="gen-table-btn" onclick="window.BioInteractive && window.BioInteractive.renderGeneticTableModal()"><i class="ti ti-table"></i> Таблица генетического кода</button></div>` : '';
+      const isProteinSynth = bioKind === 'protein_synth' || bioKind === 'trna_anticodons' || condition.table_hint || condition.mrna;
+      const genTableButtonHtml = condition.table_hint ? `<div style="margin-top:8px"><button type="button" class="gen-table-btn" onclick="window.BioInteractive && window.BioInteractive.renderGeneticTableModal()"><i class="ti ti-table"></i> Таблица генетического кода</button></div>` : '';
 
       const taskConditionHtml = isMatching
         ? `${quizImageHtml}<div class="quiz-question">${escapeHtml(condition.question || 'Установите соответствие:')}</div><div id="matching-board-container"></div>`
@@ -2194,48 +2149,11 @@
         : `<div class="dna-display">
               ${condition.strand ? `<div class="strand"><span class="strand-tag">иРНК:</span> ${formatStrand(condition.strand)}</div>` : ''}
               ${condition.mrna ? `<div class="strand"><span class="strand-tag">иРНК:</span> ${formatStrand(condition.mrna)}</div>` : ''}
-              ${condition.codons ? `<div class="strand"><span class="strand-tag">Кодоны иРНК:</span> <span class="seq">${escapeHtml(condition.codons)}</span></div>` : ''}
               ${condition.peptides ? `<div class="strand"><span class="strand-tag">Пептид:</span> <span class="seq">${escapeHtml(condition.peptides)}</span></div>` : ''}
               ${topStrand ? `<div class="strand">${formatStrand(topStrand)}</div>` : ''}
               ${bottomStrand ? `<div class="strand">${formatStrand(bottomStrand)}</div>` : ''}
               ${genTableButtonHtml}
            </div>`;
-
-      const bioQuickBarHtml = (currentTaskType === 'biology' && !isBioInteractive && !isQuiz && !isMatching) ? `
-        <div class="bio-quick-bar" id="bio-quick-bar">
-          ${(taskModeNum === 4) ? `
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-              <button type="button" class="btn-ghost gen-table-btn" onclick="window.BioInteractive && window.BioInteractive.renderGeneticTableModal()" style="font-size:0.85rem;padding:6px 12px">
-                <i class="ti ti-table"></i> Открыть таблицу генетического кода (клик по кодону добавит аминокислоту)
-              </button>
-            </div>
-          ` : (taskModeNum === 5) ? `
-            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-              <span style="font-size:0.8rem;color:var(--muted);margin-right:2px">Антикодоны:</span>
-              <button type="button" class="bio-quick-chip" data-insert="А">А</button>
-              <button type="button" class="bio-quick-chip" data-insert="У">У</button>
-              <button type="button" class="bio-quick-chip" data-insert="Г">Г</button>
-              <button type="button" class="bio-quick-chip" data-insert="Ц">Ц</button>
-              <button type="button" class="bio-quick-chip" data-insert=", ">запятая</button>
-              <button type="button" class="bio-quick-chip" data-action="backspace" title="Стереть"><i class="ti ti-backspace"></i></button>
-              <button type="button" class="bio-quick-chip" data-action="clear" title="Очистить"><i class="ti ti-trash"></i></button>
-            </div>
-          ` : `
-            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-              <span style="font-size:0.8rem;color:var(--muted);margin-right:2px">Ввод нуклеотидов:</span>
-              <button type="button" class="bio-quick-chip" data-insert="5'-">5'-</button>
-              <button type="button" class="bio-quick-chip" data-insert="А">А</button>
-              <button type="button" class="bio-quick-chip" data-insert="${taskModeNum === 1 ? 'У' : 'Т'}">${taskModeNum === 1 ? 'У' : 'Т'}</button>
-              <button type="button" class="bio-quick-chip" data-insert="Г">Г</button>
-              <button type="button" class="bio-quick-chip" data-insert="Ц">Ц</button>
-              ${taskModeNum !== 1 ? `<button type="button" class="bio-quick-chip" data-insert="У">У</button>` : ''}
-              <button type="button" class="bio-quick-chip" data-insert="-3'">-3'</button>
-              <button type="button" class="bio-quick-chip" data-action="backspace" title="Стереть"><i class="ti ti-backspace"></i></button>
-              <button type="button" class="bio-quick-chip" data-action="clear" title="Очистить"><i class="ti ti-trash"></i></button>
-            </div>
-          `}
-        </div>
-      ` : '';
 
       main.innerHTML = `
       <div class="test-container">
@@ -2258,11 +2176,11 @@
             <p class="task-instruction">${escapeHtml(instruction)}</p>
             ${taskConditionHtml}
             <div class="input-area" ${(isBioInteractive || isMatching) ? 'style="display:none"' : ''}>
-              ${bioQuickBarHtml}
               <label class="field-label">Ваш ответ</label>
-              ${isQuiz ? `<div class="quiz-options">${(condition.answers||[]).map(answer=>`<label class="quiz-option"><input name="quiz-answer" type="${condition.multiple?'checkbox':'radio'}" value="${escapeHtml(answer.id)}"><span>${escapeHtml(answer.text)}</span></label>`).join('')}</div>` : `<input type="text" id="user-input" class="dna-input" inputmode="${isMath ? 'decimal' : 'text'}" placeholder="${isMath ? 'например 42' : (taskModeNum === 4) ? 'например МЕТ-АЛА-СЕР' : (taskModeNum === 5) ? 'например УАЦ, ЦГА' : "5'-...-3'"}" autocomplete="off">`}
+              ${isQuiz ? `<div class="quiz-options">${(condition.answers||[]).map(answer=>`<label class="quiz-option"><input name="quiz-answer" type="${condition.multiple?'checkbox':'radio'}" value="${escapeHtml(answer.id)}"><span>${escapeHtml(answer.text)}</span></label>`).join('')}</div>` : `<input type="text" id="user-input" class="dna-input" inputmode="${isMath ? 'decimal' : 'text'}" placeholder="${isMath ? 'например 42' : isProteinSynth ? 'например МЕТ-АЛА-СЕР' : "5'-...-3'"}" autocomplete="off">`}
+              <div id="feedback" class="feedback-msg ${task.locked ? 'error' : task.completed ? 'success' : ''}">${task.locked ? 'Лимит неправильных ответов исчерпан.' : task.completed ? 'Назначенный вариант уже решён.' : ''}</div>
             </div>
-            <div id="feedback" class="feedback-msg ${task.locked ? 'error' : task.completed ? 'success' : ''}" style="margin-top:10px">${task.locked ? 'Лимит неправильных ответов исчерпан.' : task.completed ? 'Назначенный вариант уже решён.' : ''}</div>
+            ${(isBioInteractive || isMatching) ? `<div id="feedback" class="feedback-msg ${task.locked ? 'error' : task.completed ? 'success' : ''}" style="margin-top:10px">${task.locked ? 'Лимит неправильных ответов исчерпан.' : task.completed ? 'Назначенный вариант уже решён.' : ''}</div>` : ''}
           </div>
           <div class="task-foot">
             <span class="attempts" id="attempts">попыток: 0</span>
@@ -2270,21 +2188,6 @@
           </div>
         </div>
       </div>`;
-
-      document.querySelectorAll('.bio-quick-chip').forEach(btn => {
-        btn.onclick = () => {
-          const input = document.getElementById('user-input');
-          if (!input) return;
-          if (btn.dataset.insert) {
-            input.value += btn.dataset.insert;
-          } else if (btn.dataset.action === 'backspace') {
-            input.value = input.value.slice(0, -1);
-          } else if (btn.dataset.action === 'clear') {
-            input.value = '';
-          }
-          input.focus();
-        };
-      });
 
       const bulb = document.getElementById('bulb-btn');
       if (bulb) {
@@ -2299,7 +2202,6 @@
         document.querySelectorAll('input[name="quiz-answer"]').forEach(item=>item.disabled=true);
       }
       window.__bioInteractiveValue = '';
-      window.__currentBioKind = isBioInteractive ? bioKind : null;
       window.__matchingValue = {};
       if (isMatching) {
         const matchBox = document.getElementById('matching-board-container');
@@ -2435,53 +2337,22 @@
       if (!feedback) return;
       const btn = document.getElementById('submit-btn');
       if (!btn) return;
-      const quizInputs = Array.from(document.querySelectorAll('input[name="quiz-answer"]'));
+      const quizInputs=Array.from(document.querySelectorAll('input[name="quiz-answer"]'));
       let userVal;
-
       if (currentTaskType === 'matching' || (window.__matchingValue && Object.keys(window.__matchingValue).length > 0)) {
         userVal = window.__matchingValue || {};
         if (!Object.keys(userVal).length) {
           showToast('Соедините пары элементов перед проверкой', true);
           return;
         }
-      } else if (window.__currentBioKind) {
-        userVal = window.__bioInteractiveValue;
-        if (window.__currentBioKind === 'interactive_nucleotide') {
-          if (!userVal || typeof userVal !== 'object' || !userVal.sugar || !userVal.base) {
-            showToast('Соберите нуклеотид: выберите основание, сахар и фосфат', true);
-            return;
-          }
-        } else if (window.__currentBioKind === 'interactive_chain') {
-          if (!userVal || (Array.isArray(userVal) && (!userVal.length || userVal.some(x => !x))) || (typeof userVal === 'string' && !userVal)) {
-            showToast('Заполните все слоты цепочки нуклеотидами перед проверкой', true);
-            return;
-          }
-        } else if (window.__currentBioKind === 'interactive_cloverleaf') {
-          if (!userVal || typeof userVal !== 'object' || !userVal.paired || !userVal.anticodon || userVal.anticodon.length < 3 || userVal.anticodon.some(x => !x)) {
-            showToast('Скрутите тРНК в трилистник и укажите 3 буквы антикодона', true);
-            return;
-          }
-        }
       } else if (window.__bioInteractiveValue !== undefined && window.__bioInteractiveValue !== '') {
         userVal = window.__bioInteractiveValue;
       } else if (currentTaskType === 'quiz') {
         userVal = quizInputs.filter(item=>item.checked).map(item=>item.value);
-        if (!userVal.length) {
-          showToast('Выберите вариант ответа перед проверкой', true);
-          return;
-        }
       } else {
         userVal = (input?.value || '').trim().toUpperCase();
-        if (!userVal) {
-          showToast('Введите ответ перед проверкой', true);
-          return;
-        }
       }
-
-      if (!userVal || (Array.isArray(userVal) && !userVal.length) || (typeof userVal === 'object' && !Object.keys(userVal).length)) {
-        showToast('Укажите ответ перед проверкой', true);
-        return;
-      }
+      if (!userVal || (Array.isArray(userVal) && !userVal.length) || (typeof userVal === 'object' && !Object.keys(userVal).length)) return;
       if(input) input.disabled = true;
       quizInputs.forEach(item=>item.disabled=true);
       btn.disabled = true;
@@ -2558,10 +2429,9 @@
         feedback.className = 'feedback-msg error';
         if (res && res.errors && res.errors.length) {
           feedback.innerHTML = res.errors.slice(0, 5).map(err => {
-            const hasIdx = (typeof err.index === 'number');
-            const idxStr = hasIdx ? `позиция ${err.index + 1}: ` : '';
+            const idx = (typeof err.index === 'number') ? (err.index + 1) : '?';
             const msg = err.msg ? escapeHtml(err.msg) : `ожидалось: ${escapeHtml(err.expected || '')}`;
-            return `<div class="err-line">${idxStr}${msg}</div>`;
+            return `<div class="err-line">позиция ${idx}: ${msg}</div>`;
           }).join('');
         } else {
           feedback.textContent = 'Неверно, попробуйте ещё раз.';
